@@ -1,0 +1,324 @@
+@import 'tailwindcss';
+@import '../../../packages/shared/src/styles/index.css';
+@source '../../../packages/shared/src';
+@source '.';
+
+/* ---- Ionic Theme & Color Variables ---- */
+:root {
+  --ion-background-color: #f8fafc;
+  --ion-background-color-rgb: 248, 250, 252;
+  --ion-text-color: #0f172a;
+  --ion-text-color-rgb: 15, 23, 42;
+  --ion-border-color: #e2e8f0;
+  --ion-toolbar-background: #ffffff;
+  --ion-item-background: #ffffff;
+  --ion-card-background: #ffffff;
+  --ion-color-primary: #dc2626;
+  --ion-color-primary-rgb: 220, 38, 38;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-shade: #b91c1c;
+  --ion-color-primary-tint: #ef4444;
+  --ion-color-success: #10b981;
+  --ion-color-warning: #f59e0b;
+  --ion-color-danger: #ef4444;
+  --k-color-primary: #dc2626;
+}
+
+body {
+  background: #ffffff;
+  color: #0f172a;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ---- Button Styling Preservation ---- */
+.btn-primary {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 7px 14px !important;
+  border-radius: 8px !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+  border: none !important;
+  cursor: pointer !important;
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.25) !important;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  text-decoration: none !important;
+  line-height: normal !important;
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 3px 8px rgba(220, 38, 38, 0.35) !important;
+}
+.btn-primary:active {
+  transform: scale(0.98) !important;
+}
+
+.btn-secondary {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 6px 13px !important;
+  border-radius: 8px !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  cursor: pointer !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  text-decoration: none !important;
+  line-height: normal !important;
+}
+.btn-secondary:hover {
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+}
+.btn-secondary:active {
+  transform: scale(0.98) !important;
+}
+
+.btn-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 30px !important;
+  padding: 0 12px !important;
+  border-radius: 8px !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  color: #334155 !important;
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+  cursor: pointer !important;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  text-decoration: none !important;
+  line-height: normal !important;
+  white-space: nowrap !important;
+}
+.btn-chip:hover {
+  background-color: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+.btn-chip:active {
+  transform: scale(0.97) !important;
+}
+.btn-chip.active {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+  color: #ffffff !important;
+  border-color: #dc2626 !important;
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.3) !important;
+}
+
+.btn-dropdown-add {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  height: 36px !important;
+  padding: 0 14px !important;
+  border-radius: 8px !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+  border: none !important;
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.3) !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  line-height: normal !important;
+}
+.btn-dropdown-add:hover {
+  background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%) !important;
+}
+.btn-dropdown-add:active {
+  transform: scale(0.98) !important;
+}
+
+/* ---- App Bar Alignment (Matches App 2 PageHeader exactly) ---- */
+.app-header {
+  position: relative;
+  z-index: 40;
+  box-shadow: none !important;
+}
+
+ion-header {
+  position: relative;
+  z-index: 40;
+  background: #ffffff !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
+  padding: 0px !important;
+  margin: 0px !important;
+}
+
+/* ---- Safe Area & Screen Edge Spacing (Edge-to-Edge, No Container) ---- */
+ion-content {
+  --padding-top: 0px;
+  --padding-bottom: calc(env(safe-area-inset-bottom) + 88px);
+  --padding-start: 0px;
+  --padding-end: 0px;
+  --background: #ffffff;
+}
+ion-header ion-toolbar,
+ion-header ion-toolbar:first-of-type,
+ion-toolbar {
+  --background: #ffffff !important;
+  --color: #0f172a !important;
+  --border-color: #e2e8f0 !important;
+  --padding-start: 0px !important;
+  --padding-end: 0px !important;
+  --padding-top: 0px !important;
+  --padding-bottom: 0px !important;
+  --min-height: 56px !important;
+  padding-top: 0px !important;
+  padding-bottom: 0px !important;
+  padding-left: 0px !important;
+  padding-right: 0px !important;
+  min-height: 56px !important;
+  height: 56px !important;
+  max-height: 56px !important;
+}
+ion-card {
+  margin: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  border: none !important;
+  background: transparent !important;
+}
+ion-tab-bar {
+  padding-bottom: env(safe-area-inset-bottom);
+  --background: #ffffff;
+  --border-color: #e2e8f0;
+}
+ion-app {
+  background-color: #f8fafc !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ---- PIN Keypad ---- */
+.pin-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  background: #f1f5f9;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.pin-dot.filled {
+  background: #dc2626;
+  border-color: #dc2626;
+  transform: scale(1.15);
+  box-shadow: 0 0 10px rgba(220, 38, 38, 0.4);
+}
+.pin-key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  font-size: 1.35rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  height: 64px;
+  min-height: 48px;
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.04);
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.pin-key:active {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #dc2626;
+  transform: scale(0.96);
+}
+
+/* ---- Card Glass / Material Light ---- */
+.glass-card {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.02);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.glass-card:hover {
+  box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.06);
+}
+
+/* ---- Gradient Header (Hero Banner) ---- */
+.gradient-header {
+  background: linear-gradient(135deg, #991b1b 0%, #dc2626 50%, #ef4444 100%);
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+}
+.gradient-header::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 250px;
+  height: 250px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.15), transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* ---- Shake Animation ---- */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
+}
+.shake { animation: shake 0.4s ease-in-out; }
+
+/* ---- Print CSS ---- */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+  ion-header, ion-toolbar, ion-tab-bar, ion-footer { display: none !important; }
+
+  html, body, ion-app, ion-page, ion-content {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    --background: #ffffff !important;
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 100% !important;
+    position: static !important;
+  }
+
+  ion-content::part(scroll),
+  .inner-scroll {
+    overflow: visible !important;
+    position: static !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+

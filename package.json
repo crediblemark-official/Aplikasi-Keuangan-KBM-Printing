@@ -1,0 +1,26 @@
+{
+  "name": "kbm-pinting",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n \"OPS,OWNER\" -c \"cyan,magenta\" \"npm run dev:operasional\" \"npm run dev:owner\"",
+    "dev:operasional": "npm run dev -w apps/app1-operasional",
+    "dev:kasir": "npm run dev:operasional",
+    "dev:owner": "npm run dev -w apps/app2-owner",
+    "build:operasional": "npm run build -w apps/app1-operasional",
+    "build:kasir": "npm run build:operasional",
+    "build:owner": "npm run build -w apps/app2-owner",
+    "build:all": "npm run build:operasional && npm run build:owner",
+    "cap:sync:operasional": "npm run build:operasional && (cd apps/app1-operasional && npx cap sync android)",
+    "cap:sync:kasir": "npm run cap:sync:operasional",
+    "cap:sync:owner": "npm run build:owner && (cd apps/app2-owner && npx cap sync android)",
+    "cap:sync:all": "npm run build:all && (cd apps/app1-operasional && npx cap sync android) && (cd apps/app2-owner && npx cap sync android)"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
+}

@@ -1,0 +1,117 @@
+name: Build & Release Android APKs
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Tag Rilis (contoh: v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+      release_name:
+        description: 'Nama / Judul Rilis'
+        required: false
+        default: 'KBM Percetakan Android APK Release'
+
+jobs:
+  build-and-release:
+    name: Build & Release APKs
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: ☕ Set up Java (JDK 21)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: 🟢 Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies
+        run: npm ci || npm install
+
+      - name: 🔨 Build Web Assets & Sync Capacitor
+        run: |
+          npm run cap:sync:all
+
+      - name: 📱 Build APK App 1 - KBM Operasional
+        run: |
+          cd apps/app1-operasional/android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+          mkdir -p ../../../build-artifacts
+          cp app/build/outputs/apk/debug/app-debug.apk ../../../build-artifacts/KBM-Operasional.apk
+
+      - name: 📱 Build APK App 2 - Owner Dashboard
+        run: |
+          cd apps/app2-owner/android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+          mkdir -p ../../../build-artifacts
+          cp app/build/outputs/apk/debug/app-debug.apk ../../../build-artifacts/KBM-Owner-Dashboard.apk
+
+      - name: 📤 Upload Build Artifacts to Actions
+        uses: actions/upload-artifact@v4
+        with:
+          name: KBM-Android-APKs
+          path: build-artifacts/*.apk
+          retention-days: 30
+
+      - name: 🏷️ Set Release Tag & Name
+        id: release_vars
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.release_tag }}"
+            TITLE="${{ github.event.inputs.release_name }} - $TAG"
+          else
+            TAG="${{ github.ref_name }}"
+            TITLE="KBM Percetakan Android Apps - $TAG"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "title=$TITLE" >> $GITHUB_OUTPUT
+
+      - name: 🚀 Create GitHub Release & Upload APKs
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        with:
+          tag_name: ${{ steps.release_vars.outputs.tag }}
+          name: ${{ steps.release_vars.outputs.title }}
+          draft: false
+          prerelease: false
+          files: |
+            build-artifacts/KBM-Operasional.apk
+            build-artifacts/KBM-Owner-Dashboard.apk
+          body: |
+            ## 📱 Rilis APK Android KBM Percetakan Buku
+
+            Berikut adalah file APK Android terbaru yang siap di-download dan di-install langsung di HP/Tablet Android:
+
+            ### 📦 Unduhan APK:
+            1. 📑 **[KBM-Operasional.apk](https://github.com/${{ github.repository }}/releases/download/${{ steps.release_vars.outputs.tag }}/KBM-Operasional.apk)**
+               - Aplikasi Operasional & Produksi Percetakan.
+               - Fitur: Input Order Cetak Buku, Kalkulator Spesifikasi Buku, Catat Pembayaran Masuk, Cetak Invoice PDF, WhatsApp Share.
+            
+            2. 📊 **[KBM-Owner-Dashboard.apk](https://github.com/${{ github.repository }}/releases/download/${{ steps.release_vars.outputs.tag }}/KBM-Owner-Dashboard.apk)**
+               - Aplikasi Owner & Tim Keuangan Percetakan.
+               - Fitur: Monitoring Omset & Laba, Verifikasi Pembayaran Masuk, Kas Keluar, Monitoring Piutang, Export Excel.
+
+            ---
+            ### ✨ Fitur Unggulan:
+            - **Kunci Layar Bawaan Android**: Buka cepat & aman dengan sidik jari, pola, atau PIN bawaan HP.
+            - **Keep Screen Awake**: Layar HP tetap menyala terus tanpa auto-sleep saat aplikasi dibuka untuk operasional percetakan.
+            - **Pilihan Unggah Struk Native**: Pilihan langsung Kamera (jepret foto nota), Galeri, atau File Manager.
+            - **Offline Queue**: Transaksi tetap tersimpan saat offline dan otomatis sinkron ke Google Sheets saat internet aktif.

@@ -1,0 +1,48 @@
+# Node & Dependencies
+node_modules/
+.npm/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+build/
+build-artifacts/
+*.local
+
+# Environment & Temp
+.env
+.env.*
+!.env.example
+.tempmediaStorage/
+.user_uploaded/
+
+# Android & Gradle
+.gradle/
+**/android/.gradle/
+**/android/app/build/
+**/android/build/
+**/android/local.properties
+**/android/.idea/
+**/android/*.iml
+**/android/app/*.iml
+**/android/captures/
+*.apk
+*.aab
+
+# Don't ignore Gradle wrapper
+!**/gradle/wrapper/gradle-wrapper.jar
+!**/gradlew
+!**/gradlew.bat
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

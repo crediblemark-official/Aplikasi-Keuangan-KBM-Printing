@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="kbm-printer-grad" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ef4444" />
+      <stop offset="50%" stop-color="#dc2626" />
+      <stop offset="100%" stop-color="#991b1b" />
+    </linearGradient>
+  </defs>
+  <!-- Rounded Squircle Emblem -->
+  <rect x="2" y="2" width="44" height="44" rx="12" fill="url(#kbm-printer-grad)" />
+  <rect x="2.5" y="2.5" width="43" height="43" rx="11.5" stroke="white" stroke-opacity="0.25" stroke-width="1" />
+  
+  <!-- Top Paper Feed -->
+  <path d="M16 11C16 10.4477 16.4477 10 17 10H27.5L32 14.5V17H16V11Z" fill="#fee2e2" />
+  <path d="M27 10V14C27 14.5523 27.4477 15 28 15H32" stroke="#ef4444" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" fill="#fecaca" />
+  
+  <!-- Main Printer Body -->
+  <path d="M10 18C10 15.7909 11.7909 14 14 14H34C36.2091 14 38 15.7909 38 18V28C38 29.6569 36.6569 31 35 31H33V26.5C33 25.6716 32.3284 25 31.5 25H16.5C15.6716 25 15 25.6716 15 26.5V31H13C11.3431 31 10 29.6569 10 28V18Z" fill="white" />
+  <circle cx="33" cy="19.5" r="1.5" fill="#dc2626" />
+  
+  <!-- Output Paper with Printed Lines -->
+  <rect x="16" y="26.5" width="16" height="11" rx="1.5" fill="white" stroke="#fee2e2" stroke-width="0.8" />
+  <line x1="19" y1="30" x2="29" y2="30" stroke="#dc2626" stroke-width="1.8" stroke-linecap="round" />
+  <line x1="19" y1="33.5" x2="25" y2="33.5" stroke="#dc2626" stroke-width="1.8" stroke-linecap="round" />
+</svg>

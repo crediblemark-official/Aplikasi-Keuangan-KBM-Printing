@@ -1,0 +1,76 @@
+/* ==========================================================================
+   KBM PERCETAKAN — DESKTOP SIDEBAR
+   Normalisasi, Isolasi CSS, dan Responsive Rules
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. CSS Isolation Layer
+   Memastikan sidebar tampil identik di App 1 (Ionic + Konsta) dan App 2
+   (plain Vue). Me-pin semua nilai kritis agar tidak bisa ditimpa CSS global
+   dari Ionic/Konsta.
+   -------------------------------------------------------------------------- */
+
+.desktop-sidebar {
+  box-sizing:              border-box;
+  font-family:             'Plus Jakarta Sans', Outfit, Inter,
+                           -apple-system, BlinkMacSystemFont,
+                           'Segoe UI', Roboto, sans-serif !important;
+  font-size:               12px !important;
+  line-height:             1.5 !important;
+  -webkit-font-smoothing:  antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Enforce box-model ke seluruh turunan */
+.desktop-sidebar *,
+.desktop-sidebar *::before,
+.desktop-sidebar *::after {
+  box-sizing: border-box;
+}
+
+/* <button> — Ionic dan Konsta masing-masing punya reset berbeda */
+.desktop-sidebar button {
+  -webkit-appearance: none;
+  appearance:         none;
+  background:         transparent;
+  border:             none;
+  margin:             0;
+  padding:            0;
+  font-family:        inherit !important;
+  font-size:          inherit !important;
+  line-height:        inherit !important;
+  color:              inherit;
+  cursor:             pointer;
+  outline:            none;
+  min-height:         unset !important; /* override Ionic min-height */
+  height:             auto  !important;
+}
+
+/* <p> — Konsta / beberapa CSS global menambahkan margin pada paragraf */
+.desktop-sidebar p {
+  margin:  0 !important;
+  padding: 0 !important;
+}
+
+/* <svg> — pastikan block bukan inline agar tidak ada extra whitespace */
+.desktop-sidebar svg {
+  display:     block;
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+   2. Responsive — Show / Hide
+   -------------------------------------------------------------------------- */
+
+@media (min-width: 1024px) {
+  .desktop-sidebar {
+    display: flex  !important;
+    width:   16rem !important; /* 256px / w-64 */
+  }
+}
+
+@media (max-width: 1023px) {
+  .desktop-sidebar {
+    display: none !important;
+  }
+}

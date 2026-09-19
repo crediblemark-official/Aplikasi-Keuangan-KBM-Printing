@@ -1,0 +1,9 @@
+{
+  "appId": "com.kbm.owner",
+  "appName": "KBM Owner Dashboard",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}

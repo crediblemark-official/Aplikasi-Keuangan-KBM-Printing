@@ -1,0 +1,87 @@
+/* ==========================================================================
+   KBM PERCETAKAN DESIGN TOKENS
+   Single Source of Truth for Colors, Typography, Spacing & Base Variables
+   ========================================================================== */
+
+:root {
+  /* Brand Primary Palettes (Red Brand) */
+  --color-primary: #dc2626;
+  --color-primary-hover: #b91c1c;
+  --color-primary-active: #991b1b;
+  --color-primary-light: #fef2f2;
+  --color-primary-glow: rgba(220, 38, 38, 0.15);
+
+  /* Status Colors */
+  --color-success: #10b981;
+  --color-success-light: #ecfdf5;
+  --color-danger: #ef4444;
+  --color-danger-light: #fef2f2;
+  --color-warning: #f59e0b;
+  --color-warning-light: #fffbeb;
+  --color-info: #6366f1;
+  --color-info-light: #eef2ff;
+
+  /* Surfaces & Backgrounds */
+  --bg-base: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f1f5f9;
+  --bg-card: #ffffff;
+  --border-subtle: #e2e8f0;
+  --border-light: #f1f5f9;
+
+  /* Text Colors */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+
+  /* Layout Spacing */
+  --sidebar-width: 256px;
+  --page-px: 8px;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --page-px: 15px;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --page-px: 20px;
+  }
+}
+
+/* Base Font Families */
+:root, html, body, button, input, select, textarea, table, th, td {
+  font-family: 'Plus Jakarta Sans', 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.font-heading {
+  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif !important;
+}
+
+/* Global Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}

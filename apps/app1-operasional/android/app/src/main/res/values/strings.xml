@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">KBM Operasional</string>
+    <string name="title_activity_main">KBM Operasional</string>
+    <string name="package_name">com.kbm.operasional</string>
+    <string name="custom_url_scheme">com.kbm.operasional</string>
+</resources>

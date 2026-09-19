@@ -1,0 +1,9 @@
+{
+  "appId": "com.kbm.operasional",
+  "appName": "KBM Operasional",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}

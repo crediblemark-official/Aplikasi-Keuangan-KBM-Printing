@@ -1,0 +1,8 @@
+/* ==========================================================================
+   KBM PERCETAKAN SHARED DESIGN SYSTEM
+   Import tokens and shared micro-UI component styles
+   ========================================================================== */
+
+@import './tokens.css';
+@import './sidebar.css';
+@import './components.css';
