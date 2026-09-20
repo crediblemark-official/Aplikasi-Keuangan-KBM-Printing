@@ -84,32 +84,32 @@
         <thead>
           <!-- Baris 1: Group Headers -->
           <tr class="whitespace-nowrap">
-            <th colspan="7" class="text-center th-group-info font-bold text-xs border-b border-slate-300 py-2.5 text-slate-700">Info Order</th>
-            <th colspan="4" class="text-center th-group-dp font-bold text-xs border-b border-amber-300 border-l-2 border-amber-400 py-2.5 text-amber-900">Uang Muka (DP)</th>
-            <th colspan="4" class="text-center th-group-pelunasan font-bold text-xs border-b border-emerald-300 border-l-2 border-emerald-400 py-2.5 text-emerald-900">Pelunasan</th>
-            <th colspan="4" class="text-center th-group-ringkasan font-bold text-xs border-b border-sky-300 border-l-2 border-sky-400 py-2.5 text-sky-950">Ringkasan Tagihan</th>
+            <th colspan="7" class="text-center font-bold text-xs border-b border-slate-300 py-2.5 text-slate-700 bg-slate-100">Info Order</th>
+            <th colspan="4" class="text-center font-bold text-xs border-b border-amber-300 border-l-2 border-amber-400 py-2.5 text-amber-900 bg-amber-100">Uang Muka (DP)</th>
+            <th colspan="4" class="text-center font-bold text-xs border-b border-emerald-300 border-l-2 border-emerald-400 py-2.5 text-emerald-900 bg-emerald-100">Pelunasan</th>
+            <th colspan="4" class="text-center font-bold text-xs border-b border-sky-300 border-l-2 border-sky-400 py-2.5 text-sky-950 bg-sky-100">Ringkasan Tagihan</th>
           </tr>
           <!-- Baris 2: Kolom Detail -->
           <tr class="whitespace-nowrap">
-            <th class="th-col-info">ID Order</th>
-            <th class="th-col-info">Penerbit</th>
-            <th class="th-col-info">Judul</th>
-            <th class="text-right th-col-info">Qty</th>
-            <th class="th-col-info">Ukuran</th>
-            <th class="th-col-info">Kertas</th>
-            <th class="text-right th-col-info">Total Tagihan</th>
-            <th class="border-l-2 border-amber-400 th-col-dp">Tgl DP</th>
-            <th class="text-right th-col-dp">Nominal DP</th>
-            <th class="th-col-dp">Metode DP</th>
-            <th class="text-center th-col-dp">Bukti DP</th>
-            <th class="border-l-2 border-emerald-400 th-col-pelunasan">Tgl Pelunasan</th>
-            <th class="text-right th-col-pelunasan">Nominal Pelunasan</th>
-            <th class="th-col-pelunasan">Metode Pelunasan</th>
-            <th class="text-center th-col-pelunasan">Bukti Pelunasan</th>
-            <th class="text-right border-l-2 border-sky-400 th-col-ringkasan">Sudah Masuk</th>
-            <th class="text-right th-col-ringkasan">Sisa Piutang</th>
-            <th class="text-center th-col-ringkasan">Status Bayar</th>
-            <th class="text-center th-col-ringkasan">Aksi</th>
+            <th class="bg-slate-50 text-slate-600">ID Order</th>
+            <th class="bg-slate-50 text-slate-600">Penerbit</th>
+            <th class="bg-slate-50 text-slate-600">Judul</th>
+            <th class="text-right bg-slate-50 text-slate-600">Qty</th>
+            <th class="bg-slate-50 text-slate-600">Ukuran</th>
+            <th class="bg-slate-50 text-slate-600">Kertas</th>
+            <th class="text-right bg-slate-50 text-slate-600">Total Tagihan</th>
+            <th class="border-l-2 border-amber-400 bg-amber-50 text-amber-800">Tgl DP</th>
+            <th class="text-right bg-amber-50 text-amber-800">Nominal DP</th>
+            <th class="bg-amber-50 text-amber-800">Metode DP</th>
+            <th class="text-center bg-amber-50 text-amber-800">Bukti DP</th>
+            <th class="border-l-2 border-emerald-400 bg-emerald-50 text-emerald-800">Tgl Pelunasan</th>
+            <th class="text-right bg-emerald-50 text-emerald-800">Nominal Pelunasan</th>
+            <th class="bg-emerald-50 text-emerald-800">Metode Pelunasan</th>
+            <th class="text-center bg-emerald-50 text-emerald-800">Bukti Pelunasan</th>
+            <th class="text-right border-l-2 border-sky-400 bg-sky-50 text-sky-800">Sudah Masuk</th>
+            <th class="text-right bg-sky-50 text-sky-800">Sisa Piutang</th>
+            <th class="text-center bg-sky-50 text-sky-800">Status Bayar</th>
+            <th class="text-center bg-sky-50 text-sky-800">Aksi</th>
           </tr>
         </thead>
         <tbody>
@@ -123,7 +123,7 @@
           <tr
             v-for="row in filteredPiutangRows"
             :key="row.order.id_order"
-            class="hover:bg-slate-50/70 transition-colors"
+            class="group/row hover:bg-slate-50/70 transition-colors"
           >
             <!-- 1. ID Order -->
             <td class="font-mono text-xs font-semibold text-slate-700 whitespace-nowrap align-top py-3">
@@ -170,7 +170,7 @@
             </td>
 
             <!-- Tgl DP -->
-            <td class="align-top py-3 whitespace-nowrap text-xs text-slate-700 border-l-2 border-amber-300 col-dp">
+            <td class="align-top py-3 whitespace-nowrap text-xs text-slate-700 border-l-2 border-amber-300 bg-amber-50/40 group-hover/row:bg-amber-100/70 transition-colors">
               <template v-for="tx in row.payments.filter(t => t.jenis_pembayaran === 'DP')" :key="tx.id">
                 <div>{{ formatTanggal(tx.tanggal) }}</div>
               </template>
@@ -178,7 +178,7 @@
             </td>
 
             <!-- Nominal DP -->
-            <td class="text-right align-top py-3 whitespace-nowrap text-xs font-mono font-bold col-dp"
+            <td class="text-right align-top py-3 whitespace-nowrap text-xs font-mono font-bold bg-amber-50/40 group-hover/row:bg-amber-100/70 transition-colors"
               :class="row.payments.filter(t => t.jenis_pembayaran === 'DP').some(t => t.status_verifikasi === 'PENDING') ? 'text-amber-700' : 'text-slate-900'">
               <template v-for="tx in row.payments.filter(t => t.jenis_pembayaran === 'DP')" :key="tx.id">
                 <div>{{ formatRupiah(tx.nominal) }}</div>
@@ -187,7 +187,7 @@
             </td>
 
             <!-- Metode DP -->
-            <td class="align-top py-3 whitespace-nowrap text-xs text-slate-700 col-dp">
+            <td class="align-top py-3 whitespace-nowrap text-xs text-slate-700 bg-amber-50/40 group-hover/row:bg-amber-100/70 transition-colors">
               <template v-for="tx in row.payments.filter(t => t.jenis_pembayaran === 'DP')" :key="tx.id">
                 <div>{{ formatMetode(tx.metode) }}</div>
               </template>
@@ -195,7 +195,7 @@
             </td>
 
             <!-- Bukti/Status DP -->
-            <td class="text-center align-top py-3 text-xs col-dp">
+            <td class="text-center align-top py-3 text-xs bg-amber-50/40 group-hover/row:bg-amber-100/70 transition-colors">
               <template v-for="tx in row.payments.filter(t => t.jenis_pembayaran === 'DP')" :key="tx.id">
                 <div class="flex items-center justify-center gap-1">
                   <a v-if="tx.fileId" :href="`https://drive.google.com/file/d/${tx.fileId}/view`" target="_blank" rel="noopener"
@@ -222,7 +222,7 @@
             </td>
 
             <!-- Tgl Pelunasan -->
-            <td class="align-top py-3 whitespace-nowrap text-xs text-slate-700 border-l-2 border-emerald-300 col-pelunasan">
+            <td class="align-top py-3 whitespace-nowrap text-xs text-slate-700 border-l-2 border-emerald-300 bg-emerald-50/40 group-hover/row:bg-emerald-100/70 transition-colors">
               <template v-for="tx in row.payments.filter(t => t.jenis_pembayaran !== 'DP')" :key="tx.id">
                 <div>{{ formatTanggal(tx.tanggal) }}</div>
               </template>
@@ -230,7 +230,7 @@
             </td>
 
             <!-- Nominal Pelunasan -->
-            <td class="text-right align-top py-3 whitespace-nowrap text-xs font-mono font-bold col-pelunasan"
+            <td class="text-right align-top py-3 whitespace-nowrap text-xs font-mono font-bold bg-emerald-50/40 group-hover/row:bg-emerald-100/70 transition-colors"
               :class="row.payments.filter(t => t.jenis_pembayaran !== 'DP').some(t => t.status_verifikasi === 'PENDING') ? 'text-amber-700' : 'text-slate-900'">
               <template v-for="tx in row.payments.filter(t => t.jenis_pembayaran !== 'DP')" :key="tx.id">
                 <div>{{ formatRupiah(tx.nominal) }}</div>
@@ -239,7 +239,7 @@
             </td>
 
             <!-- Metode Pelunasan -->
-            <td class="align-top py-3 whitespace-nowrap text-xs text-slate-700 col-pelunasan">
+            <td class="align-top py-3 whitespace-nowrap text-xs text-slate-700 bg-emerald-50/40 group-hover/row:bg-emerald-100/70 transition-colors">
               <template v-for="tx in row.payments.filter(t => t.jenis_pembayaran !== 'DP')" :key="tx.id">
                 <div>{{ formatMetode(tx.metode) }}</div>
               </template>
@@ -247,7 +247,7 @@
             </td>
 
             <!-- Bukti/Status Pelunasan -->
-            <td class="text-center align-top py-3 text-xs col-pelunasan">
+            <td class="text-center align-top py-3 text-xs bg-emerald-50/40 group-hover/row:bg-emerald-100/70 transition-colors">
               <template v-for="tx in row.payments.filter(t => t.jenis_pembayaran !== 'DP')" :key="tx.id">
                 <div class="flex items-center justify-center gap-1">
                   <a v-if="tx.fileId" :href="`https://drive.google.com/file/d/${tx.fileId}/view`" target="_blank" rel="noopener"
@@ -274,7 +274,7 @@
             </td>
 
             <!-- 6. Sudah Masuk -->
-            <td class="text-right font-mono font-semibold text-emerald-700 whitespace-nowrap align-top py-3 border-l-2 border-sky-300 col-ringkasan">
+            <td class="text-right font-mono font-semibold text-emerald-700 whitespace-nowrap align-top py-3 border-l-2 border-sky-300 bg-sky-50/30 group-hover/row:bg-sky-100/60 transition-colors">
               <div class="inline-flex items-center gap-1.5 justify-end">
                 <span>{{ formatRupiah(row.total_masuk ?? row.total_masuk_verified) }}</span>
                 <span
@@ -288,18 +288,18 @@
             </td>
 
             <!-- 7. Sisa Piutang -->
-            <td class="text-right font-extrabold whitespace-nowrap align-top py-3 col-ringkasan"
+            <td class="text-right font-extrabold whitespace-nowrap align-top py-3 bg-sky-50/30 group-hover/row:bg-sky-100/60 transition-colors"
                 :class="row.sisa_tagihan > 0 ? 'text-rose-600' : 'text-emerald-600'">
               {{ formatRupiah(row.sisa_tagihan) }}
             </td>
 
             <!-- 8. Status Bayar Badge -->
-            <td class="text-center whitespace-nowrap align-top py-3 col-ringkasan">
+            <td class="text-center whitespace-nowrap align-top py-3 bg-sky-50/30 group-hover/row:bg-sky-100/60 transition-colors">
               <StatusBadge :status="row.status_bayar" />
             </td>
 
             <!-- 9. Aksi -->
-            <td class="text-center whitespace-nowrap align-top py-3 col-ringkasan">
+            <td class="text-center whitespace-nowrap align-top py-3 bg-sky-50/30 group-hover/row:bg-sky-100/60 transition-colors">
               <button
                 v-if="row.sisa_tagihan > 0"
                 @click="openPaymentModalForOrder(row)"
@@ -1118,66 +1118,4 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
-/* ========================================================================== */
-/* TABLE GROUP STYLING: MEMUDAHKAN PELACAKAN MATA SECARA CEPAT                 */
-/* ========================================================================== */
-
-/* Baris 1: Group Headers */
-.th-group-info {
-  background-color: #f1f5f9 !important;
-}
-.th-group-dp {
-  background-color: #fef3c7 !important;
-}
-.th-group-pelunasan {
-  background-color: #d1fae5 !important;
-}
-.th-group-ringkasan {
-  background-color: #e0f2fe !important;
-}
-
-/* Baris 2: Column Headers */
-.th-col-info {
-  background-color: #f8fafc !important;
-  color: #475569 !important;
-}
-.th-col-dp {
-  background-color: #fffbeb !important;
-  color: #92400e !important;
-}
-.th-col-pelunasan {
-  background-color: #f0fdf4 !important;
-  color: #065f46 !important;
-}
-.th-col-ringkasan {
-  background-color: #f0f9ff !important;
-  color: #0369a1 !important;
-}
-
-/* Table Body: Warna Lembut per Group */
-.col-dp {
-  background-color: #fffdf5 !important;
-}
-.col-pelunasan {
-  background-color: #f4fdf8 !important;
-}
-.col-ringkasan {
-  background-color: #f8fafc !important;
-}
-
-/* Hover Row: Mempertahankan Identitas Warna Group */
-:deep(.data-table tr:hover td.col-dp),
-.data-table tr:hover td.col-dp {
-  background-color: #fef3c7 !important;
-}
-:deep(.data-table tr:hover td.col-pelunasan),
-.data-table tr:hover td.col-pelunasan {
-  background-color: #d1fae5 !important;
-}
-:deep(.data-table tr:hover td.col-ringkasan),
-.data-table tr:hover td.col-ringkasan {
-  background-color: #e0f2fe !important;
-}
-</style>
 

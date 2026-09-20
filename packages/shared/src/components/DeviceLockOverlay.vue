@@ -1,6 +1,13 @@
 <template>
   <Teleport to="body">
-    <transition name="fade-lock">
+    <transition
+      enter-active-class="transition-opacity duration-200 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition-opacity duration-150 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
       <div v-if="modelValue" class="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4 select-none">
         
         <!-- Decorative Glow -->
@@ -9,7 +16,7 @@
         </div>
 
         <!-- Lock Card -->
-        <div class="relative w-full max-w-sm bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 flex flex-col items-center text-center animate-card">
+        <div class="relative w-full max-w-sm bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 flex flex-col items-center text-center transition-all duration-200">
           
           <!-- Brand / Logo -->
           <div class="mb-4 w-full flex flex-col items-center justify-center text-center">
@@ -39,7 +46,7 @@
           </p>
 
           <!-- Error Feedback -->
-          <div v-if="errorMessage" class="w-full mb-4 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center justify-center gap-1.5 animate-shake">
+          <div v-if="errorMessage" class="w-full mb-4 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center justify-center gap-1.5 animate-pulse">
             <svg class="w-4 h-4 text-rose-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -134,40 +141,3 @@ onMounted(async () => {
   }
 })
 </script>
-
-<style scoped>
-.fade-lock-enter-active,
-.fade-lock-leave-active {
-  transition: opacity 0.25s ease;
-}
-
-.fade-lock-enter-from,
-.fade-lock-leave-to {
-  opacity: 0;
-}
-
-@keyframes cardPop {
-  0% {
-    opacity: 0;
-    transform: scale(0.92) translateY(12px);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-.animate-card {
-  animation: cardPop 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20%, 60% { transform: translateX(-6px); }
-  40%, 80% { transform: translateX(6px); }
-}
-
-.animate-shake {
-  animation: shake 0.4s ease-in-out;
-}
-</style>
