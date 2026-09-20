@@ -2,79 +2,79 @@
   <div class="border-b border-slate-200 bg-slate-50/60">
     
     <!-- 1. Operational Quick Alerts / Smart Insights -->
-    <div class="px-3 sm:px-5 py-3.5 border-b border-slate-200 bg-white grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4">
+    <div class="px-3 sm:px-5 py-3 border-b border-slate-200 bg-white grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
       
       <!-- Card 1: Antrean Produksi Aktif -->
-      <div class="p-3 rounded-2xl bg-amber-50/70 border border-amber-200/80 flex flex-col justify-between">
-        <div class="flex items-center justify-between mb-1">
-          <span class="text-[11px] font-bold text-amber-900 uppercase tracking-wider">Antrean Cetak</span>
-          <span class="flex h-2 w-2 relative">
+      <div class="p-2.5 sm:p-3 rounded-xl bg-amber-50/70 border border-amber-200/80 flex flex-col justify-between">
+        <div class="flex items-center justify-between mb-0.5">
+          <span class="text-[10px] font-bold text-amber-900 uppercase tracking-wider">Antrean Cetak</span>
+          <span class="flex h-1.5 w-1.5 relative">
             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+            <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500"></span>
           </span>
         </div>
         <div>
           <div class="flex items-baseline gap-1">
-            <span class="text-xl sm:text-2xl font-black text-amber-950 font-mono">{{ activeOrdersCount }}</span>
-            <span class="text-xs font-semibold text-amber-700">order</span>
+            <span class="text-lg sm:text-xl font-black text-amber-950 font-mono">{{ activeOrdersCount }}</span>
+            <span class="text-[11px] font-semibold text-amber-700">order</span>
           </div>
-          <p class="text-[11px] text-amber-700 font-medium truncate mt-0.5">
+          <p class="text-[10px] text-amber-700 font-medium truncate">
             {{ formatRibuan(activeTotalPcs) }} total oplah pcs
           </p>
         </div>
       </div>
 
       <!-- Card 2: Siap Kirim / Ambil -->
-      <div class="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 flex flex-col justify-between">
-        <div class="flex items-center justify-between mb-1">
-          <span class="text-[11px] font-bold text-emerald-900 uppercase tracking-wider">Siap Kirim / Ambil</span>
-          <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div class="p-2.5 sm:p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/80 flex flex-col justify-between">
+        <div class="flex items-center justify-between mb-0.5">
+          <span class="text-[10px] font-bold text-emerald-900 uppercase tracking-wider">Siap Kirim / Ambil</span>
+          <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
           </svg>
         </div>
         <div>
           <div class="flex items-baseline gap-1">
-            <span class="text-xl sm:text-2xl font-black text-emerald-950 font-mono">{{ completedOrdersCount }}</span>
-            <span class="text-xs font-semibold text-emerald-700">order</span>
+            <span class="text-lg sm:text-xl font-black text-emerald-950 font-mono">{{ completedOrdersCount }}</span>
+            <span class="text-[11px] font-semibold text-emerald-700">order</span>
           </div>
-          <p class="text-[11px] text-emerald-700 font-medium truncate mt-0.5">
+          <p class="text-[10px] text-emerald-700 font-medium truncate">
             {{ formatRibuan(completedTotalPcs) }} pcs cetak selesai
           </p>
         </div>
       </div>
 
       <!-- Card 3: Peringatan Belum Lunas (Siap Ambil tapi Belum Lunas) -->
-      <div class="p-3 rounded-2xl bg-rose-50/70 border border-rose-200/80 flex flex-col justify-between">
-        <div class="flex items-center justify-between mb-1">
-          <span class="text-[11px] font-bold text-rose-900 uppercase tracking-wider">Perlu Pelunasan</span>
-          <svg class="w-4 h-4 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div class="p-2.5 sm:p-3 rounded-xl bg-rose-50/70 border border-rose-200/80 flex flex-col justify-between">
+        <div class="flex items-center justify-between mb-0.5">
+          <span class="text-[10px] font-bold text-rose-900 uppercase tracking-wider">Perlu Pelunasan</span>
+          <svg class="w-3.5 h-3.5 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
         </div>
         <div>
           <div class="flex items-baseline gap-1">
-            <span class="text-xl sm:text-2xl font-black text-rose-950 font-mono">{{ unpaidCompletedCount }}</span>
-            <span class="text-xs font-semibold text-rose-700">order</span>
+            <span class="text-lg sm:text-xl font-black text-rose-950 font-mono">{{ unpaidCompletedCount }}</span>
+            <span class="text-[11px] font-semibold text-rose-700">order</span>
           </div>
-          <p class="text-[11px] text-rose-700 font-medium truncate mt-0.5" title="Order selesai cetak namun belum lunas">
+          <p class="text-[10px] text-rose-700 font-medium truncate" title="Order selesai cetak namun belum lunas">
             Cek kasir sblm serah terima
           </p>
         </div>
       </div>
 
       <!-- Card 4: Kertas Terbanyak Dipakai -->
-      <div class="p-3 rounded-2xl bg-slate-100/90 border border-slate-200 flex flex-col justify-between">
-        <div class="flex items-center justify-between mb-1">
-          <span class="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Bahan Dominan</span>
-          <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div class="p-2.5 sm:p-3 rounded-xl bg-slate-100/90 border border-slate-200 flex flex-col justify-between">
+        <div class="flex items-center justify-between mb-0.5">
+          <span class="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Bahan Dominan</span>
+          <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         </div>
         <div>
-          <span class="text-sm sm:text-base font-extrabold text-slate-800 line-clamp-1">
+          <span class="text-xs sm:text-sm font-extrabold text-slate-800 line-clamp-1">
             {{ dominantPaper.name }}
           </span>
-          <p class="text-[11px] text-slate-500 font-medium truncate mt-0.5">
+          <p class="text-[10px] text-slate-500 font-medium truncate">
             {{ dominantPaper.percentage }}% dari total volume
           </p>
         </div>
@@ -86,39 +86,42 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 bg-white">
       
       <!-- Chart Left: Tren Volume Produksi 7 Hari Terakhir (8 cols on lg) -->
-      <div class="lg:col-span-7 xl:col-span-8 p-3 sm:p-5 border-b lg:border-b-0 lg:border-r border-slate-200">
-        <div class="flex items-center justify-between mb-3">
+      <div class="lg:col-span-7 xl:col-span-8 p-3 sm:p-4 border-b lg:border-b-0 lg:border-r border-slate-200">
+        <div class="flex items-center justify-between mb-2 sm:mb-3">
           <div>
-            <h3 class="text-xs sm:text-sm font-bold text-slate-800 flex items-center gap-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-red-600"></span>
-              <span>Tren Volume Produksi (7 Hari Terakhir)</span>
+            <h3 class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-red-600"></span>
+              <span>Tren Produksi (7 Hari)</span>
             </h3>
-            <p class="text-[11px] text-slate-400">Total eksemplar buku (pcs) dan jumlah pesanan masuk per hari</p>
+            <p class="text-[10px] text-slate-400">Total oplah (pcs) & pesanan masuk</p>
           </div>
-          <span class="text-[11px] font-bold text-slate-600 font-mono bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+          <span class="text-[10px] font-bold text-slate-600 font-mono bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
             {{ formatRibuan(last7DaysTotalPcs) }} pcs
           </span>
         </div>
 
         <!-- Canvas Container -->
-        <div class="h-52 sm:h-60 relative w-full">
+        <div class="h-48 sm:h-56 relative w-full">
           <canvas ref="productionChartCanvas"></canvas>
         </div>
       </div>
 
       <!-- Chart Right: Komposisi Bahan & Ukuran Buku (4 cols on lg) -->
-      <div class="lg:col-span-5 xl:col-span-4 p-3 sm:p-5">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-xs sm:text-sm font-bold text-slate-800">
-            Distribusi Produksi
-          </h3>
+      <div class="lg:col-span-5 xl:col-span-4 p-3 sm:p-4">
+        <div class="flex items-center justify-between mb-2 sm:mb-3">
+          <div>
+            <h3 class="text-xs font-bold text-slate-800">
+              Distribusi Produksi
+            </h3>
+            <p class="text-[10px] text-slate-400">Kertas, ukuran, atau status</p>
+          </div>
           <!-- Toggle Breakdown Type -->
-          <div class="inline-flex items-center gap-1 rounded-xl bg-slate-100 p-1 border border-slate-200 text-xs font-semibold shadow-2xs">
+          <div class="inline-flex items-center gap-1 rounded-lg bg-slate-100 p-0.5 border border-slate-200 text-[11px] font-semibold shadow-2xs">
             <button
               type="button"
               @click="activeBreakdown = 'kertas'"
               :class="[
-                'px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs',
+                'px-2 py-0.5 rounded-md transition-all cursor-pointer text-[11px]',
                 activeBreakdown === 'kertas'
                   ? 'bg-white text-red-600 shadow-xs font-bold'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
@@ -130,7 +133,7 @@
               type="button"
               @click="activeBreakdown = 'ukuran'"
               :class="[
-                'px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs',
+                'px-2 py-0.5 rounded-md transition-all cursor-pointer text-[11px]',
                 activeBreakdown === 'ukuran'
                   ? 'bg-white text-red-600 shadow-xs font-bold'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
@@ -142,7 +145,7 @@
               type="button"
               @click="activeBreakdown = 'status'"
               :class="[
-                'px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs',
+                'px-2 py-0.5 rounded-md transition-all cursor-pointer text-[11px]',
                 activeBreakdown === 'status'
                   ? 'bg-white text-red-600 shadow-xs font-bold'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
@@ -154,7 +157,7 @@
         </div>
 
         <!-- Donut Canvas Container -->
-        <div class="h-52 sm:h-60 relative w-full flex items-center justify-center">
+        <div class="h-48 sm:h-56 relative w-full flex items-center justify-center">
           <canvas ref="distributionChartCanvas"></canvas>
         </div>
       </div>
