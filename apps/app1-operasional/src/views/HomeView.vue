@@ -34,7 +34,10 @@
         <MetricStrip :items="shiftMetrics" />
 
         <!-- 2. Operational Charts & Insights Section -->
-        <OperationalInsights :orders="orderStore.orders" />
+        <OperationalInsights
+          :orders="orderStore.orders"
+          :get-payment-status="orderStore.getPaymentStatus"
+        />
 
         <!-- 3. Section Title: Order Terbaru -->
         <SectionHeader title="Order Terbaru">
@@ -169,7 +172,7 @@ import SyncIndicatorPill from '@shared/components/SyncIndicatorPill.vue'
 import PageHeader from '@shared/components/PageHeader.vue'
 import KbmLogo from '@shared/components/KbmLogo.vue'
 import MetricStrip from '@shared/components/MetricStrip.vue'
-import OperationalInsights from '../components/OperationalInsights.vue'
+import OperationalInsights from '@shared/components/OperationalInsights.vue'
 import MobileBottomNav from '@shared/components/MobileBottomNav.vue'
 import type { BottomNavItem } from '@shared/components/MobileBottomNav.vue'
 import SectionHeader from '@shared/components/SectionHeader.vue'

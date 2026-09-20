@@ -161,16 +161,14 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { Chart, registerables } from 'chart.js'
-import type { Order } from '@shared/types'
-import { useOrderStore } from '../stores/orders'
+import type { Order } from '../types'
 
 Chart.register(...registerables)
 
 const props = defineProps<{
   orders: Order[]
+  getPaymentStatus?: (orderId: string, total: number) => string
 }>()
-
-const orderStore = useOrderStore()
 
 const activeBreakdown = ref<'kertas' | 'ukuran' | 'status'>('kertas')
 
@@ -203,7 +201,8 @@ const completedTotalPcs = computed(() => {
 const unpaidCompletedCount = computed(() => {
   return props.orders.filter(o => {
     if (o.status_order !== 'SELESAI') return false
-    const payStatus = orderStore.getPaymentStatus(o.id_order, o.total_harga)
+    if (!props.getPaymentStatus) return false
+    const payStatus = props.getPaymentStatus(o.id_order, o.total_harga)
     return payStatus === 'BELUM_BAYAR' || payStatus === 'DP'
   }).length
 })
