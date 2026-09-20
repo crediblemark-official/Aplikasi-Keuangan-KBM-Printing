@@ -12,7 +12,7 @@
         <div class="relative w-full max-w-sm bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 flex flex-col items-center text-center animate-card">
           
           <!-- Brand / Logo -->
-          <div class="mb-4">
+          <div class="mb-4 w-full flex flex-col items-center justify-center text-center">
             <KbmLogo size="md" variant="stacked" :subtitle="roleTitle || 'Sistem Percetakan Terproteksi'" />
           </div>
 

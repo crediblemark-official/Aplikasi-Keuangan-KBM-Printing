@@ -1,5 +1,8 @@
 <template>
-  <div class="inline-flex items-center gap-2.5 select-none" :class="{ 'flex-col text-center': variant === 'stacked' }">
+  <div
+    class="inline-flex items-center select-none"
+    :class="variant === 'stacked' ? 'flex-col justify-center items-center text-center' : 'gap-2.5'"
+  >
     <!-- Brand Icon (Printer in Red Squircle with inline CSS gradient - 100% router/SPA safe) -->
     <div
       class="relative flex items-center justify-center flex-shrink-0 rounded-2xl shadow-sm transition-transform text-white overflow-hidden"
@@ -60,15 +63,19 @@
     </div>
 
     <!-- Typography: "KBM" (shown if variant !== 'icon') -->
-    <div v-if="variant !== 'icon'" class="min-w-0" :class="{ 'mt-2.5': variant === 'stacked' }">
-      <div class="flex items-center leading-none">
-        <span class="font-black tracking-tight text-slate-900" :style="{ fontSize: `${fontSizeTitle}px` }">
+    <div
+      v-if="variant !== 'icon'"
+      class="min-w-0"
+      :class="variant === 'stacked' ? 'mt-2 flex flex-col items-center justify-center text-center' : ''"
+    >
+      <div class="flex items-center leading-none" :class="{ 'justify-center': variant === 'stacked' }">
+        <span class="font-black tracking-tight text-slate-900 text-center" :style="{ fontSize: `${fontSizeTitle}px` }">
           KBM
         </span>
       </div>
       <p
         v-if="subtitle"
-        class="text-slate-400 font-semibold tracking-wide uppercase mt-1 leading-none"
+        class="text-slate-400 font-semibold tracking-wide uppercase mt-1 leading-none text-center"
         :style="{ fontSize: `${fontSizeSubtitle}px` }"
       >
         {{ subtitle }}
