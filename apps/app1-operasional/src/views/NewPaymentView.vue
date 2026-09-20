@@ -109,7 +109,8 @@
                 <ul class="list-disc list-inside space-y-1 text-slate-500 text-xs">
                   <li>Pilih jenis pembayaran: <strong class="text-slate-700">Uang Muka (DP)</strong> atau <strong class="text-slate-700">Pelunasan</strong>.</li>
                   <li>Gunakan pilihan cepat nominal (50%, 100%, sisa tagihan) untuk mengisi cepat.</li>
-                  <li>Pilih metode pembayaran (Tunai, Bank, atau QRIS).</li>
+                  <li>Pilih metode pembayaran (Saldo Deposit, Tunai, Bank, atau QRIS).</li>
+                  <li><strong class="text-slate-700">Potong Deposit:</strong> Otomatis aktif jika penerbit memiliki saldo deposit dari Buku Kas.</li>
                   <li>Unggah foto struk atau bukti transfer jika ada untuk verifikasi.</li>
                 </ul>
               </div>
@@ -161,6 +162,29 @@
                 <SectionHeader title="2. Nominal & Metode Pembayaran" />
 
                 <div class="p-3.5 sm:p-4 space-y-3.5">
+                  <!-- Banner Saldo Deposit Penerbit -->
+                  <div
+                    v-if="publisherDepositBalance > 0"
+                    class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 flex items-center justify-between gap-2 shadow-2xs"
+                  >
+                    <div class="flex items-center gap-2.5 min-w-0">
+                      <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-base shrink-0">
+                        💳
+                      </div>
+                      <div class="min-w-0">
+                        <p class="text-xs font-bold text-emerald-900 truncate">Penerbit memiliki Saldo Deposit</p>
+                        <p class="text-[11px] text-emerald-700 font-semibold font-mono">{{ formatRupiah(publisherDepositBalance) }} tersedia</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      @click="useDepositQuick"
+                      class="px-2.5 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-lg transition-colors shrink-0 shadow-2xs cursor-pointer"
+                    >
+                      Potong Deposit
+                    </button>
+                  </div>
+
                   <!-- Nominal Input -->
                   <div class="space-y-1">
                     <div class="flex items-center justify-between">
@@ -174,13 +198,13 @@
                         Rp
                       </span>
                       <input
-                        v-model.number="form.nominal"
-                        type="number"
-                        min="1"
+                        :value="form.nominal ? form.nominal.toLocaleString('id-ID') : ''"
+                        type="text"
+                        inputmode="numeric"
                         placeholder="0"
                         class="w-full px-3 py-2 text-sm sm:text-base font-bold font-mono text-slate-800 outline-none border-0 bg-transparent"
                         required
-                        @input="activePreset = null"
+                        @input="onNominalInput"
                       />
                     </div>
                   </div>
@@ -205,16 +229,19 @@
                   <!-- Metode Bayar -->
                   <div class="space-y-1.5 pt-1.5 border-t border-slate-100">
                     <label class="text-xs font-bold text-slate-700">Metode Pembayaran</label>
-                    <div class="grid grid-cols-3 gap-2">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       <label
                         v-for="m in metodeOptions"
                         :key="m.value"
-                        class="cursor-pointer py-2 px-2 text-center rounded-lg border transition-all select-none"
-                        :class="form.metode === m.value ? 'border-red-600 bg-red-50/40 ring-1 ring-red-600/30 text-red-900' : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'"
+                        class="py-2 px-2 text-center rounded-lg border transition-all select-none flex flex-col justify-center"
+                        :class="[
+                          m.disabled ? 'opacity-50 cursor-not-allowed bg-slate-50 border-slate-200 text-slate-400' : 'cursor-pointer',
+                          !m.disabled && form.metode === m.value ? 'border-red-600 bg-red-50/40 ring-1 ring-red-600/30 text-red-900 font-bold' : (!m.disabled ? 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700' : '')
+                        ]"
                       >
-                        <input type="radio" v-model="form.metode" :value="m.value" class="hidden" />
-                        <p class="text-xs font-bold">{{ m.label }}</p>
-                        <p class="text-[10px] text-slate-400 mt-0.5">{{ m.desc }}</p>
+                        <input type="radio" v-model="form.metode" :value="m.value" :disabled="m.disabled" class="hidden" />
+                        <p class="text-xs font-bold truncate">{{ m.label }}</p>
+                        <p class="text-[10px] mt-0.5 truncate" :class="m.disabled ? 'text-slate-400 italic' : 'text-slate-400'">{{ m.desc }}</p>
                       </label>
                     </div>
                   </div>
@@ -356,11 +383,46 @@ const jenisPembayaranOptions = [
   { value: 'PELUNASAN', label: 'Pelunasan', desc: 'Pelunasan sisa tagihan' },
 ]
 
-const metodeOptions = [
-  { value: 'KASIR_TUNAI', label: 'Tunai', desc: 'Pembayaran Tunai' },
-  { value: 'BANK_BCA', label: 'Bank', desc: 'Transfer Bank' },
-  { value: 'QRIS', label: 'QRIS', desc: 'Scan Statis / Dinamis' },
-]
+const publisherDepositBalance = computed(() => {
+  const penerbit = selectedOrder.value?.nama_penerbit?.trim().toLowerCase()
+  if (!penerbit) return 0
+
+  const allKm = orderStore.kasMasukList.length > 0 ? orderStore.kasMasukList : kasMasukList.value
+
+  // Total deposit masuk untuk penerbit ini
+  const totalDeposit = allKm
+    .filter((k) => k.nama_penerbit?.trim().toLowerCase() === penerbit && k.jenis_pembayaran === 'DEPOSIT' && (k.status_verifikasi as any) !== 'BATAL')
+    .reduce((sum, k) => sum + k.nominal, 0)
+
+  // Total yang sudah terpakai untuk potong saldo deposit
+  const totalTerpakai = allKm
+    .filter((k) => k.nama_penerbit?.trim().toLowerCase() === penerbit && k.metode === 'SALDO_DEPOSIT' && (k.status_verifikasi as any) !== 'BATAL')
+    .reduce((sum, k) => sum + k.nominal, 0)
+
+  return Math.max(0, totalDeposit - totalTerpakai)
+})
+
+const metodeOptions = computed(() => {
+  const depositAvailable = publisherDepositBalance.value > 0
+  const list: Array<{ value: MetodeBayar; label: string; desc: string; disabled?: boolean }> = [
+    {
+      value: 'SALDO_DEPOSIT' as MetodeBayar,
+      label: '💳 Saldo Deposit',
+      desc: depositAvailable ? `Sisa: ${formatRupiah(publisherDepositBalance.value)}` : 'Saldo Rp 0 (Kosong)',
+      disabled: !depositAvailable,
+    },
+    { value: 'KASIR_TUNAI' as MetodeBayar, label: 'Tunai', desc: 'Pembayaran Tunai', disabled: false },
+    { value: 'BANK_BCA' as MetodeBayar, label: 'Bank', desc: 'Transfer Bank', disabled: false },
+    { value: 'QRIS' as MetodeBayar, label: 'QRIS', desc: 'Scan Statis / Dinamis', disabled: false },
+  ]
+  return list
+})
+
+function useDepositQuick() {
+  form.value.metode = 'SALDO_DEPOSIT'
+  const maxCanUse = Math.min(sisaTagihan.value, publisherDepositBalance.value)
+  form.value.nominal = maxCanUse
+}
 
 // Sum of all verified or recorded payments for this order
 const totalTerbayar = computed(() =>
@@ -419,6 +481,15 @@ const quickPresets = computed<QuickPreset[]>(() => {
   }
 })
 
+function onNominalInput(e: Event) {
+  const target = e.target as HTMLInputElement
+  const raw = target.value.replace(/\D/g, '')
+  const num = raw ? parseInt(raw, 10) : 0
+  form.value.nominal = num
+  target.value = num ? num.toLocaleString('id-ID') : ''
+  activePreset.value = null
+}
+
 function applyQuickPreset(preset: QuickPreset) {
   activePreset.value = preset.id
   form.value.nominal = preset.nominal
@@ -472,9 +543,15 @@ async function loadData() {
 
     form.value.id_order = targetOrderId.value
 
-    const res = await api.getKasMasuk({ id_order: targetOrderId.value })
-    if (res.success && res.data) {
-      kasMasukList.value = res.data
+    const [resOrderKm, resAllKm] = await Promise.all([
+      api.getKasMasuk({ id_order: targetOrderId.value }),
+      api.getKasMasuk().catch(() => ({ success: false, data: [] })),
+    ])
+    if (resOrderKm.success && resOrderKm.data) {
+      kasMasukList.value = resOrderKm.data
+    }
+    if (resAllKm.success && resAllKm.data) {
+      orderStore.kasMasukList = resAllKm.data
     }
 
     // Smart default nominal & payment type
@@ -503,16 +580,30 @@ import { useSyncStore } from '@shared/stores/syncStore'
 
 async function submitPayment() {
   if (!isFormValid.value || isSubmitting.value) return
+
+  // Validasi pemotongan deposit
+  if (form.value.metode === 'SALDO_DEPOSIT' && form.value.nominal > publisherDepositBalance.value) {
+    toastMsg.value = `⚠️ Nominal melebihi sisa saldo deposit penerbit (${formatRupiah(publisherDepositBalance.value)})`
+    toastColor.value = 'warning'
+    toastOpen.value = true
+    return
+  }
+
   isSubmitting.value = true
 
   try {
+    const isDepositMethod = form.value.metode === 'SALDO_DEPOSIT'
+    const statusVerifikasi = isDepositMethod ? 'VERIFIED' : 'PENDING'
+
     const payload = {
       id_order: targetOrderId.value,
       jenis_pembayaran: form.value.jenis_pembayaran,
       nominal: form.value.nominal,
       metode: form.value.metode,
       diinput_oleh: authStore.nama ?? 'OPERASIONAL',
-      keterangan: form.value.keterangan || undefined,
+      status_verifikasi: statusVerifikasi,
+      nama_penerbit: selectedOrder.value?.nama_penerbit,
+      keterangan: form.value.keterangan || (isDepositMethod ? `Potong saldo deposit ${selectedOrder.value?.nama_penerbit || ''}` : undefined),
       foto_base64: photoBase64.value || undefined,
       foto_filename: photoFilename.value || undefined,
     }
@@ -528,7 +619,7 @@ async function submitPayment() {
           nominal: form.value.nominal,
           metode: form.value.metode,
           diinput_oleh: authStore.nama ?? 'OPERASIONAL',
-          status_verifikasi: 'PENDING',
+          status_verifikasi: statusVerifikasi,
           keterangan: form.value.keterangan || '',
           nama_penerbit: selectedOrder.value?.nama_penerbit || '',
         }
@@ -557,7 +648,7 @@ async function submitPayment() {
           nominal: form.value.nominal,
           metode: form.value.metode,
           diinput_oleh: authStore.nama ?? 'OPERASIONAL',
-          status_verifikasi: 'PENDING',
+          status_verifikasi: statusVerifikasi,
           keterangan: form.value.keterangan || '',
           nama_penerbit: selectedOrder.value?.nama_penerbit || '',
         }

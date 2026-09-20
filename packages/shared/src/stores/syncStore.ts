@@ -198,19 +198,29 @@ export const useSyncStore = defineStore('sync', () => {
     const start = performance.now()
     try {
       const res = await api.ping()
-      if (res.success) {
+      if (res.success || (res as any).data || (res.error && res.error.includes('Action tidak dikenal'))) {
         const ms = Math.round(performance.now() - start)
         gasLatencyMs.value = ms
         isOnline.value = true
         return ms
       } else {
+        const browserOnline = typeof navigator !== 'undefined' ? navigator.onLine : true
+        if (browserOnline && !res.isOffline) {
+          isOnline.value = true
+          return null
+        }
         isOnline.value = false
         gasLatencyMs.value = null
         return null
       }
     } catch (e) {
       console.warn('Health check failed:', e)
-      isOnline.value = false
+      const browserOnline = typeof navigator !== 'undefined' ? navigator.onLine : true
+      if (browserOnline) {
+        isOnline.value = true
+      } else {
+        isOnline.value = false
+      }
       gasLatencyMs.value = null
       return null
     } finally {

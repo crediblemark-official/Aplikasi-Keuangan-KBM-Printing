@@ -2,13 +2,20 @@
   <ion-page>
     <ion-header class="ion-no-border">
       <PageHeader
-        title="Order Cetak Baru"
+        :title="isEditMode ? 'Edit Order Cetak' : 'Order Cetak Baru'"
+        :subtitle="isEditMode ? `ID Order: ${editOrderId}` : ''"
         :show-back="true"
         back-label="Daftar Order"
         @back="router.push('/order/list')"
       >
         <template #actions>
+          <div v-if="isEditMode" class="flex items-center gap-2">
+            <span class="font-mono text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg">
+              {{ editOrderId }}
+            </span>
+          </div>
           <button
+            v-else
             type="button"
             @click="resetForm"
             class="btn-secondary h-8 text-xs font-semibold px-2.5 rounded-md cursor-pointer text-slate-500 hover:text-slate-800"
@@ -106,13 +113,13 @@
                     </div>
                     <div class="flex rounded-lg border border-slate-300 overflow-hidden focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500 bg-white shadow-2xs">
                       <input
-                        v-model.number="form.jml_pcs"
-                        type="number"
-                        min="1"
+                        :value="form.jml_pcs ? form.jml_pcs.toLocaleString('id-ID') : ''"
+                        type="text"
+                        inputmode="numeric"
                         placeholder="100"
                         class="w-full px-3 py-1.5 font-mono font-bold text-base text-slate-800 outline-none border-0 bg-transparent"
                         required
-                        @input="recalculatePriceAuto"
+                        @input="onJmlPcsInput"
                       />
                       <span class="inline-flex items-center px-3 bg-slate-100 border-l border-slate-200 text-xs font-bold text-slate-500 select-none">
                         pcs
@@ -274,12 +281,12 @@
                     </div>
                     <div class="flex rounded-lg border border-slate-300 overflow-hidden focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500 bg-white shadow-2xs">
                       <input
-                        v-model.number="form.cetak_bw"
-                        type="number"
-                        min="0"
+                        :value="form.cetak_bw ? form.cetak_bw.toLocaleString('id-ID') : (form.cetak_bw === 0 ? '0' : '')"
+                        type="text"
+                        inputmode="numeric"
                         placeholder="0"
                         class="w-full px-3 py-1.5 font-mono text-sm text-slate-800 outline-none border-0 bg-transparent"
-                        @input="recalculatePriceAuto"
+                        @input="onCetakBWInput"
                       />
                       <span class="inline-flex items-center px-2.5 bg-slate-100 border-l border-slate-200 text-xs font-semibold text-slate-500 select-none">
                         hal
@@ -296,12 +303,12 @@
                     </div>
                     <div class="flex rounded-lg border border-slate-300 overflow-hidden focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500 bg-white shadow-2xs">
                       <input
-                        v-model.number="form.cetak_fc"
-                        type="number"
-                        min="0"
+                        :value="form.cetak_fc ? form.cetak_fc.toLocaleString('id-ID') : (form.cetak_fc === 0 ? '0' : '')"
+                        type="text"
+                        inputmode="numeric"
                         placeholder="0"
                         class="w-full px-3 py-1.5 font-mono text-sm text-slate-800 outline-none border-0 bg-transparent"
-                        @input="recalculatePriceAuto"
+                        @input="onCetakFCInput"
                       />
                       <span class="inline-flex items-center px-2.5 bg-slate-100 border-l border-slate-200 text-xs font-semibold text-slate-500 select-none">
                         hal
@@ -407,12 +414,12 @@
                     <label class="text-xs font-semibold text-slate-700 shrink-0">Kuantitas Dus Dibutuhkan:</label>
                     <div class="flex rounded-lg border border-slate-300 overflow-hidden bg-white max-w-[130px] focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500">
                       <input
-                        v-model.number="form.packing_dus_qty"
-                        type="number"
-                        min="1"
+                        :value="form.packing_dus_qty ? form.packing_dus_qty.toLocaleString('id-ID') : ''"
+                        type="text"
+                        inputmode="numeric"
                         placeholder="Contoh: 20"
                         class="w-full px-2.5 py-1 text-xs font-mono font-bold text-slate-800 outline-none border-0"
-                        @input="recalculatePriceAuto"
+                        @input="onPackingDusQtyInput"
                       />
                       <span class="inline-flex items-center px-2 bg-slate-100 text-[10px] font-bold text-slate-500 border-l border-slate-200">
                         dus
@@ -461,13 +468,13 @@
                       Rp
                     </span>
                     <input
-                      v-model.number="form.total_harga"
-                      type="number"
-                      min="1"
+                      :value="form.total_harga ? form.total_harga.toLocaleString('id-ID') : ''"
+                      type="text"
+                      inputmode="numeric"
                       placeholder="0"
                       class="w-full px-3 py-2 text-xl sm:text-2xl font-black text-red-600 font-mono tracking-tight outline-none border-0 bg-transparent"
                       required
-                      @input="isCustomPrice = true"
+                      @input="onTotalHargaInput"
                     />
                   </div>
                   <p class="font-mono font-bold text-emerald-700 text-xs mt-1">
@@ -519,13 +526,13 @@
                   >
                     <span v-if="orderStore.isLoading" class="flex items-center justify-center gap-2">
                       <ion-spinner name="crescent" class="w-4 h-4"></ion-spinner>
-                      <span>Menyimpan Order...</span>
+                      <span>{{ isEditMode ? 'Menyimpan Perubahan...' : 'Menyimpan Order...' }}</span>
                     </span>
                     <span v-else class="flex items-center justify-center gap-2">
                       <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                       </svg>
-                      <span>Simpan Order & Buat Invoice</span>
+                      <span>{{ isEditMode ? 'Simpan Perubahan Order' : 'Simpan Order & Buat Invoice' }}</span>
                     </span>
                   </button>
                 </div>
@@ -558,7 +565,7 @@
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
-          <span>Simpan Order</span>
+          <span>{{ isEditMode ? 'Simpan Perubahan' : 'Simpan Order' }}</span>
         </span>
       </button>
     </div>
@@ -577,6 +584,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import {
   IonPage, IonHeader, IonContent, IonSpinner, IonToast, useIonRouter,
 } from '@ionic/vue'
@@ -595,6 +603,10 @@ import type { UkuranBuku, JenisKertas, JenisFinishing } from '@shared/types'
 
 const orderStore = useOrderStore()
 const router = useIonRouter()
+const route = useRoute()
+
+const isEditMode = computed(() => Boolean(route.params.id || route.query.edit))
+const editOrderId = computed(() => String(route.params.id || route.query.edit || ''))
 
 const toastOpen = ref(false)
 const toastMsg = ref('')
@@ -955,6 +967,51 @@ function toggleFinishing(item: JenisFinishing) {
   recalculatePriceAuto()
 }
 
+function onJmlPcsInput(e: Event) {
+  const target = e.target as HTMLInputElement
+  const raw = target.value.replace(/\D/g, '')
+  const num = raw ? parseInt(raw, 10) : 0
+  form.value.jml_pcs = num
+  target.value = num ? num.toLocaleString('id-ID') : ''
+  recalculatePriceAuto()
+}
+
+function onCetakBWInput(e: Event) {
+  const target = e.target as HTMLInputElement
+  const raw = target.value.replace(/\D/g, '')
+  const num = raw ? parseInt(raw, 10) : 0
+  form.value.cetak_bw = num
+  target.value = num ? num.toLocaleString('id-ID') : (raw === '0' ? '0' : '')
+  recalculatePriceAuto()
+}
+
+function onCetakFCInput(e: Event) {
+  const target = e.target as HTMLInputElement
+  const raw = target.value.replace(/\D/g, '')
+  const num = raw ? parseInt(raw, 10) : 0
+  form.value.cetak_fc = num
+  target.value = num ? num.toLocaleString('id-ID') : (raw === '0' ? '0' : '')
+  recalculatePriceAuto()
+}
+
+function onPackingDusQtyInput(e: Event) {
+  const target = e.target as HTMLInputElement
+  const raw = target.value.replace(/\D/g, '')
+  const num = raw ? parseInt(raw, 10) : 0
+  form.value.packing_dus_qty = num
+  target.value = num ? num.toLocaleString('id-ID') : ''
+  recalculatePriceAuto()
+}
+
+function onTotalHargaInput(e: Event) {
+  const target = e.target as HTMLInputElement
+  const raw = target.value.replace(/\D/g, '')
+  const num = raw ? parseInt(raw, 10) : 0
+  form.value.total_harga = num
+  target.value = num ? num.toLocaleString('id-ID') : ''
+  isCustomPrice.value = true
+}
+
 function applyPricelistCalculation() {
   form.value.total_harga = priceBreakdown.value.total_harga
   isCustomPrice.value = false
@@ -993,6 +1050,41 @@ function resetForm() {
   recalculatePriceAuto()
 }
 
+async function loadExistingOrder() {
+  if (!editOrderId.value) return
+  await orderStore.ensureOrderLoaded(editOrderId.value)
+  const existing = orderStore.orders.find((o) => o.id_order.trim() === editOrderId.value.trim())
+  if (existing) {
+    const rawJudulPenulis = existing.judul_penulis || ''
+    const parts = rawJudulPenulis.split(' / ')
+    const derivedJudul = existing.judul_buku || parts[0]?.trim() || ''
+    const derivedPenulis = existing.nama_penulis || (parts.length > 1 ? parts.slice(1).join(' / ').trim() : '')
+
+    form.value = {
+      nama_penerbit: existing.nama_penerbit || '',
+      judul_buku: derivedJudul,
+      nama_penulis: derivedPenulis,
+      alamat_penerbit: existing.alamat_penerbit || '',
+      kontak_penerbit: existing.kontak_penerbit || '',
+      jml_pcs: existing.jml_pcs || 100,
+      ukuran: (existing.ukuran as UkuranBuku) || 'A5',
+      ukuran_custom: existing.ukuran_custom || '',
+      kertas: (existing.kertas as JenisKertas) || 'BP_57',
+      kertas_bw: (existing.kertas_bw as JenisKertas) || (existing.kertas as JenisKertas) || 'BP_57',
+      kertas_fc: (existing.kertas_fc as JenisKertas) || (existing.kertas as JenisKertas) || 'HVS_80',
+      is_kertas_sama: !existing.kertas_fc || existing.kertas_bw === existing.kertas_fc,
+      packing_dus_tipe: existing.packing_dus_tipe || null,
+      packing_dus_qty: existing.packing_dus_qty || 0,
+      cetak_bw: existing.cetak_bw || 0,
+      cetak_fc: existing.cetak_fc || 0,
+      finishing: Array.isArray(existing.finishing) ? [...existing.finishing] : ['SOFT_COVER'],
+      total_harga: existing.total_harga || 0,
+      catatan: existing.catatan || '',
+    }
+    isCustomPrice.value = true
+  }
+}
+
 async function submitOrder() {
   if (!isFormValid.value) return
 
@@ -1000,7 +1092,7 @@ async function submitOrder() {
   const namaPenulis = String(form.value.nama_penulis || '').trim()
   const combinedJudulPenulis = namaPenulis ? `${judulBuku} / ${namaPenulis}` : judulBuku
 
-  const result = await orderStore.createOrder({
+  const orderPayload = {
     nama_penerbit: String(form.value.nama_penerbit || '').trim(),
     judul_penulis: combinedJudulPenulis,
     judul_buku: judulBuku,
@@ -1021,13 +1113,29 @@ async function submitOrder() {
     catatan: form.value.catatan ? String(form.value.catatan).trim() : '',
     alamat_penerbit: form.value.alamat_penerbit ? String(form.value.alamat_penerbit).trim() : '',
     kontak_penerbit: form.value.kontak_penerbit != null ? String(form.value.kontak_penerbit).trim() : '',
-  })
+  }
 
-  if (result && result.id_order) {
-    router.push(`/invoice/${result.id_order.trim()}`)
+  if (isEditMode.value) {
+    const res = await orderStore.updateOrder({
+      id_order: editOrderId.value,
+      ...orderPayload,
+    })
+
+    if (res && res.success) {
+      router.push(`/order/${editOrderId.value}`)
+    } else {
+      toastMsg.value = res?.error || orderStore.error || 'Gagal memperbarui order'
+      toastOpen.value = true
+    }
   } else {
-    toastMsg.value = orderStore.error ?? 'Gagal menyimpan order'
-    toastOpen.value = true
+    const result = await orderStore.createOrder(orderPayload)
+
+    if (result && result.id_order) {
+      router.push(`/invoice/${result.id_order.trim()}`)
+    } else {
+      toastMsg.value = orderStore.error ?? 'Gagal menyimpan order'
+      toastOpen.value = true
+    }
   }
 }
 
@@ -1040,7 +1148,10 @@ onMounted(async () => {
     console.warn('Failed to load client list:', err)
   }
   if (orderStore.orders.length === 0) {
-    orderStore.fetchOrders().catch((err) => console.warn('Failed to fetch orders:', err))
+    await orderStore.fetchOrders().catch((err) => console.warn('Failed to fetch orders:', err))
+  }
+  if (isEditMode.value) {
+    await loadExistingOrder()
   }
 })
 </script>

@@ -452,3 +452,31 @@
 .sheet-leave-to .bottom-sheet {
   transform: translateY(100%);
 }
+
+/* Combobox Dropdown Add Button */
+.btn-dropdown-add {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  height: 36px !important;
+  padding: 0 14px !important;
+  border-radius: 8px !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+  border: none !important;
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.3) !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  line-height: normal !important;
+}
+.btn-dropdown-add:hover {
+  background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%) !important;
+}
+.btn-dropdown-add:active {
+  transform: scale(0.98) !important;
+}
+

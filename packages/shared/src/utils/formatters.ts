@@ -76,6 +76,7 @@ export function formatMetode(metode: string): string {
     BANK: '🏦 Bank',
     TRANSFER: '🏦 Bank',
     QRIS: '📱 QRIS',
+    SALDO_DEPOSIT: '💳 Saldo Deposit',
   }
   return map[metode] ?? (metode === 'BANK_BCA' ? '🏦 Bank' : metode)
 }
@@ -92,6 +93,19 @@ export function formatKategori(kategori: string): string {
     LAIN_LAIN: 'Lain-lain',
   }
   return map[kategori] ?? kategori
+}
+
+/**
+ * Format jenis pembayaran untuk display
+ */
+export function formatJenisPembayaran(jenis: string): string {
+  const map: Record<string, string> = {
+    DP: 'Uang Muka (DP)',
+    PELUNASAN: 'Pelunasan',
+    DEPOSIT: 'Deposit Penerbit',
+    NON_ORDER: 'Non-Order / Lainnya',
+  }
+  return map[jenis] ?? jenis
 }
 
 /**

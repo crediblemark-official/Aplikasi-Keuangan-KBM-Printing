@@ -70,13 +70,19 @@ function route(e) {
       'validatePassword': () => handleValidatePassword(body),
       'getOrders': () => handleGetOrders(e.parameter),
       'createOrder': () => handleCreateOrder(body),
+      'updateOrder': () => handleUpdateOrder(body),
+      'deleteOrder': () => handleDeleteOrder(body),
       'updateOrderStatus': () => handleUpdateOrderStatus(body),
       'getKasMasuk': () => handleGetKasMasuk(e.parameter),
       'createKasMasuk': () => handleCreateKasMasuk(body),
+      'updateKasMasuk': () => handleUpdateKasMasuk(body),
+      'deleteKasMasuk': () => handleDeleteKasMasuk(body),
       'verifyKasMasuk': () => handleVerifyKasMasuk(body),
       'attachBuktiKasMasuk': () => handleAttachBuktiKasMasuk(body),
       'getKasKeluar': () => handleGetKasKeluar(e.parameter),
       'createKasKeluar': () => handleCreateKasKeluar(body),
+      'updateKasKeluar': () => handleUpdateKasKeluar(body),
+      'deleteKasKeluar': () => handleDeleteKasKeluar(body),
       'getSummaryReport': () => handleGetSummaryReport(e.parameter),
       'savePDFtoDrive': () => handleSavePDFtoDrive(body),
       'getClients': () => handleGetClients(),
@@ -403,6 +409,160 @@ function handleUpdateOrderStatus(body) {
   return { success: false, error: 'Order tidak ditemukan' };
 }
 
+function handleUpdateOrder(body) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const sheet = getSheet(SHEET_ORDERS);
+    const data = sheet.getDataRange().getValues();
+    if (data.length <= 1) return { success: false, error: 'Data order kosong' };
+
+    const headers = data[0];
+    const idCol = headers.indexOf('id_order');
+    if (idCol === -1) return { success: false, error: 'Kolom id_order tidak ditemukan' };
+
+    const order = body.order || body;
+    const id_order = order.id_order;
+    if (!id_order) return { success: false, error: 'id_order wajib diisi' };
+
+    let rowIndex = -1;
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][idCol]).trim() === String(id_order).trim()) {
+        rowIndex = i + 1; // 1-indexed
+        break;
+      }
+    }
+
+    if (rowIndex === -1) {
+      return { success: false, error: 'Order dengan ID ' + id_order + ' tidak ditemukan' };
+    }
+
+    const combinedJudulPenulis = order.judul_penulis || (order.nama_penulis ? `${order.judul_buku} / ${order.nama_penulis}` : order.judul_buku || '');
+
+    // Update each column present in headers
+    headers.forEach((h, colIdx) => {
+      let val = null;
+      let shouldUpdate = true;
+      switch (h) {
+        case 'id_order':
+        case 'tanggal':
+          shouldUpdate = false; // pertahankan id & tanggal order asli
+          break;
+        case 'nama_penerbit':
+          if (order.nama_penerbit !== undefined) val = order.nama_penerbit;
+          else shouldUpdate = false;
+          break;
+        case 'judul_penulis':
+          val = combinedJudulPenulis;
+          break;
+        case 'judul_buku':
+          if (order.judul_buku !== undefined) val = order.judul_buku;
+          else shouldUpdate = false;
+          break;
+        case 'nama_penulis':
+          if (order.nama_penulis !== undefined) val = order.nama_penulis;
+          else shouldUpdate = false;
+          break;
+        case 'jml_pcs':
+          if (order.jml_pcs !== undefined) val = Number(order.jml_pcs) || 0;
+          else shouldUpdate = false;
+          break;
+        case 'ukuran':
+          if (order.ukuran !== undefined) val = order.ukuran;
+          else shouldUpdate = false;
+          break;
+        case 'ukuran_custom':
+          if (order.ukuran_custom !== undefined) val = order.ukuran_custom;
+          else shouldUpdate = false;
+          break;
+        case 'kertas':
+          if (order.kertas !== undefined) val = order.kertas;
+          else shouldUpdate = false;
+          break;
+        case 'cetak_bw':
+          if (order.cetak_bw !== undefined) val = Number(order.cetak_bw) || 0;
+          else shouldUpdate = false;
+          break;
+        case 'cetak_fc':
+          if (order.cetak_fc !== undefined) val = Number(order.cetak_fc) || 0;
+          else shouldUpdate = false;
+          break;
+        case 'finishing':
+          if (order.finishing !== undefined) val = JSON.stringify(order.finishing || []);
+          else shouldUpdate = false;
+          break;
+        case 'total_harga':
+          if (order.total_harga !== undefined) val = Number(order.total_harga) || 0;
+          else shouldUpdate = false;
+          break;
+        case 'status_order':
+          if (order.status_order !== undefined) val = order.status_order;
+          else shouldUpdate = false;
+          break;
+        case 'catatan':
+          if (order.catatan !== undefined) val = order.catatan;
+          else shouldUpdate = false;
+          break;
+        case 'alamat_penerbit':
+          if (order.alamat_penerbit !== undefined) val = order.alamat_penerbit;
+          else shouldUpdate = false;
+          break;
+        case 'kontak_penerbit':
+          if (order.kontak_penerbit !== undefined) val = order.kontak_penerbit;
+          else shouldUpdate = false;
+          break;
+        default:
+          if (order[h] !== undefined) val = order[h];
+          else shouldUpdate = false;
+          break;
+      }
+
+      if (shouldUpdate && val !== null) {
+        sheet.getRange(rowIndex, colIdx + 1).setValue(val);
+      }
+    });
+
+    SpreadsheetApp.flush();
+    invalidateCache(['orders_all', 'kas_masuk_all', 'dashboard_summary']);
+
+    // Recheck status bayar jika total_harga diubah
+    try {
+      checkAndUpdateOrderStatus(id_order);
+    } catch(e) {}
+
+    return { success: true, data: { id_order } };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function handleDeleteOrder(body) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const sheet = getSheet(SHEET_ORDERS);
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const idCol = headers.indexOf('id_order');
+    const statusCol = headers.indexOf('status_order');
+
+    const id_order = body.id_order;
+    if (!id_order) return { success: false, error: 'id_order wajib diisi' };
+
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][idCol]).trim() === String(id_order).trim()) {
+        sheet.getRange(i + 1, statusCol + 1).setValue('BATAL');
+        SpreadsheetApp.flush();
+        invalidateCache(['orders_all', 'kas_masuk_all', 'dashboard_summary']);
+        return { success: true, data: { id_order } };
+      }
+    }
+    return { success: false, error: 'Order tidak ditemukan' };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 // ---- KAS MASUK ----
 function handleGetKasMasuk(params) {
   params = params || {};
@@ -453,16 +613,18 @@ function handleCreateKasMasuk(body) {
   try {
     const sheet = getSheet(SHEET_KAS_MASUK);
     const id = generateId('KM', sheet);
-    const tanggal = Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyy-MM-dd');
+    const tanggal = body.tanggal || Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyy-MM-dd');
 
-    // Get nama_penerbit dari order
-    let nama_penerbit = '';
-    if (body.id_order) {
+    // Get nama_penerbit dari body atau dari order
+    let nama_penerbit = body.nama_penerbit || '';
+    if (body.id_order && !nama_penerbit) {
       const orderSheet = getSheet(SHEET_ORDERS);
       const orders = sheetToObjects(orderSheet);
       const order = orders.find(o => o.id_order === body.id_order);
       if (order) nama_penerbit = order.nama_penerbit;
     }
+
+    const status_verifikasi = body.status_verifikasi || (body.diinput_oleh === 'OWNER' ? 'VERIFIED' : 'PENDING');
 
     const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
     const rowData = headers.map(h => {
@@ -474,7 +636,7 @@ function handleCreateKasMasuk(body) {
         case 'nominal': return Number(body.nominal) || 0;
         case 'metode': return body.metode;
         case 'diinput_oleh': return body.diinput_oleh;
-        case 'status_verifikasi': return 'PENDING';
+        case 'status_verifikasi': return status_verifikasi;
         case 'file_id_bukti': return fileId || '';
         case 'nama_penerbit': return nama_penerbit;
         case 'keterangan': return body.keterangan || '';
@@ -543,6 +705,78 @@ function handleAttachBuktiKasMasuk(body) {
       }
     }
     return { success: false, error: 'ID Kas Masuk tidak ditemukan' };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function handleUpdateKasMasuk(body) {
+  if (!body.id_kas_masuk) {
+    return { success: false, error: 'id_kas_masuk wajib disertakan' };
+  }
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    const sheet = getSheet(SHEET_KAS_MASUK);
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const idCol = headers.indexOf('id_kas_masuk');
+    if (idCol === -1) return { success: false, error: 'Kolom id_kas_masuk tidak ditemukan' };
+
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][idCol] === body.id_kas_masuk) {
+        const orderIdCol = headers.indexOf('id_order');
+        const currentOrderId = data[i][orderIdCol] || body.id_order;
+
+        headers.forEach((h, colIdx) => {
+          if (h === 'id_kas_masuk' || h === 'diinput_oleh') return;
+          if (body[h] !== undefined) {
+            let val = body[h];
+            if (h === 'nominal') val = Number(val) || 0;
+            sheet.getRange(i + 1, colIdx + 1).setValue(val);
+          }
+        });
+
+        SpreadsheetApp.flush();
+        if (currentOrderId) {
+          checkAndUpdateOrderStatus(currentOrderId);
+        }
+        invalidateCache(['kas_masuk_all', 'orders_all']);
+        return { success: true, message: 'Kas Masuk berhasil diperbarui' };
+      }
+    }
+    return { success: false, error: 'ID Kas Masuk tidak ditemukan' };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function handleDeleteKasMasuk(body) {
+  if (!body.id_kas_masuk) return { success: false, error: 'id_kas_masuk wajib disertakan' };
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    const sheet = getSheet(SHEET_KAS_MASUK);
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const idCol = headers.indexOf('id_kas_masuk');
+    const statusCol = headers.indexOf('status_verifikasi');
+
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][idCol] === body.id_kas_masuk) {
+        if (statusCol !== -1) {
+          sheet.getRange(i + 1, statusCol + 1).setValue('BATAL');
+        } else {
+          sheet.deleteRow(i + 1);
+        }
+        SpreadsheetApp.flush();
+        const orderId = data[i][headers.indexOf('id_order')];
+        if (orderId) checkAndUpdateOrderStatus(orderId);
+        invalidateCache(['kas_masuk_all', 'orders_all']);
+        return { success: true, message: 'Kas Masuk berhasil dibatalkan' };
+      }
+    }
+    return { success: false, error: 'Data tidak ditemukan' };
   } finally {
     lock.releaseLock();
   }
@@ -634,6 +868,65 @@ function handleCreateKasKeluar(body) {
     invalidateCache(['kas_keluar_all']);
 
     return { success: true, data: { id_kas_keluar: id, file_id_nota: fileId } };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function handleUpdateKasKeluar(body) {
+  if (!body.id_kas_keluar) {
+    return { success: false, error: 'id_kas_keluar wajib disertakan' };
+  }
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    const sheet = getSheet(SHEET_KAS_KELUAR);
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const idCol = headers.indexOf('id_kas_keluar');
+    if (idCol === -1) return { success: false, error: 'Kolom id_kas_keluar tidak ditemukan' };
+
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][idCol] === body.id_kas_keluar) {
+        headers.forEach((h, colIdx) => {
+          if (h === 'id_kas_keluar' || h === 'diinput_oleh') return;
+          if (body[h] !== undefined) {
+            let val = body[h];
+            if (h === 'nominal') val = Number(val) || 0;
+            sheet.getRange(i + 1, colIdx + 1).setValue(val);
+          }
+        });
+
+        SpreadsheetApp.flush();
+        invalidateCache(['kas_keluar_all']);
+        return { success: true, message: 'Kas Keluar berhasil diperbarui' };
+      }
+    }
+    return { success: false, error: 'ID Kas Keluar tidak ditemukan' };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function handleDeleteKasKeluar(body) {
+  if (!body.id_kas_keluar) return { success: false, error: 'id_kas_keluar wajib disertakan' };
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    const sheet = getSheet(SHEET_KAS_KELUAR);
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const idCol = headers.indexOf('id_kas_keluar');
+
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][idCol] === body.id_kas_keluar) {
+        sheet.deleteRow(i + 1);
+        SpreadsheetApp.flush();
+        invalidateCache(['kas_keluar_all']);
+        return { success: true, message: 'Kas Keluar berhasil dihapus' };
+      }
+    }
+    return { success: false, error: 'Data tidak ditemukan' };
   } finally {
     lock.releaseLock();
   }

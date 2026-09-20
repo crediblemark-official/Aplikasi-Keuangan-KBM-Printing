@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { CONFIG } from '@shared/api/gasClient'
 import { screenWakeLock } from '@shared/utils/wakeLock'
 
 const DEVICE_AUTH_KEY = 'kbm_device_auth_operasional'
@@ -15,7 +14,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Restore session dari sessionStorage
   function restoreSession() {
-    const saved = sessionStorage.getItem(DEVICE_AUTH_KEY) || sessionStorage.getItem('kbm_device_auth_kasir') || sessionStorage.getItem(CONFIG.PIN_KEY)
+    const saved = sessionStorage.getItem(DEVICE_AUTH_KEY) || sessionStorage.getItem('kbm_device_auth_kasir')
     if (saved) {
       try {
         const data = JSON.parse(saved)
@@ -26,7 +25,6 @@ export const useAuthStore = defineStore('auth', () => {
       } catch {
         sessionStorage.removeItem(DEVICE_AUTH_KEY)
         sessionStorage.removeItem('kbm_device_auth_kasir')
-        sessionStorage.removeItem(CONFIG.PIN_KEY)
       }
     }
   }
@@ -58,7 +56,6 @@ export const useAuthStore = defineStore('auth', () => {
     nama.value = null
     try {
       sessionStorage.removeItem(DEVICE_AUTH_KEY)
-      sessionStorage.removeItem(CONFIG.PIN_KEY)
     } catch (e) {
       console.warn('Gagal menghapus sesi kunci:', e)
     } finally {

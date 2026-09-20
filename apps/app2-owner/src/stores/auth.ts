@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { CONFIG } from '@shared/api/gasClient'
 import { screenWakeLock } from '@shared/utils/wakeLock'
 
 const DEVICE_AUTH_KEY = 'kbm_device_auth_owner'
@@ -14,7 +13,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => role.value !== null)
 
   function restoreSession() {
-    const saved = localStorage.getItem(DEVICE_AUTH_KEY) || localStorage.getItem(CONFIG.PASSWORD_KEY)
+    const saved = localStorage.getItem(DEVICE_AUTH_KEY)
     if (saved) {
       try {
         const data = JSON.parse(saved)
@@ -24,7 +23,6 @@ export const useAuthStore = defineStore('auth', () => {
         screenWakeLock.acquire()
       } catch {
         localStorage.removeItem(DEVICE_AUTH_KEY)
-        localStorage.removeItem(CONFIG.PASSWORD_KEY)
       }
     }
   }
@@ -56,7 +54,6 @@ export const useAuthStore = defineStore('auth', () => {
     nama.value = null
     try {
       localStorage.removeItem(DEVICE_AUTH_KEY)
-      localStorage.removeItem(CONFIG.PASSWORD_KEY)
     } catch (e) {
       console.warn('Gagal menghapus sesi kunci owner:', e)
     } finally {

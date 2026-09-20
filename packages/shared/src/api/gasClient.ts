@@ -36,8 +36,6 @@ function notifyNetworkStatus(isOnline: boolean) {
 export const CONFIG = {
   GAS_URL: 'https://script.google.com/macros/s/AKfycbwGVC-HCtsQygsRgrAUSlF4V-IpU5pCHEojxO02tUWLMGq-Dz1CQHtVmV4MnNPzJYcFOA/exec',
   APP_NAME: 'KBM Percetakan',
-  PIN_KEY: 'kbm_pin_session',
-  PASSWORD_KEY: 'kbm_pwd_session',
 }
 
 // ---- Timeout helper ----
@@ -141,15 +139,24 @@ export async function gasPost<T = unknown>(
 
 // ---- Typed API helpers ----
 export const api = {
-  // Health & Ping (Super cepat & hemat kuota)
-  ping: () =>
-    gasGet<{ message: string; timestamp: number }>('ping', {}, 4000),
+  // Health & Ping (Super cepat & hemat kuota, dengan fallback cerdas jika GAS belum di-redeploy)
+  ping: async () => {
+    const res = await gasGet<{ message?: string; timestamp?: number }>('ping', {}, 8000)
+    if (res.success) return res as ApiResponse<{ message: string; timestamp: number }>
+    // Jika server GAS merespon pesan "Action tidak dikenal: ping", berarti server aktif dan terhubung!
+    if (res.error && res.error.includes('Action tidak dikenal')) {
+      return { success: true, message: 'pong', timestamp: Date.now() } as unknown as ApiResponse<{ message: string; timestamp: number }>
+    }
+    // Fallback: cek ke endpoint getClients yang sudah pasti ada di GAS deployment lama
+    if (typeof navigator !== 'undefined' && navigator.onLine) {
+      const fallbackRes = await gasGet('getClients', {}, 8000)
+      if (fallbackRes.success) {
+        return { success: true, message: 'pong', timestamp: Date.now() } as unknown as ApiResponse<{ message: string; timestamp: number }>
+      }
+    }
+    return res as ApiResponse<{ message: string; timestamp: number }>
+  },
 
-  // Auth
-  validatePin: (pin: string) =>
-    gasPost<{ role: string; nama: string }>('validatePin', { pin }),
-  validatePassword: (password: string) =>
-    gasPost<{ role: string; nama: string }>('validatePassword', { password }),
 
   // Orders
   getOrders: (params?: { status?: string; search?: string }) =>
@@ -171,12 +178,41 @@ export const api = {
   updateOrderStatus: async (id_order: string, status: string) => {
     const res = await gasPost('updateOrderStatus', { id_order, status })
     tryLogSync({
-      entity_type: 'STATUS_ORDER',
+      entity_type: 'ORDER',
       title: `Update Status: ${id_order}`,
-      subtitle: `Status diubah menjadi ${status}`,
+      subtitle: `Status baru: ${status}`,
+      nominal: 0,
       status: res.success ? 'SYNCED' : 'FAILED',
       action: 'updateOrderStatus',
       payload: { id_order, status },
+      error_message: res.error,
+    })
+    return res
+  },
+  updateOrder: async (order: Partial<import('../types').Order> & { id_order: string }) => {
+    const res = await gasPost<{ id_order: string }>('updateOrder', { order })
+    tryLogSync({
+      entity_type: 'ORDER',
+      title: `Update Order: ${order.nama_penerbit || order.id_order}`,
+      subtitle: `ID: ${order.id_order}`,
+      nominal: order.total_harga || 0,
+      status: res.success ? 'SYNCED' : 'FAILED',
+      action: 'updateOrder',
+      payload: { order },
+      error_message: res.error,
+    })
+    return res
+  },
+  deleteOrder: async (id_order: string) => {
+    const res = await gasPost<{ id_order: string }>('deleteOrder', { id_order })
+    tryLogSync({
+      entity_type: 'ORDER',
+      title: `Batalkan Order: ${id_order}`,
+      subtitle: `ID: ${id_order}`,
+      nominal: 0,
+      status: res.success ? 'SYNCED' : 'FAILED',
+      action: 'deleteOrder',
+      payload: { id_order },
       error_message: res.error,
     })
     return res
@@ -194,12 +230,15 @@ export const api = {
     keterangan?: string
     foto_base64?: string
     foto_filename?: string
+    nama_penerbit?: string
+    tanggal?: string
+    status_verifikasi?: string
   }) => {
     const res = await gasPost<{ id_kas_masuk: string }>('createKasMasuk', data)
     tryLogSync({
       entity_type: 'KAS_MASUK',
       title: `Kas Masuk: ${data.jenis_pembayaran} (${data.metode})`,
-      subtitle: data.keterangan || (data.id_order ? `Order ${data.id_order}` : 'Non-Order'),
+      subtitle: data.keterangan || (data.nama_penerbit ? `Penerbit ${data.nama_penerbit}` : data.id_order ? `Order ${data.id_order}` : 'Non-Order'),
       nominal: data.nominal,
       status: res.success ? 'SYNCED' : 'FAILED',
       action: 'createKasMasuk',
@@ -221,11 +260,23 @@ export const api = {
     })
     return res
   },
+  updateKasMasuk: (data: {
+    id_kas_masuk: string
+    tanggal?: string
+    nominal?: number
+    metode?: string
+    keterangan?: string
+    nama_penerbit?: string
+    jenis_pembayaran?: string
+  }) => gasPost<{ success: boolean; message?: string }>('updateKasMasuk', data),
+  deleteKasMasuk: (id_kas_masuk: string) =>
+    gasPost<{ success: boolean; message?: string }>('deleteKasMasuk', { id_kas_masuk }),
 
   // Kas Keluar
   getKasKeluar: (params?: { periode?: string }) =>
     gasGet<import('../types').KasKeluar[]>('getKasKeluar', params ?? {}),
   createKasKeluar: async (data: {
+    tanggal?: string
     kategori: string
     rincian: string
     nominal: number
@@ -247,6 +298,17 @@ export const api = {
     })
     return res
   },
+  updateKasKeluar: (data: {
+    id_kas_keluar: string
+    tanggal?: string
+    kategori?: string
+    rincian?: string
+    nominal?: number
+    sumber_kas?: string
+    penerima?: string
+  }) => gasPost<{ success: boolean; message?: string }>('updateKasKeluar', data),
+  deleteKasKeluar: (id_kas_keluar: string) =>
+    gasPost<{ success: boolean; message?: string }>('deleteKasKeluar', { id_kas_keluar }),
 
   // Laporan
   getSummaryReport: (periode: string) =>

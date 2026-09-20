@@ -46,3 +46,4 @@ build-artifacts/
 *.njsproj
 *.sln
 *.sw?
+node_modules

@@ -3,8 +3,8 @@
 // ============================================================
 
 export type StatusOrder = 'PROSES' | 'SELESAI' | 'BATAL'
-export type JenisPembayaran = 'DP' | 'PELUNASAN' | 'NON_ORDER'
-export type MetodeBayar = 'KASIR_TUNAI' | 'BANK_BCA' | 'QRIS'
+export type JenisPembayaran = 'DP' | 'PELUNASAN' | 'NON_ORDER' | 'DEPOSIT'
+export type MetodeBayar = 'KASIR_TUNAI' | 'BANK_BCA' | 'QRIS' | 'SALDO_DEPOSIT'
 export type StatusVerifikasi = 'PENDING' | 'VERIFIED'
 export type KategoriKasKeluar =
   | 'BAHAN_BAKU'

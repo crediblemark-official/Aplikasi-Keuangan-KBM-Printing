@@ -23,6 +23,14 @@
             class="pl-8 pr-2.5 py-1 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:border-slate-300 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 cursor-pointer shadow-2xs transition-colors"
           />
         </div>
+        <BaseButton @click="router.push('/dashboard/buku-kas?action=input-kas-masuk')" size="sm">
+          <template #icon>
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+          </template>
+          Kas Masuk
+        </BaseButton>
       </template>
     </PageHeader>
 
@@ -97,7 +105,9 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import PageHeader from '@shared/components/PageHeader.vue'
+import BaseButton from '@shared/components/BaseButton.vue'
 import KbmLogo from '@shared/components/KbmLogo.vue'
 import MetricStrip from '@shared/components/MetricStrip.vue'
 import type { MetricItem } from '@shared/components/MetricStrip.vue'
@@ -108,6 +118,7 @@ import { Chart, registerables } from 'chart.js'
 
 Chart.register(...registerables)
 
+const router = useRouter()
 const isLoading = ref(false)
 const chartCanvas = ref<HTMLCanvasElement>()
 const donutCanvas = ref<HTMLCanvasElement>()

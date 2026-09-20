@@ -113,8 +113,15 @@
           </div>
           <div>
             <label class="form-label">Nominal (Rp) *</label>
-            <input v-model.number="form.nominal" type="number" min="1"
-                   placeholder="0" class="form-input font-bold text-rose-600 bg-white" required />
+            <input
+              :value="form.nominal ? form.nominal.toLocaleString('id-ID') : ''"
+              type="text"
+              inputmode="numeric"
+              placeholder="0"
+              class="form-input font-bold text-rose-600 bg-white"
+              required
+              @input="onNominalInput"
+            />
           </div>
         </div>
 
@@ -249,6 +256,14 @@ const summaryMetrics = computed(() => [
   { label: 'Hari Ini', value: formatRupiah(totalHariIni.value) },
   { label: 'Kasir Tunai', value: formatRupiah(totalKasirTunai.value), valueClass: 'text-amber-600' },
 ])
+
+function onNominalInput(e: Event) {
+  const target = e.target as HTMLInputElement
+  const raw = target.value.replace(/\D/g, '')
+  const num = raw ? parseInt(raw, 10) : 0
+  form.value.nominal = num
+  target.value = num ? num.toLocaleString('id-ID') : ''
+}
 
 function handlePhotoChange(uploadData: { base64: string; filename: string } | null) {
   if (uploadData) {

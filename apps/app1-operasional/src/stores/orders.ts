@@ -289,6 +289,33 @@ export const useOrderStore = defineStore('orders', () => {
     }
   }
 
+  async function updateOrder(orderData: Partial<Order> & { id_order: string }) {
+    const trimmedId = orderData.id_order.trim()
+    const targetIdx = orders.value.findIndex((o) => o.id_order.trim() === trimmedId)
+    const oldOrder = targetIdx !== -1 ? { ...orders.value[targetIdx] } : null
+
+    if (targetIdx !== -1) {
+      orders.value[targetIdx] = {
+        ...orders.value[targetIdx],
+        ...orderData,
+      }
+    }
+
+    isLoading.value = true
+    try {
+      const res = await api.updateOrder(orderData)
+      if (!res.success && oldOrder && targetIdx !== -1 && !res.isOffline) {
+        orders.value[targetIdx] = oldOrder
+      }
+      return res
+    } catch (err: any) {
+      if (oldOrder && targetIdx !== -1) orders.value[targetIdx] = oldOrder
+      return { success: false, error: err?.message || String(err) }
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   function setCurrentOrder(id: string) {
     currentOrderId.value = id
   }
@@ -304,6 +331,7 @@ export const useOrderStore = defineStore('orders', () => {
     fetchOrders,
     fetchKasMasuk,
     createOrder,
+    updateOrder,
     updateOrderStatus,
     ensureOrderLoaded,
     setCurrentOrder,
