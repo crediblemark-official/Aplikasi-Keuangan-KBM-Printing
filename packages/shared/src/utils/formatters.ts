@@ -125,6 +125,8 @@ export function formatFinishing(finishing: string[]): string {
     LAMINASI_DOFF: 'Laminasi Doff',
     LAMINASI_GLOSSY: 'Laminasi Glossy',
     PACKING_DUS: 'Packing Dus',
+    PACKING_DUS_KECIL: 'Dus Kecil',
+    PACKING_DUS_BESAR: 'Dus Besar',
     SHRINK_WRAP: 'Shrink Wrap',
     SPIRAL: 'Spiral',
     JILID_LEM: 'Jilid Lem Panas',

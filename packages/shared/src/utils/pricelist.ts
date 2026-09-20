@@ -189,10 +189,11 @@ export function calculateOrderPriceDetailed(input: PriceCalcInput): PriceCalcRes
     }
   }
 
-  // Tambahan packing dus
-  if (finishing.includes('PACKING_DUS')) {
-    // Dus kecil Rp 5.000 dibagi rata atau ditambahkan per order
-    baseFinishingPerPcs += 50
+  // Tambahan packing dus (Berdasarkan Book2: Dus Kecil Rp 5.000, Dus Besar Rp 10.000)
+  if (finishing.includes('PACKING_DUS_BESAR')) {
+    baseFinishingPerPcs += 100 // Rp 10.000 per dus (~100 buku)
+  } else if (finishing.includes('PACKING_DUS') || finishing.includes('PACKING_DUS_KECIL')) {
+    baseFinishingPerPcs += 50  // Rp 5.000 per dus (~100 buku)
   }
 
   // Diskon finishing berdasarkan oplah

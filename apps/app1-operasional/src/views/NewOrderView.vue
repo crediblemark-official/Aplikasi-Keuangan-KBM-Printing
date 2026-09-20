@@ -691,7 +691,8 @@ const finishingOptions = [
   { value: 'BINDING_POTONG', label: 'Binding + Potong', sub: 'Jilid lem & potong rapi' },
   { value: 'LAMINASI_DOFF', label: 'Laminasi Doff', sub: 'Doff doff lembut' },
   { value: 'LAMINASI_GLOSSY', label: 'Laminasi Glossy', sub: 'Glossy kilap' },
-  { value: 'PACKING_DUS', label: 'Packing Dus', sub: 'Kardus pengiriman' },
+  { value: 'PACKING_DUS_KECIL', label: 'Dus Kecil', sub: 'Kardus kecil (Rp 5.000)' },
+  { value: 'PACKING_DUS_BESAR', label: 'Dus Besar', sub: 'Kardus besar (Rp 10.000)' },
   { value: 'SHRINK_WRAP', label: 'Shrink Wrap', sub: 'Plastik segel' },
 ]
 

@@ -36,6 +36,8 @@ export type JenisFinishing =
   | 'JILID_LEM'
   | 'BINDING_POTONG'
   | 'PACKING_DUS'
+  | 'PACKING_DUS_KECIL'
+  | 'PACKING_DUS_BESAR'
 
 // ---- Entitas Utama ----
 
