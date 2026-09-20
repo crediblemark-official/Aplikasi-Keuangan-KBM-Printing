@@ -384,20 +384,20 @@ const jenisPembayaranOptions = [
 ]
 
 const publisherDepositBalance = computed(() => {
-  const penerbit = selectedOrder.value?.nama_penerbit?.trim().toLowerCase()
+  const penerbit = String(selectedOrder.value?.nama_penerbit || '').trim().toLowerCase()
   if (!penerbit) return 0
 
   const allKm = orderStore.kasMasukList.length > 0 ? orderStore.kasMasukList : kasMasukList.value
 
   // Total deposit masuk untuk penerbit ini
   const totalDeposit = allKm
-    .filter((k) => k.nama_penerbit?.trim().toLowerCase() === penerbit && k.jenis_pembayaran === 'DEPOSIT' && (k.status_verifikasi as any) !== 'BATAL')
-    .reduce((sum, k) => sum + k.nominal, 0)
+    .filter((k) => String(k.nama_penerbit || '').trim().toLowerCase() === penerbit && k.jenis_pembayaran === 'DEPOSIT' && (k.status_verifikasi as any) !== 'BATAL')
+    .reduce((sum, k) => sum + (Number(k.nominal) || 0), 0)
 
   // Total yang sudah terpakai untuk potong saldo deposit
   const totalTerpakai = allKm
-    .filter((k) => k.nama_penerbit?.trim().toLowerCase() === penerbit && k.metode === 'SALDO_DEPOSIT' && (k.status_verifikasi as any) !== 'BATAL')
-    .reduce((sum, k) => sum + k.nominal, 0)
+    .filter((k) => String(k.nama_penerbit || '').trim().toLowerCase() === penerbit && k.metode === 'SALDO_DEPOSIT' && (k.status_verifikasi as any) !== 'BATAL')
+    .reduce((sum, k) => sum + (Number(k.nominal) || 0), 0)
 
   return Math.max(0, totalDeposit - totalTerpakai)
 })
@@ -543,15 +543,12 @@ async function loadData() {
 
     form.value.id_order = targetOrderId.value
 
-    const [resOrderKm, resAllKm] = await Promise.all([
+    const [resOrderKm, _] = await Promise.all([
       api.getKasMasuk({ id_order: targetOrderId.value }),
-      api.getKasMasuk().catch(() => ({ success: false, data: [] })),
+      orderStore.fetchKasMasuk(true),
     ])
     if (resOrderKm.success && resOrderKm.data) {
       kasMasukList.value = resOrderKm.data
-    }
-    if (resAllKm.success && resAllKm.data) {
-      orderStore.kasMasukList = resAllKm.data
     }
 
     // Smart default nominal & payment type

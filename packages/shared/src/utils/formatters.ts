@@ -66,6 +66,47 @@ export function getCurrentPeriode(): string {
 }
 
 /**
+ * Get start and end date for a given YYYY-MM
+ */
+export function getMonthDateRange(monthStr: string): { startDate: string; endDate: string } {
+  const [yearStr, mStr] = monthStr.split('-')
+  const year = parseInt(yearStr, 10)
+  const month = parseInt(mStr, 10)
+  const startDate = `${monthStr}-01`
+  // Last day of month
+  const lastDay = new Date(year, month, 0).getDate()
+  const endDate = `${monthStr}-${String(lastDay).padStart(2, '0')}`
+  return { startDate, endDate }
+}
+
+/**
+ * Get start and end date for a given YYYY
+ */
+export function getYearDateRange(yearStr: string): { startDate: string; endDate: string } {
+  return {
+    startDate: `${yearStr}-01-01`,
+    endDate: `${yearStr}-12-31`,
+  }
+}
+
+/**
+ * Check if a date string falls inside the active date filter
+ */
+export function isDateInFilterRange(
+  dateStr: string | undefined | null,
+  filter?: { mode: string; startDate?: string; endDate?: string } | null
+): boolean {
+  if (!filter || filter.mode === 'ALL') return true
+  if (!filter.startDate && !filter.endDate) return true
+  if (!dateStr) return false
+  const d = String(dateStr).substring(0, 10)
+  if (filter.startDate && d < filter.startDate) return false
+  if (filter.endDate && d > filter.endDate) return false
+  return true
+}
+
+
+/**
  * Format metode bayar untuk display
  */
 export function formatMetode(metode: string): string {

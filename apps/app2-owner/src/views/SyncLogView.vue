@@ -4,8 +4,8 @@
     <!-- Standard Shared Header -->
     <PageHeader title="Log Sinkronisasi">
       <template #actions>
-        <!-- Search Input in Header (same as PiutangView) -->
-        <div class="w-36 sm:w-56">
+        <!-- Search Input in Header (Tablet & Desktop only) -->
+        <div class="hidden sm:block sm:w-48 lg:w-56">
           <SearchInput
             v-model="searchQuery"
             placeholder="Cari ID / transaksi..."
@@ -60,6 +60,14 @@
         </button>
       </template>
     </PageHeader>
+
+    <!-- Mobile Search Bar (Full Width on Mobile) -->
+    <div class="sm:hidden px-[8px] sm:px-[15px] py-2 border-b border-slate-200 bg-white">
+      <SearchInput
+        v-model="searchQuery"
+        placeholder="Cari ID / transaksi..."
+      />
+    </div>
 
     <!-- Summary Metrics Strip (same as SummaryView, KasKeluarView, PiutangView) -->
     <MetricStrip :items="summaryMetrics" />

@@ -93,6 +93,10 @@
               Buku: <strong class="text-slate-800">{{ order.judul_buku || order.judul_penulis }}</strong>
               <span v-if="order.nama_penulis" class="text-slate-400"> / {{ order.nama_penulis }}</span>
             </p>
+            <div v-if="order.catatan" class="mt-2 text-xs text-amber-800 bg-amber-50/90 border border-amber-200/80 rounded px-3 py-1.5 flex items-start gap-1.5">
+              <span class="font-bold text-amber-900 shrink-0">Catatan:</span>
+              <span>{{ order.catatan }}</span>
+            </div>
           </div>
 
           <!-- Bottom Row: Clean Total Price Strip -->
@@ -108,83 +112,80 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 border-b border-slate-200">
 
           <!-- LEFT COLUMN: Spesifikasi Cetak & Riwayat Kas Masuk (col-span-7) -->
-          <div class="lg:col-span-7 border-b lg:border-b-0 lg:border-r border-slate-200">
+          <div class="lg:col-span-7 border-b lg:border-b-0 lg:border-r border-slate-200 flex flex-col">
 
-            <!-- Spesifikasi Cetak -->
-            <div class="border-b border-slate-200">
-              <SectionHeader title="Spesifikasi Cetak">
-                <template #actions>
-                  <span class="text-xs font-mono font-bold text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded">
-                    {{ order.jml_pcs }} pcs
-                  </span>
-                </template>
-              </SectionHeader>
-              <div class="grid grid-cols-2 sm:grid-cols-3 bg-slate-200 gap-px">
-                <div v-for="spec in specList" :key="spec.label" class="px-4 py-2.5 bg-white">
-                  <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">{{ spec.label }}</p>
-                  <p class="text-xs text-slate-800 font-bold mt-0.5 font-mono">{{ spec.value }}</p>
+            <!-- Spesifikasi Cetak Header (Line 0: h-9 = 36px) -->
+            <SectionHeader title="Spesifikasi Cetak">
+              <template #actions>
+                <span class="text-xs font-mono font-bold text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded">
+                  {{ order.jml_pcs }} pcs
+                </span>
+              </template>
+            </SectionHeader>
+
+            <!-- Row 1 Specs (Line 1: lg:h-[48px]) -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 bg-slate-200 gap-px border-b border-slate-200">
+              <div v-for="spec in specList.slice(0, 3)" :key="spec.label" class="px-4 py-2 lg:h-[48px] bg-white flex flex-col justify-center">
+                <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider leading-none">{{ spec.label }}</p>
+                <p class="text-xs text-slate-800 font-bold mt-1 font-mono leading-tight truncate" :title="spec.value">{{ spec.value }}</p>
+              </div>
+            </div>
+
+            <!-- Row 2 Specs (Line 2: lg:h-[48px]) -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 bg-slate-200 gap-px border-b border-slate-200">
+              <div v-for="spec in specList.slice(3, 6)" :key="spec.label" class="px-4 py-2 lg:h-[48px] bg-white flex flex-col justify-center">
+                <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider leading-none">{{ spec.label }}</p>
+                <p class="text-xs text-slate-800 font-bold mt-1 font-mono leading-tight truncate" :title="spec.value">{{ spec.value }}</p>
+              </div>
+            </div>
+
+            <!-- Row 3: Riwayat Kas Masuk Header (Line 3: h-10 = 40px) -->
+            <div class="h-10 px-[8px] sm:px-[15px] lg:px-4 bg-slate-50/75 border-b border-slate-200 flex items-center justify-between">
+              <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                Riwayat Kas Masuk
+              </span>
+              <button
+                @click="router.push(`/payment/new/${orderId}`)"
+                type="button"
+                class="text-xs text-red-600 hover:text-red-700 font-bold cursor-pointer"
+              >
+                + Catat Bayar
+              </button>
+            </div>
+
+            <!-- Row 4: Empty State or Payment Items List (Line 4: lg:h-[60px] or dynamic) -->
+            <div v-if="kasMasukList.length === 0" class="px-4 py-3.5 lg:h-[60px] flex items-center justify-center text-center text-slate-400 text-xs bg-white font-medium">
+              Belum ada catatan pembayaran masuk
+            </div>
+            <div v-else class="divide-y divide-slate-200 bg-white">
+              <div
+                v-for="km in kasMasukList"
+                :key="km.id_kas_masuk"
+                class="px-4 sm:px-6 py-2.5 flex items-center justify-between hover:bg-slate-50/60 transition-colors"
+              >
+                <div class="space-y-0.5">
+                  <p class="text-slate-900 text-xs font-bold font-mono">{{ formatRupiah(km.nominal) }}</p>
+                  <p class="text-slate-500 text-[11px]">{{ km.jenis_pembayaran }} • {{ formatMetode(km.metode) }}</p>
                 </div>
-              </div>
-            </div>
-
-            <!-- Catatan Order (if exists) -->
-            <div v-if="order.catatan" class="border-b border-slate-200">
-              <SectionHeader title="Catatan Order" />
-              <div class="px-4 py-3 text-xs text-slate-700 leading-relaxed bg-amber-50/30">
-                {{ order.catatan }}
-              </div>
-            </div>
-
-            <!-- Riwayat Kas Masuk -->
-            <div>
-              <SectionHeader title="Riwayat Kas Masuk">
-                <template #actions>
-                  <button
-                    @click="router.push(`/payment/new/${orderId}`)"
-                    type="button"
-                    class="text-xs text-red-600 hover:text-red-700 font-bold cursor-pointer"
-                  >
-                    + Catat Bayar
-                  </button>
-                </template>
-              </SectionHeader>
-
-              <!-- Empty State -->
-              <div v-if="kasMasukList.length === 0" class="px-4 py-6 text-center text-slate-400 text-xs bg-white font-medium">
-                Belum ada catatan pembayaran masuk
-              </div>
-
-              <!-- Kas Masuk Items List -->
-              <div v-else class="divide-y divide-slate-200 bg-white">
-                <div
-                  v-for="km in kasMasukList"
-                  :key="km.id_kas_masuk"
-                  class="px-4 sm:px-6 py-2.5 flex items-center justify-between hover:bg-slate-50/60 transition-colors"
-                >
-                  <div class="space-y-0.5">
-                    <p class="text-slate-900 text-xs font-bold font-mono">{{ formatRupiah(km.nominal) }}</p>
-                    <p class="text-slate-500 text-[11px]">{{ km.jenis_pembayaran }} • {{ formatMetode(km.metode) }}</p>
+                <div class="text-right flex flex-col items-end gap-1">
+                  <div class="flex items-center gap-2">
+                    <a
+                      v-if="km.file_id_bukti"
+                      :href="`https://drive.google.com/file/d/${km.file_id_bukti}/view`"
+                      target="_blank"
+                      rel="noopener"
+                      class="inline-flex items-center gap-1 text-[11px] font-semibold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-200/80 px-2 py-0.5 rounded transition-colors cursor-pointer"
+                      title="Buka bukti pembayaran di Google Drive"
+                    >
+                      <span>Lihat Bukti</span>
+                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                    <span v-else class="text-slate-400 text-[10px] italic">Tanpa bukti</span>
+                    <StatusBadge :status="km.status_verifikasi" size="xs" />
                   </div>
-                  <div class="text-right flex flex-col items-end gap-1">
-                    <div class="flex items-center gap-2">
-                      <a
-                        v-if="km.file_id_bukti"
-                        :href="`https://drive.google.com/file/d/${km.file_id_bukti}/view`"
-                        target="_blank"
-                        rel="noopener"
-                        class="inline-flex items-center gap-1 text-[11px] font-semibold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-200/80 px-2 py-0.5 rounded transition-colors cursor-pointer"
-                        title="Buka bukti pembayaran di Google Drive"
-                      >
-                        <span>Lihat Bukti</span>
-                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                      </a>
-                      <span v-else class="text-slate-400 text-[10px] italic">Tanpa bukti</span>
-                      <StatusBadge :status="km.status_verifikasi" size="xs" />
-                    </div>
-                    <p class="text-slate-400 text-[10px] font-mono">{{ formatTanggal(km.tanggal) }}</p>
-                  </div>
+                  <p class="text-slate-400 text-[10px] font-mono">{{ formatTanggal(km.tanggal) }}</p>
                 </div>
               </div>
             </div>
@@ -192,61 +193,61 @@
           </div>
 
           <!-- RIGHT COLUMN: Status Pembayaran & Quick Actions (col-span-5) -->
-          <div class="lg:col-span-5 bg-white">
-            <div class="lg:sticky lg:top-0 z-10">
-              <SectionHeader title="Status Pembayaran">
-                <template #actions>
-                  <StatusBadge :status="sisaTagihan === 0 ? 'LUNAS' : totalMasuk > 0 ? 'DP' : 'BELUM_BAYAR'" size="xs" />
-                </template>
-              </SectionHeader>
+          <div class="lg:col-span-5 bg-white flex flex-col">
+            <!-- Line 0: Header (h-9 = 36px) -->
+            <SectionHeader title="Status Pembayaran">
+              <template #actions>
+                <StatusBadge :status="sisaTagihan === 0 ? 'LUNAS' : totalMasuk > 0 ? 'DP' : 'BELUM_BAYAR'" size="xs" />
+              </template>
+            </SectionHeader>
 
-              <!-- Financial Rows (Divided by clean lines) -->
-              <div class="divide-y divide-slate-200 text-xs">
-                <div class="px-4 sm:px-6 py-3 flex justify-between items-center">
-                  <span class="text-slate-600 font-medium">Total Nilai Order</span>
-                  <span class="font-bold text-slate-900 font-mono">{{ formatRupiah(order.total_harga) }}</span>
-                </div>
-                <div class="px-4 sm:px-6 py-3 flex justify-between items-center">
-                  <span class="text-slate-600 font-medium">Total Terbayar</span>
-                  <span class="font-bold text-emerald-600 font-mono">{{ formatRupiah(totalMasuk) }}</span>
-                </div>
-                <div v-if="totalPending > 0" class="px-4 sm:px-6 py-2.5 flex justify-between items-center bg-amber-50/60 text-amber-800 text-[11px]">
-                  <span>Menunggu Rekonsiliasi Owner</span>
-                  <span class="font-bold font-mono">{{ formatRupiah(totalPending) }}</span>
-                </div>
-                <div class="px-4 sm:px-6 py-3.5 flex justify-between items-center bg-slate-50">
-                  <span class="text-slate-900 font-bold">Sisa Tagihan</span>
-                  <span class="font-mono font-black text-base" :class="sisaTagihan > 0 ? 'text-red-600' : 'text-emerald-600'">
-                    {{ formatRupiah(sisaTagihan) }}
-                  </span>
-                </div>
-              </div>
+            <!-- Line 1: Total Nilai Order (lg:h-[48px]) -->
+            <div class="px-4 sm:px-6 py-2 lg:h-[48px] flex justify-between items-center border-b border-slate-200 bg-white">
+              <span class="text-slate-600 font-medium text-xs">Total Nilai Order</span>
+              <span class="font-bold text-slate-900 font-mono text-xs">{{ formatRupiah(order.total_harga) }}</span>
+            </div>
 
-              <!-- Desktop Action Buttons -->
-              <div class="hidden lg:flex px-4 sm:px-6 py-3.5 border-t border-slate-200 gap-2.5 bg-slate-50/30">
-                <button
-                  @click="router.push(`/payment/new/${orderId}`)"
-                  class="btn-primary flex-1 h-9.5 text-xs font-bold justify-center cursor-pointer"
-                >
-                  + Catat Bayar
-                </button>
-                <button
-                  @click="kirimWA"
-                  type="button"
-                  class="btn-primary flex-1 h-9.5 text-xs font-bold justify-center !bg-[#25D366] hover:!bg-[#20bd5a] text-white cursor-pointer flex items-center gap-1.5"
-                >
-                  <svg class="w-4 h-4 fill-current shrink-0" viewBox="0 0 16 16">
-                    <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.655.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.596-6.592 6.596m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.016-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.707 1.916.81 2.049c.098.133 1.39 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/>
-                  </svg>
-                  <span>Kirim WA</span>
-                </button>
-                <button
-                  @click="router.push(`/invoice/${orderId}`)"
-                  class="btn-secondary h-9.5 text-xs font-bold px-3.5 cursor-pointer"
-                >
-                  Faktur
-                </button>
+            <!-- Line 2: Total Terbayar (lg:h-[48px]) -->
+            <div class="px-4 sm:px-6 py-2 lg:h-[48px] flex justify-between items-center border-b border-slate-200 bg-white">
+              <div class="flex flex-col">
+                <span class="text-slate-600 font-medium text-xs">Total Terbayar</span>
+                <span v-if="totalPending > 0" class="text-[10px] text-amber-700 font-medium">Menunggu Owner: {{ formatRupiah(totalPending) }}</span>
               </div>
+              <span class="font-bold text-emerald-600 font-mono text-xs">{{ formatRupiah(totalMasuk) }}</span>
+            </div>
+
+            <!-- Line 3: Sisa Tagihan (h-10 = 40px) -->
+            <div class="px-4 sm:px-6 h-10 flex justify-between items-center bg-slate-50 border-b border-slate-200">
+              <span class="text-slate-900 font-bold text-xs">Sisa Tagihan</span>
+              <span class="font-mono font-black text-sm sm:text-base" :class="sisaTagihan > 0 ? 'text-red-600' : 'text-emerald-600'">
+                {{ formatRupiah(sisaTagihan) }}
+              </span>
+            </div>
+
+            <!-- Line 4: Desktop Action Buttons (lg:h-[60px]) -->
+            <div class="hidden lg:flex px-4 sm:px-6 h-[60px] items-center gap-2.5 bg-slate-50/30">
+              <button
+                @click="router.push(`/payment/new/${orderId}`)"
+                class="btn-primary flex-1 h-9 text-xs font-bold justify-center cursor-pointer"
+              >
+                + Catat Bayar
+              </button>
+              <button
+                @click="kirimWA"
+                type="button"
+                class="btn-primary flex-1 h-9 text-xs font-bold justify-center !bg-[#25D366] hover:!bg-[#20bd5a] text-white cursor-pointer flex items-center gap-1.5"
+              >
+                <svg class="w-4 h-4 fill-current shrink-0" viewBox="0 0 16 16">
+                  <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.655.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.596-6.592 6.596m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.016-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.707 1.916.81 2.049c.098.133 1.39 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/>
+                </svg>
+                <span>Kirim WA</span>
+              </button>
+              <button
+                @click="router.push(`/invoice/${orderId}`)"
+                class="btn-secondary h-9 text-xs font-bold px-3.5 cursor-pointer"
+              >
+                Faktur
+              </button>
             </div>
           </div>
 
@@ -335,21 +336,21 @@ const sisaTagihan = computed(() =>
 
 const specList = computed(() => {
   if (!order.value) return []
-  const list = [
+  let finishingVal = formatFinishing(order.value.finishing) || '-'
+  if (order.value.packing_dus_tipe || (order.value.biaya_packing && order.value.biaya_packing > 0)) {
+    const boxName = order.value.packing_dus_tipe === 'DUS_BESAR' ? 'Dus Bsr' : 'Dus Kcl'
+    const qty = order.value.packing_dus_qty || 1
+    finishingVal += ` • ${qty}x ${boxName}`
+  }
+
+  return [
     { label: 'Jumlah Oplah', value: `${order.value.jml_pcs} pcs` },
     { label: 'Ukuran Buku', value: order.value.ukuran_custom || order.value.ukuran },
     { label: 'Jenis Kertas', value: formatKertasOrder(order.value) },
     { label: 'Halaman BW', value: `${order.value.cetak_bw} hal` },
     { label: 'Halaman FC', value: `${order.value.cetak_fc} hal` },
-    { label: 'Finishing Jilid', value: formatFinishing(order.value.finishing) || '-' },
+    { label: order.value.packing_dus_tipe ? 'Finishing & Packing' : 'Finishing Jilid', value: finishingVal },
   ]
-  if (order.value.packing_dus_tipe || (order.value.biaya_packing && order.value.biaya_packing > 0)) {
-    const boxName = order.value.packing_dus_tipe === 'DUS_BESAR' ? 'Dus Besar' : 'Dus Kecil'
-    const qty = order.value.packing_dus_qty || 1
-    const cost = order.value.biaya_packing ? ` (${formatRupiah(order.value.biaya_packing)})` : ''
-    list.push({ label: 'Packing Dus', value: `${qty}x ${boxName}${cost}` })
-  }
-  return list
 })
 
 function kirimWA() {

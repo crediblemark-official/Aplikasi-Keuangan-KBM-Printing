@@ -7,8 +7,8 @@
         @back="router.canGoBack() ? router.back() : router.push('/home')"
       >
         <template #actions>
-          <!-- Search Input in Header -->
-          <div class="w-36 sm:w-56">
+          <!-- Search Input in Header (Tablet & Desktop only) -->
+          <div class="hidden sm:block sm:w-48 lg:w-56">
             <SearchInput
               v-model="searchQuery"
               placeholder="Cari ID / transaksi..."
@@ -67,6 +67,13 @@
 
     <ion-content :fullscreen="true">
       <div class="w-full min-h-full pb-24 lg:pb-8 bg-white">
+        <!-- Mobile Search Bar (Full Width on Mobile) -->
+        <div class="sm:hidden px-[8px] sm:px-[15px] py-2 border-b border-slate-200 bg-white">
+          <SearchInput
+            v-model="searchQuery"
+            placeholder="Cari ID / transaksi..."
+          />
+        </div>
 
         <!-- Summary Metrics Strip -->
         <MetricStrip :items="summaryMetrics" />
@@ -240,11 +247,21 @@
         </div>
       </template>
     </BaseModal>
+
+    <!-- Bottom Navigation Bar (Mobile only) -->
+    <MobileBottomNav
+      :left-items="mobileLeftItems"
+      :center-item="mobileCenterItem"
+      :right-items="mobileRightItems"
+      :current-path="route.path"
+      @navigate="navigate"
+    />
   </ion-page>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonContent, useIonRouter } from '@ionic/vue'
 import PageHeader from '@shared/components/PageHeader.vue'
 import MetricStrip from '@shared/components/MetricStrip.vue'
@@ -256,12 +273,42 @@ import TableStateRow from '@shared/components/TableStateRow.vue'
 import StatusBadge from '@shared/components/StatusBadge.vue'
 import BaseButton from '@shared/components/BaseButton.vue'
 import BaseModal from '@shared/components/BaseModal.vue'
+import MobileBottomNav from '@shared/components/MobileBottomNav.vue'
+import type { BottomNavItem } from '@shared/components/MobileBottomNav.vue'
 import { useSyncStore } from '@shared/stores/syncStore'
+import { useOrderStore } from '../stores/orders'
 import type { SyncLogItem, SyncStatus, SyncEntityType } from '@shared/types/sync'
 import { formatRupiah } from '@shared/utils/formatters'
 
+const route = useRoute()
 const router = useIonRouter()
 const syncStore = useSyncStore()
+const orderStore = useOrderStore()
+
+const mobileLeftItems = computed<BottomNavItem[]>(() => [
+  { id: 'home', path: '/home', label: 'Beranda' },
+  { id: 'order-list', path: '/order/list', label: 'Pesanan', badge: orderStore.orders.length || undefined },
+])
+
+const mobileCenterItem: BottomNavItem = {
+  id: 'new-order',
+  path: '/order/new',
+  label: 'Order Baru',
+}
+
+const mobileRightItems = computed<BottomNavItem[]>(() => [
+  { id: 'klien', path: '/klien', label: 'Klien' },
+  {
+    id: 'sync-log',
+    path: '/sync-log',
+    label: 'Log Sync',
+    badge: (syncStore.pendingCount + syncStore.failedCount) > 0 ? (syncStore.pendingCount + syncStore.failedCount) : undefined,
+  },
+])
+
+function navigate(path: string) {
+  router.push(path)
+}
 
 const selectedFilter = ref('all')
 const searchQuery = ref('')

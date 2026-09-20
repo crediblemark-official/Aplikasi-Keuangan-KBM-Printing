@@ -18,10 +18,13 @@
     "cap:sync:operasional": "npm run build:operasional && (cd apps/app1-operasional && npx cap sync android)",
     "cap:sync:kasir": "npm run cap:sync:operasional",
     "cap:sync:owner": "npm run build:owner && (cd apps/app2-owner && npx cap sync android)",
-    "cap:sync:all": "npm run build:all && (cd apps/app1-operasional && npx cap sync android) && (cd apps/app2-owner && npx cap sync android)"
+    "cap:sync:all": "npm run build:all && (cd apps/app1-operasional && npx cap sync android) && (cd apps/app2-owner && npx cap sync android)",
+    "test": "npm run build:all",
+    "prepare": "husky"
   },
   "devDependencies": {
-    "concurrently": "^10.0.5"
+    "concurrently": "^10.0.5",
+    "husky": "^9.1.7"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.1"

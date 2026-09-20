@@ -4,19 +4,6 @@
     <!-- Header Section (Exact h-14) -->
     <PageHeader title="Laporan & Analitik Keuangan">
       <template #actions>
-        <div class="relative flex items-center">
-          <span class="absolute left-2.5 pointer-events-none text-slate-400">
-            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </span>
-          <input
-            type="month"
-            v-model="selectedPeriode"
-            @change="loadAllData"
-            class="pl-8 pr-2.5 py-1 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:border-slate-300 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 cursor-pointer shadow-2xs transition-colors"
-          />
-        </div>
         <BaseButton @click="exportExcelSummary" :loading="isExporting" size="sm">
           <template #icon>
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -27,6 +14,14 @@
         </BaseButton>
       </template>
     </PageHeader>
+
+    <!-- Control Bar: Date Filter (Tanggal, Bulan, Tahun, Rentang) -->
+    <div class="px-[8px] sm:px-[15px] lg:px-[20px] py-2.5 border-b border-slate-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+      <DateFilterBar v-model="dateFilter" initial-mode="MONTH" />
+      <span class="text-xs text-slate-500 font-semibold font-mono shrink-0 text-center w-full sm:w-auto">
+        Periode Analisis: <strong class="text-slate-800">{{ dateFilter.label || selectedPeriode }}</strong>
+      </span>
+    </div>
 
     <!-- Top Metric Strip -->
     <MetricStrip :items="kpiMetrics" />
@@ -146,31 +141,33 @@
 
     <!-- Section 3: Jenis Pembayaran & Highlight Financial Insight Cards -->
     <div class="p-[8px] py-4 sm:p-[15px] sm:py-5 lg:p-[20px] bg-slate-50/50">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+      <div class="flex md:grid md:grid-cols-3 gap-3.5 overflow-x-auto scrollbar-none snap-x snap-mandatory py-0.5">
 
         <!-- Card 1: Rasio DP vs Pelunasan -->
-        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-bold text-slate-600">Struktur Pembayaran</span>
-            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 font-mono">Masuk</span>
-          </div>
-          <div class="space-y-2">
-            <div>
-              <div class="flex justify-between text-xs font-semibold text-slate-700 mb-1">
-                <span>Pelunasan</span>
-                <span class="font-mono text-emerald-600">{{ formatRupiah(jenisBreakdown.pelunasan) }}</span>
-              </div>
-              <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                <div class="bg-emerald-500 h-2 rounded-full" :style="{ width: `${jenisBreakdown.pelunasanPct}%` }"></div>
-              </div>
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs w-[82vw] sm:w-[320px] md:w-auto max-w-[340px] md:max-w-none shrink-0 snap-start flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-slate-600">Struktur Pembayaran</span>
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 font-mono">Masuk</span>
             </div>
-            <div>
-              <div class="flex justify-between text-xs font-semibold text-slate-700 mb-1">
-                <span>Uang Muka (DP)</span>
-                <span class="font-mono text-blue-600">{{ formatRupiah(jenisBreakdown.dp) }}</span>
+            <div class="space-y-2">
+              <div>
+                <div class="flex justify-between text-xs font-semibold text-slate-700 mb-1">
+                  <span>Pelunasan</span>
+                  <span class="font-mono text-emerald-600">{{ formatRupiah(jenisBreakdown.pelunasan) }}</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                  <div class="bg-emerald-500 h-2 rounded-full" :style="{ width: `${jenisBreakdown.pelunasanPct}%` }"></div>
+                </div>
               </div>
-              <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                <div class="bg-blue-500 h-2 rounded-full" :style="{ width: `${jenisBreakdown.dpPct}%` }"></div>
+              <div>
+                <div class="flex justify-between text-xs font-semibold text-slate-700 mb-1">
+                  <span>Uang Muka (DP)</span>
+                  <span class="font-mono text-blue-600">{{ formatRupiah(jenisBreakdown.dp) }}</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                  <div class="bg-blue-500 h-2 rounded-full" :style="{ width: `${jenisBreakdown.dpPct}%` }"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -180,17 +177,19 @@
         </div>
 
         <!-- Card 2: Pengeluaran Terbesar -->
-        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-bold text-slate-600">Beban Terbesar</span>
-            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-700 font-mono">Top Cost</span>
-          </div>
-          <div class="mt-1">
-            <h4 class="text-base font-bold text-slate-900">{{ topCategory.label }}</h4>
-            <p class="text-xl font-black font-mono text-rose-600 mt-0.5">{{ formatRupiah(topCategory.nominal) }}</p>
-            <p class="text-[11px] text-slate-500 font-medium mt-1">
-              Menyerap <span class="font-bold text-slate-800">{{ topCategory.percentage }}%</span> dari total pengeluaran bulan ini.
-            </p>
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs w-[82vw] sm:w-[320px] md:w-auto max-w-[340px] md:max-w-none shrink-0 snap-start flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-slate-600">Beban Terbesar</span>
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-700 font-mono">Top Cost</span>
+            </div>
+            <div class="mt-1">
+              <h4 class="text-base font-bold text-slate-900">{{ topCategory.label }}</h4>
+              <p class="text-xl font-black font-mono text-rose-600 mt-0.5">{{ formatRupiah(topCategory.nominal) }}</p>
+              <p class="text-[11px] text-slate-500 font-medium mt-1">
+                Menyerap <span class="font-bold text-slate-800">{{ topCategory.percentage }}%</span> dari total pengeluaran bulan ini.
+              </p>
+            </div>
           </div>
           <p class="text-[11px] text-slate-400 mt-3 pt-2.5 border-t border-slate-100">
             Pastikan efisiensi dan pencatatan stok terjaga.
@@ -198,26 +197,28 @@
         </div>
 
         <!-- Card 3: Status Efisiensi & Cashflow -->
-        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-bold text-slate-600">Kesehatan Arus Kas</span>
-            <span
-              class="text-[10px] font-bold px-1.5 py-0.5 rounded-md font-mono"
-              :class="labaBersih >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'"
-            >
-              {{ labaBersih >= 0 ? 'SURPLUS' : 'DEFISIT' }}
-            </span>
-          </div>
-          <div class="mt-1">
-            <h4 class="text-base font-bold" :class="labaBersih >= 0 ? 'text-emerald-700' : 'text-rose-700'">
-              {{ labaBersih >= 0 ? 'Cash Flow Sehat' : 'Defisit Terdeteksi' }}
-            </h4>
-            <p class="text-xl font-black font-mono mt-0.5" :class="labaBersih >= 0 ? 'text-emerald-600' : 'text-rose-600'">
-              {{ formatRupiah(Math.abs(labaBersih)) }}
-            </p>
-            <p class="text-[11px] text-slate-500 font-medium mt-1">
-              Margin laba bersih tercatat sebesar <span class="font-bold text-slate-800">{{ profitMargin }}%</span>.
-            </p>
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs w-[82vw] sm:w-[320px] md:w-auto max-w-[340px] md:max-w-none shrink-0 snap-start flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-slate-600">Kesehatan Arus Kas</span>
+              <span
+                class="text-[10px] font-bold px-1.5 py-0.5 rounded-md font-mono"
+                :class="labaBersih >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'"
+              >
+                {{ labaBersih >= 0 ? 'SURPLUS' : 'DEFISIT' }}
+              </span>
+            </div>
+            <div class="mt-1">
+              <h4 class="text-base font-bold" :class="labaBersih >= 0 ? 'text-emerald-700' : 'text-rose-700'">
+                {{ labaBersih >= 0 ? 'Cash Flow Sehat' : 'Defisit Terdeteksi' }}
+              </h4>
+              <p class="text-xl font-black font-mono mt-0.5" :class="labaBersih >= 0 ? 'text-emerald-600' : 'text-rose-600'">
+                {{ formatRupiah(Math.abs(labaBersih)) }}
+              </p>
+              <p class="text-[11px] text-slate-500 font-medium mt-1">
+                Margin laba bersih tercatat sebesar <span class="font-bold text-slate-800">{{ profitMargin }}%</span>.
+              </p>
+            </div>
           </div>
           <p class="text-[11px] text-slate-400 mt-3 pt-2.5 border-t border-slate-100">
             Dihitung dari total masuk verified dikurangi kas keluar.
@@ -239,13 +240,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import PageHeader from '@shared/components/PageHeader.vue'
 import BaseButton from '@shared/components/BaseButton.vue'
 import MetricStrip from '@shared/components/MetricStrip.vue'
+import DateFilterBar from '@shared/components/DateFilterBar.vue'
 import { api } from '@shared/api/gasClient'
-import { formatRupiah, getCurrentPeriode, formatKategori, formatMetode } from '@shared/utils/formatters'
-import type { KasMasuk, KasKeluar, SummaryReport } from '@shared/types'
+import {
+  formatRupiah,
+  getCurrentPeriode,
+  formatKategori,
+  formatMetode,
+  formatTanggal,
+  isDateInFilterRange,
+} from '@shared/utils/formatters'
+import type { KasMasuk, KasKeluar, SummaryReport, DateFilterValue } from '@shared/types'
 import { Chart, registerables } from 'chart.js'
 
 Chart.register(...registerables)
@@ -253,6 +262,7 @@ Chart.register(...registerables)
 const isLoading = ref(false)
 const isExporting = ref(false)
 const selectedPeriode = ref(getCurrentPeriode())
+const dateFilter = ref<DateFilterValue>({ mode: 'MONTH' })
 
 const kasMasukList = ref<KasMasuk[]>([])
 const kasKeluarList = ref<KasKeluar[]>([])
@@ -274,11 +284,19 @@ let trendChartInstance: Chart | null = null
 let kategoriDonutInstance: Chart | null = null
 let sumberDonutInstance: Chart | null = null
 
-// Filter kas masuk sesuai periode yang dipilih
+// Filter kas masuk sesuai periode / rentang tanggal yang dipilih
 const filteredKasMasukByPeriode = computed(() =>
   kasMasukList.value.filter((k) => {
     if (!k.tanggal) return false
-    return String(k.tanggal).substring(0, 7) === selectedPeriode.value
+    return isDateInFilterRange(k.tanggal, dateFilter.value)
+  })
+)
+
+// Filter kas keluar sesuai periode / rentang tanggal yang dipilih
+const filteredKasKeluarByPeriode = computed(() =>
+  kasKeluarList.value.filter((k) => {
+    if (!k.tanggal) return false
+    return isDateInFilterRange(k.tanggal, dateFilter.value)
   })
 )
 
@@ -287,7 +305,7 @@ const totalMasuk = computed(() =>
     .filter((k) => k.status_verifikasi === 'VERIFIED')
     .reduce((s, k) => s + k.nominal, 0)
 )
-const totalKeluar = computed(() => kasKeluarList.value.reduce((s, k) => s + k.nominal, 0))
+const totalKeluar = computed(() => filteredKasKeluarByPeriode.value.reduce((s, k) => s + k.nominal, 0))
 const labaBersih = computed(() => totalMasuk.value - totalKeluar.value)
 
 const profitMargin = computed(() => {
@@ -305,7 +323,7 @@ const kpiMetrics = computed(() => [
     label: 'Kas Masuk (Verified)',
     value: formatRupiah(totalMasuk.value),
     valueClass: 'text-emerald-600',
-    sub: 'Periode ' + selectedPeriode.value,
+    sub: 'Periode ' + (dateFilter.value.label || selectedPeriode.value),
     subClass: 'text-emerald-600',
     subDot: 'bg-emerald-500',
     minWidth: 'min-w-[150px]',
@@ -314,7 +332,7 @@ const kpiMetrics = computed(() => [
     label: 'Total Pengeluaran Kas',
     value: formatRupiah(totalKeluar.value),
     valueClass: 'text-rose-600',
-    sub: 'Periode ' + selectedPeriode.value,
+    sub: 'Periode ' + (dateFilter.value.label || selectedPeriode.value),
     subClass: 'text-rose-600',
     subDot: 'bg-rose-500',
     minWidth: 'min-w-[150px]',
@@ -365,7 +383,7 @@ const kategoriBreakdown = computed(() => {
     KONSUMSI: 0,
     LAIN_LAIN: 0,
   }
-  kasKeluarList.value.forEach((k) => {
+  filteredKasKeluarByPeriode.value.forEach((k) => {
     if (totals[k.kategori] !== undefined) {
       totals[k.kategori] += k.nominal
     } else {
@@ -626,7 +644,7 @@ async function loadAllData() {
   try {
     const [kmRes, kkRes, sumRes] = await Promise.all([
       api.getKasMasuk(),
-      api.getKasKeluar({ periode: selectedPeriode.value }),
+      api.getKasKeluar(),
       api.getSummaryReport(selectedPeriode.value),
     ])
 
@@ -643,24 +661,36 @@ async function loadAllData() {
   }
 }
 
+watch(
+  dateFilter,
+  async () => {
+    await nextTick()
+    renderKategoriDonut()
+    renderSumberDonut()
+  },
+  { deep: true }
+)
+
 async function exportExcelSummary() {
   isExporting.value = true
   try {
     const XLSX = await import('xlsx')
     const wb = XLSX.utils.book_new()
 
+    const periodLabel = (dateFilter.value.label || selectedPeriode.value).replace(/[^a-zA-Z0-9_-]/g, '_')
+
     // Sheet 1: Ringkasan KPI
     const kpiData = [
-      { Indikator: 'Periode Analisis', Nilai: selectedPeriode.value },
+      { Indikator: 'Periode Analisis', Nilai: dateFilter.value.label || selectedPeriode.value },
       { Indikator: 'Total Kas Masuk (Verified)', Nilai: totalMasuk.value },
       { Indikator: 'Total Kas Keluar', Nilai: totalKeluar.value },
       { Indikator: 'Estimasi Laba Bersih', Nilai: labaBersih.value },
       { Indikator: 'Net Profit Margin (%)', Nilai: `${profitMargin.value}%` },
-      { Indikator: 'Operating Expense Ratio (%)', Nilai: `${expenseRatio.value}%` },
+      { Indikator: 'Expense Ratio (%)', Nilai: `${expenseRatio.value}%` },
     ]
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(kpiData), 'Ringkasan KPI')
 
-    // Sheet 2: Beban Kategori
+    // Sheet 2: Komposisi Biaya Operasional
     const katData = kategoriBreakdown.value.map((k) => ({
       Kategori: k.label,
       Nominal: k.nominal,
@@ -676,7 +706,7 @@ async function exportExcelSummary() {
     }))
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(srcData), 'Sumber Kas')
 
-    XLSX.writeFile(wb, `Laporan_Analitik_KBM_${selectedPeriode.value}.xlsx`)
+    XLSX.writeFile(wb, `Laporan_Analitik_KBM_${periodLabel}.xlsx`)
   } finally {
     isExporting.value = false
   }

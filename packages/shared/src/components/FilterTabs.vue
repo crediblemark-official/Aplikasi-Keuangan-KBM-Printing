@@ -1,11 +1,11 @@
 <template>
-  <div class="filter-tabs-container flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1">
+  <div class="filter-tabs-container flex items-center gap-1.5 flex-nowrap overflow-x-auto scrollbar-none py-1 max-w-full">
     <button
       v-for="tab in tabs"
       :key="String(getTabValue(tab))"
       type="button"
       @click="selectTab(getTabValue(tab))"
-      class="filter-pill flex-shrink-0 gap-1.5"
+      class="filter-pill flex-shrink-0 gap-1.5 whitespace-nowrap"
       :class="[
         isActive(getTabValue(tab)) ? activeClass : '',
         tab.disabled ? 'opacity-50 cursor-not-allowed' : ''

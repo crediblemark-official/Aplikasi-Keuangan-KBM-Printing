@@ -12,20 +12,6 @@
       </template>
       <template #actions>
         <!-- Periode Selector -->
-        <div class="relative flex items-center">
-          <span class="absolute left-2 pointer-events-none text-slate-400">
-            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </span>
-          <input
-            type="month"
-            v-model="selectedPeriode"
-            @change="loadData"
-            class="pl-6 sm:pl-7 pr-1 sm:pr-2 py-1 text-[11px] sm:text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:border-slate-300 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 cursor-pointer shadow-2xs transition-colors w-[96px] sm:w-[130px]"
-          />
-        </div>
-
         <!-- Export Excel Button -->
         <BaseButton
           @click="exportExcel"
@@ -72,6 +58,14 @@
       </template>
     </PageHeader>
 
+    <!-- Control Bar: Date Filter (Tanggal, Bulan, Tahun, Rentang) -->
+    <div class="px-[8px] sm:px-[15px] lg:px-[20px] py-2.5 border-b border-slate-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+      <DateFilterBar v-model="dateFilter" initial-mode="MONTH" />
+      <span class="text-xs text-slate-500 font-semibold font-mono shrink-0 text-center w-full sm:w-auto">
+        Periode: <strong class="text-slate-800">{{ dateFilter.label || selectedPeriode }}</strong>
+      </span>
+    </div>
+
     <!-- Summary Metrics Strip -->
     <MetricStrip :items="summaryMetrics" />
 
@@ -79,7 +73,7 @@
     <div class="border-b border-slate-200 bg-white">
       <div class="px-[8px] sm:px-[15px] lg:px-[20px] py-2.5 border-b border-slate-100 bg-slate-50/40 flex items-center justify-between">
         <h3 class="text-slate-900 font-bold text-xs sm:text-sm">Rekapitulasi Saldo Kas per Akun</h3>
-        <span class="text-[11px] font-semibold text-slate-500 font-mono">Periode: {{ selectedPeriode }}</span>
+        <span class="text-[11px] font-semibold text-slate-500 font-mono">Periode: {{ dateFilter.label || selectedPeriode }}</span>
       </div>
       <TableScrollWrapper>
         <table class="data-table w-full min-w-[500px]">
@@ -121,23 +115,22 @@
           </span>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="flex items-center gap-2 w-full sm:w-auto overflow-x-auto scrollbar-none py-0.5 justify-between sm:justify-end">
           <!-- Filter Tabs Tipe -->
-          <div class="flex flex-wrap gap-1 bg-slate-200/60 p-0.5 rounded-lg">
+          <div class="flex items-center gap-1 bg-slate-200/60 p-0.5 rounded-lg overflow-x-auto scrollbar-none flex-nowrap shrink-0 max-w-full">
             <button
               v-for="tab in mutasiTabs"
               :key="tab.id"
               @click="activeTab = tab.id"
-              class="px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1.5"
+              class="px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap"
               :class="activeTab === tab.id ? 'bg-white text-slate-900 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'"
             >
               <span>{{ tab.label }}</span>
             </button>
           </div>
 
-
           <!-- Search Input -->
-          <div class="w-36 sm:w-48">
+          <div class="w-36 sm:w-48 shrink-0">
             <SearchInput v-model="searchQuery" placeholder="Cari keterangan..." />
           </div>
         </div>
@@ -448,15 +441,17 @@
 
         <!-- Nominal -->
         <div>
-          <label class="form-label">Nominal (Rp) *</label>
-          <div class="relative">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs font-semibold">Rp</span>
+          <label class="form-label">Nominal *</label>
+          <div class="flex rounded-lg border border-slate-300 overflow-hidden focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white transition-all shadow-2xs">
+            <span class="inline-flex items-center px-3 bg-slate-100 border-r border-slate-200 text-xs font-mono font-bold text-slate-500 select-none">
+              Rp
+            </span>
             <input
               :value="editForm.nominal ? editForm.nominal.toLocaleString('id-ID') : ''"
               @input="onEditNominalInput"
               type="text"
               inputmode="numeric"
-              class="form-input pl-9 font-mono font-bold text-slate-900 bg-white"
+              class="w-full px-3 py-2 text-sm font-bold font-mono text-slate-900 outline-none border-0 bg-transparent"
               placeholder="0"
               required
             />
@@ -557,6 +552,7 @@ import ConfirmModal from '@shared/components/ConfirmModal.vue'
 import ImageUploader from '@shared/components/ImageUploader.vue'
 import SearchInput from '@shared/components/SearchInput.vue'
 import ComboboxInput, { type ComboboxOption } from '@shared/components/ComboboxInput.vue'
+import DateFilterBar from '@shared/components/DateFilterBar.vue'
 import { api } from '@shared/api/gasClient'
 import { useAuthStore } from '../stores/auth'
 import {
@@ -567,8 +563,9 @@ import {
   getTodayISO,
   getCurrentPeriode,
   formatJenisPembayaran,
+  isDateInFilterRange,
 } from '@shared/utils/formatters'
-import type { KasMasuk, KasKeluar, SumberKas, KategoriKasKeluar, Client, Order } from '@shared/types'
+import type { KasMasuk, KasKeluar, SumberKas, KategoriKasKeluar, Client, Order, DateFilterValue } from '@shared/types'
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -578,6 +575,7 @@ const isExporting = ref(false)
 const snackbar = ref('')
 const snackbarType = ref<'success' | 'error'>('success')
 const selectedPeriode = ref(getCurrentPeriode())
+const dateFilter = ref<DateFilterValue>({ mode: 'MONTH' })
 
 function showToast(msg: string, type: 'success' | 'error' = 'success') {
   snackbar.value = msg
@@ -710,20 +708,18 @@ const penerbitOptions = computed<ComboboxOption[]>(() => {
   return list.sort((a, b) => a.label.localeCompare(b.label))
 })
 
-// Filter kas masuk by selected period (excluding non-cash settlements like SALDO_DEPOSIT)
+// Filter kas masuk by active date filter (excluding non-cash settlements like SALDO_DEPOSIT)
 const filteredKasMasukByPeriode = computed(() =>
   kasMasukList.value.filter((k) => {
     if (!k.tanggal) return false
-    const tgl = String(k.tanggal).substring(0, 7)
-    return tgl === selectedPeriode.value
+    return isDateInFilterRange(k.tanggal, dateFilter.value)
   })
 )
 
 const filteredKasKeluarByPeriode = computed(() =>
   kasKeluarList.value.filter((k) => {
     if (!k.tanggal) return false
-    const tgl = String(k.tanggal).substring(0, 7)
-    return tgl === selectedPeriode.value
+    return isDateInFilterRange(k.tanggal, dateFilter.value)
   })
 )
 
@@ -1169,7 +1165,8 @@ async function exportExcel() {
     }))
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rekapData), 'Rekap Akun')
 
-    XLSX.writeFile(wb, `Buku_Kas_KBM_${selectedPeriode.value}.xlsx`)
+    const periodLabel = (dateFilter.value.label || selectedPeriode.value).replace(/[^a-zA-Z0-9_-]/g, '_')
+    XLSX.writeFile(wb, `Buku_Kas_KBM_${periodLabel}.xlsx`)
   } finally {
     isExporting.value = false
   }
@@ -1180,7 +1177,7 @@ async function loadData() {
   try {
     const [kmRes, kkRes, clRes, ordRes] = await Promise.all([
       api.getKasMasuk(),
-      api.getKasKeluar({ periode: selectedPeriode.value }),
+      api.getKasKeluar(),
       api.getClients().catch(() => ({ success: false, data: [] })),
       api.getOrders().catch(() => ({ success: false, data: [] })),
     ])

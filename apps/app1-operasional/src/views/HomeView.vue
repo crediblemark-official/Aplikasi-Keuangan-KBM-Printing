@@ -166,6 +166,7 @@ import { IonPage, IonHeader, IonContent, IonIcon, useIonRouter } from '@ionic/vu
 import { chevronForwardOutline, logOutOutline } from 'ionicons/icons'
 import { useAuthStore } from '../stores/auth'
 import { useOrderStore } from '../stores/orders'
+import { useSyncStore } from '@shared/stores/syncStore'
 import { formatTanggal, formatRupiah, getTodayISO, formatKertasOrder } from '@shared/utils/formatters'
 import SyncIndicatorPill from '@shared/components/SyncIndicatorPill.vue'
 
@@ -184,6 +185,7 @@ import TableStateRow from '@shared/components/TableStateRow.vue'
 const route = useRoute()
 const authStore = useAuthStore()
 const orderStore = useOrderStore()
+const syncStore = useSyncStore()
 const router = useIonRouter()
 
 const currentDate = computed(() => formatTanggal(getTodayISO()))
@@ -230,10 +232,10 @@ const shiftMetrics = computed(() => [
   },
 ])
 
-const mobileLeftItems: BottomNavItem[] = [
+const mobileLeftItems = computed<BottomNavItem[]>(() => [
   { id: 'home', path: '/home', label: 'Beranda' },
-  { id: 'order-list', path: '/order/list', label: 'Pesanan' },
-]
+  { id: 'order-list', path: '/order/list', label: 'Pesanan', badge: orderStore.orders.length || undefined },
+])
 
 const mobileCenterItem: BottomNavItem = {
   id: 'new-order',
@@ -241,10 +243,15 @@ const mobileCenterItem: BottomNavItem = {
   label: 'Order Baru',
 }
 
-const mobileRightItems: BottomNavItem[] = [
-  { id: 'sync-log', path: '/sync-log', label: 'Log Sync' },
-  { id: 'invoice', path: '/order/list', label: 'Invoice' },
-]
+const mobileRightItems = computed<BottomNavItem[]>(() => [
+  { id: 'klien', path: '/klien', label: 'Klien' },
+  {
+    id: 'sync-log',
+    path: '/sync-log',
+    label: 'Log Sync',
+    badge: (syncStore.pendingCount + syncStore.failedCount) > 0 ? (syncStore.pendingCount + syncStore.failedCount) : undefined,
+  },
+])
 
 function navigate(path: string) {
   router.push(path)

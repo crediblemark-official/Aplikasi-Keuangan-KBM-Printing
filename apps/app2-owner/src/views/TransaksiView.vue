@@ -43,31 +43,36 @@
     <!-- Summary Metrics Strip -->
     <MetricStrip :items="summaryMetrics" />
 
-    <!-- Control Bar: Status Filter & Ringkasan -->
-    <div class="px-[8px] sm:px-[15px] lg:px-[20px] py-2.5 border-b border-slate-200 bg-slate-50/60 flex flex-wrap items-center justify-between gap-2.5">
-      <!-- Status Filter Buttons -->
-      <div class="flex flex-wrap items-center gap-1 bg-slate-200/70 p-1 rounded-xl">
-        <button
-          v-for="tab in filterOptions"
-          :key="tab.value"
-          @click="statusFilter = tab.value"
-          class="px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer"
-          :class="statusFilter === tab.value ? 'bg-white text-slate-900 shadow-2xs font-extrabold' : 'text-slate-600 hover:text-slate-900'"
-        >
-          <span>{{ tab.label }}</span>
-          <span
-            v-if="tab.count !== undefined"
-            class="px-1.5 py-0.2 rounded-full text-[10px] font-bold"
-            :class="tab.badgeClass || (statusFilter === tab.value ? 'bg-red-50 text-red-600' : 'bg-slate-300 text-slate-700')"
-          >
-            {{ tab.count }}
-          </span>
-        </button>
-      </div>
+    <!-- Control Bar: Date Filter, Status Filter & Ringkasan -->
+    <div class="px-[8px] sm:px-[15px] lg:px-[20px] py-2.5 border-b border-slate-200 bg-white flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+      <!-- Date Filter Bar (Tanggal, Bulan, Tahun, Rentang) -->
+      <DateFilterBar v-model="dateFilter" />
 
-      <!-- Info Count -->
-      <div class="text-xs text-slate-500 font-medium">
-        Menampilkan <strong class="text-slate-800">{{ filteredPiutangRows.length }}</strong> dari {{ piutangRows.length }} order cetak
+      <!-- Status Filter Buttons & Count -->
+      <div class="flex items-center gap-2.5 w-full md:w-auto overflow-x-auto scrollbar-none py-0.5 justify-between md:justify-end">
+        <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto scrollbar-none flex-nowrap shrink-0 max-w-full">
+          <button
+            v-for="tab in filterOptions"
+            :key="tab.value"
+            @click="statusFilter = tab.value"
+            class="px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap"
+            :class="statusFilter === tab.value ? 'bg-white text-slate-900 shadow-2xs font-extrabold' : 'text-slate-600 hover:text-slate-900'"
+          >
+            <span>{{ tab.label }}</span>
+            <span
+              v-if="tab.count !== undefined"
+              class="px-1.5 py-0.2 rounded-full text-[10px] font-bold shrink-0"
+              :class="tab.badgeClass || (statusFilter === tab.value ? 'bg-red-50 text-red-600' : 'bg-slate-300 text-slate-700')"
+            >
+              {{ tab.count }}
+            </span>
+          </button>
+        </div>
+
+        <!-- Info Count -->
+        <div class="text-xs text-slate-500 font-medium shrink-0 whitespace-nowrap">
+          <strong class="text-slate-800">{{ filteredPiutangRows.length }}</strong> order
+        </div>
       </div>
     </div>
 
@@ -406,16 +411,21 @@
         <!-- Nominal & Metode -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="form-label">Nominal Bayar (Rp) *</label>
-            <input
-              :value="paymentForm.nominal ? paymentForm.nominal.toLocaleString('id-ID') : ''"
-              @input="onNominalInput"
-              type="text"
-              inputmode="numeric"
-              placeholder="0"
-              class="form-input font-mono font-bold text-slate-900 bg-white"
-              required
-            />
+            <label class="form-label">Nominal Bayar *</label>
+            <div class="flex rounded-lg border border-slate-300 overflow-hidden focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white transition-all shadow-2xs">
+              <span class="inline-flex items-center px-3 bg-slate-100 border-r border-slate-200 text-xs font-mono font-bold text-slate-500 select-none">
+                Rp
+              </span>
+              <input
+                :value="paymentForm.nominal ? paymentForm.nominal.toLocaleString('id-ID') : ''"
+                @input="onNominalInput"
+                type="text"
+                inputmode="numeric"
+                placeholder="0"
+                class="w-full px-3 py-2 text-sm font-bold font-mono text-slate-900 outline-none border-0 bg-transparent"
+                required
+              />
+            </div>
           </div>
           <div>
             <label class="form-label">Metode Pembayaran *</label>
@@ -494,16 +504,18 @@
 
         <!-- Nominal -->
         <div>
-          <label class="form-label">Nominal Bayar (Rp) *</label>
-          <div class="relative">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs font-semibold">Rp</span>
+          <label class="form-label">Nominal Bayar *</label>
+          <div class="flex rounded-lg border border-slate-300 overflow-hidden focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white transition-all shadow-2xs">
+            <span class="inline-flex items-center px-3 bg-slate-100 border-r border-slate-200 text-xs font-mono font-bold text-slate-500 select-none">
+              Rp
+            </span>
             <input
               :value="editPaymentForm.nominal ? editPaymentForm.nominal.toLocaleString('id-ID') : ''"
               @input="onEditPaymentNominalInput"
               type="text"
               inputmode="numeric"
               placeholder="0"
-              class="form-input pl-9 font-mono font-bold text-slate-900 bg-white"
+              class="w-full px-3 py-2 text-sm font-bold font-mono text-slate-900 outline-none border-0 bg-transparent"
               required
             />
           </div>
@@ -561,7 +573,7 @@
       cancel-text="Kembali"
       type="danger"
       :loading="isSubmittingEditPayment"
-      @confirm="executeDeletePayment"
+      @confirm="executeDeletePayment()"
     />
 
     <!-- Snackbar Toast (Success & Error support) -->
@@ -603,6 +615,7 @@ import BaseModal from '@shared/components/BaseModal.vue'
 import ConfirmModal from '@shared/components/ConfirmModal.vue'
 import ImageUploader from '@shared/components/ImageUploader.vue'
 import SearchInput from '@shared/components/SearchInput.vue'
+import DateFilterBar from '@shared/components/DateFilterBar.vue'
 import { api } from '@shared/api/gasClient'
 import { useAuthStore } from '../stores/auth'
 import {
@@ -612,8 +625,9 @@ import {
   formatKertasOrder,
   hitungStatusBayar,
   getTodayISO,
+  isDateInFilterRange,
 } from '@shared/utils/formatters'
-import type { KasMasuk, Order, SumberKas, PiutangRow } from '@shared/types'
+import type { KasMasuk, Order, SumberKas, PiutangRow, DateFilterValue } from '@shared/types'
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -625,6 +639,7 @@ const snackbar = ref('')
 const snackbarType = ref<'success' | 'error'>('success')
 const searchQuery = ref('')
 const statusFilter = ref<'ALL' | 'PIUTANG' | 'LUNAS' | 'PENDING_VERIF'>('ALL')
+const dateFilter = ref<DateFilterValue>({ mode: 'ALL' })
 
 function showToast(msg: string, type: 'success' | 'error' = 'success') {
   snackbar.value = msg
@@ -757,6 +772,13 @@ const filteredPiutangRows = computed(() => {
     if (statusFilter.value === 'LUNAS' && r.sisa_tagihan > 0) return false
     if (statusFilter.value === 'PENDING_VERIF' && !r.has_pending) return false
 
+    // Date filter: mencakup tanggal order dibuat ataupun transaksi pembayaran masuk
+    if (dateFilter.value.mode !== 'ALL') {
+      const orderMatch = isDateInFilterRange(r.order.tanggal, dateFilter.value)
+      const payMatch = r.payments.some((p) => isDateInFilterRange(p.tanggal, dateFilter.value))
+      if (!orderMatch && !payMatch) return false
+    }
+
     if (searchQuery.value.trim()) {
       const q = searchQuery.value.toLowerCase()
       return (
@@ -769,16 +791,17 @@ const filteredPiutangRows = computed(() => {
   })
 })
 
-const totalTagihanPiutang = computed(() => piutangRows.value.reduce((s, r) => s + r.order.total_harga, 0))
-const totalMasukPiutang = computed(() => piutangRows.value.reduce((s, r) => s + (r.total_masuk ?? r.total_masuk_verified), 0))
-const totalSisaPiutang = computed(() => piutangRows.value.reduce((s, r) => s + r.sisa_tagihan, 0))
-const orderLunasCount = computed(() => piutangRows.value.filter((r) => r.sisa_tagihan <= 0).length)
+const totalTagihanPiutang = computed(() => filteredPiutangRows.value.reduce((s, r) => s + r.order.total_harga, 0))
+const totalMasukPiutang = computed(() => filteredPiutangRows.value.reduce((s, r) => s + (r.total_masuk ?? r.total_masuk_verified), 0))
+const totalSisaPiutang = computed(() => filteredPiutangRows.value.reduce((s, r) => s + r.sisa_tagihan, 0))
+const orderLunasCount = computed(() => filteredPiutangRows.value.filter((r) => r.sisa_tagihan <= 0).length)
+const filteredPendingVerifikasiCount = computed(() => filteredPiutangRows.value.filter((r) => r.has_pending).length)
 
 // Summary Metrics Bar
 const summaryMetrics = computed(() => [
   {
     label: 'Order Aktif',
-    value: piutangRows.value.filter((r) => r.order.status_order === 'PROSES').length,
+    value: filteredPiutangRows.value.filter((r) => r.order.status_order === 'PROSES').length,
     minWidth: 'min-w-[120px]',
   },
   {
@@ -800,16 +823,16 @@ const summaryMetrics = computed(() => [
   },
   {
     label: 'Perlu Verifikasi',
-    value: pendingVerifikasiCount.value > 0 ? `${pendingVerifikasiCount.value} Transaksi` : '0 Pending',
-    valueClass: pendingVerifikasiCount.value > 0 ? 'text-amber-600 font-extrabold' : 'text-slate-600',
-    sub: pendingVerifikasiCount.value > 0 ? 'Menunggu Approval Owner' : 'Semua Tervalidasi',
-    subClass: pendingVerifikasiCount.value > 0 ? 'text-amber-600' : 'text-slate-400',
-    subDot: pendingVerifikasiCount.value > 0 ? 'bg-amber-500' : 'bg-emerald-500',
+    value: filteredPendingVerifikasiCount.value > 0 ? `${filteredPendingVerifikasiCount.value} Order` : '0 Pending',
+    valueClass: filteredPendingVerifikasiCount.value > 0 ? 'text-amber-600 font-extrabold' : 'text-slate-600',
+    sub: filteredPendingVerifikasiCount.value > 0 ? 'Menunggu Approval Owner' : 'Semua Tervalidasi',
+    subClass: filteredPendingVerifikasiCount.value > 0 ? 'text-amber-600' : 'text-slate-400',
+    subDot: filteredPendingVerifikasiCount.value > 0 ? 'bg-amber-500' : 'bg-emerald-500',
     minWidth: 'min-w-[160px]',
   },
   {
     label: 'Order Lunas',
-    value: `${orderLunasCount.value} / ${piutangRows.value.length}`,
+    value: `${orderLunasCount.value} / ${filteredPiutangRows.value.length}`,
     valueClass: 'text-emerald-700',
     minWidth: 'min-w-[130px]',
   },
@@ -1049,7 +1072,7 @@ async function submitEditPayment() {
   }
 }
 
-async function executeDeletePayment() {
+const executeDeletePayment = async () => {
   if (!editPaymentForm.value.id_kas_masuk) return
 
   isSubmittingEditPayment.value = true

@@ -1152,6 +1152,16 @@ onMounted(async () => {
   }
   if (isEditMode.value) {
     await loadExistingOrder()
+  } else if (route.query.penerbit) {
+    const pubName = String(route.query.penerbit).trim()
+    form.value.nama_penerbit = pubName
+    const matched = [...customClients.value, ...clients.value].find(
+      (c) => c.nama_penerbit.trim().toLowerCase() === pubName.toLowerCase()
+    )
+    if (matched) {
+      if (matched.kontak && !form.value.kontak_penerbit) form.value.kontak_penerbit = matched.kontak
+      if (matched.alamat && !form.value.alamat_penerbit) form.value.alamat_penerbit = matched.alamat
+    }
   }
 })
 </script>

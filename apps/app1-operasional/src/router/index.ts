@@ -40,6 +40,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/InvoiceView.vue'),
   },
   {
+    path: '/klien',
+    name: 'ClientList',
+    component: () => import('../views/ClientListView.vue'),
+  },
+  {
     path: '/sync-log',
     name: 'SyncLog',
     component: () => import('../views/SyncLogView.vue'),

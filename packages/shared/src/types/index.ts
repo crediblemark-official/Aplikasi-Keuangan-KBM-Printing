@@ -158,4 +158,17 @@ export interface InvoiceData {
   no_rekening: string
 }
 
+// ---- Filter Tanggal & Periode ----
+
+export type DateFilterMode = 'ALL' | 'TODAY' | 'MONTH' | 'YEAR' | 'RANGE' | 'CUSTOM_DATE'
+
+export interface DateFilterValue {
+  mode: DateFilterMode
+  startDate?: string // 'YYYY-MM-DD'
+  endDate?: string   // 'YYYY-MM-DD'
+  month?: string     // 'YYYY-MM'
+  year?: string      // 'YYYY'
+  label?: string     // Human-readable summary (e.g. "Bulan Ini", "20 Sep 2026", "1-20 Sep 2026")
+}
+
 export * from './sync'

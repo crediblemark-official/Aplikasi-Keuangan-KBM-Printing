@@ -22,9 +22,10 @@
           <SearchInput v-model="search" placeholder="Cari penerbit, judul buku, SPK..." @input="debouncedSearch" />
         </div>
 
-        <!-- Horizontal Filter Tabs -->
-        <div class="px-[8px] sm:px-[15px] lg:px-[20px] py-1.5 border-b border-slate-200 bg-white">
+        <!-- Toolbar: Status Tabs & Date Filter Bar -->
+        <div class="px-[8px] sm:px-[15px] lg:px-[20px] py-2 border-b border-slate-200 bg-white flex flex-col md:flex-row md:items-center justify-between gap-2.5">
           <FilterTabs v-model="activeFilter" :tabs="filterTabs" />
+          <DateFilterBar v-model="dateFilter" />
         </div>
 
         <!-- Order Data Table -->
@@ -109,37 +110,71 @@
       </div>
     </ion-content>
 
-    <!-- FAB (Mobile only) -->
-    <ion-fab vertical="bottom" horizontal="end" slot="fixed" class="lg:hidden">
-      <ion-fab-button @click="router.push('/order/new')"
-        style="--background: #2563eb; --box-shadow: 0 10px 25px -5px rgba(37,99,235,0.4)">
-        <ion-icon :icon="addOutline"></ion-icon>
-      </ion-fab-button>
-    </ion-fab>
+    <!-- Bottom Navigation Bar (Mobile only) -->
+    <MobileBottomNav
+      :left-items="mobileLeftItems"
+      :center-item="mobileCenterItem"
+      :right-items="mobileRightItems"
+      :current-path="route.path"
+      @navigate="navigate"
+    />
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import {
-  IonPage, IonHeader, IonContent, IonFab, IonFabButton, IonIcon, useIonRouter,
+  IonPage, IonHeader, IonContent, useIonRouter,
 } from '@ionic/vue'
-import { addOutline } from 'ionicons/icons'
 import PageHeader from '@shared/components/PageHeader.vue'
 import FilterTabs from '@shared/components/FilterTabs.vue'
 import SearchInput from '@shared/components/SearchInput.vue'
 import { useOrderStore } from '../stores/orders'
+import { useSyncStore } from '@shared/stores/syncStore'
 import BaseButton from '@shared/components/BaseButton.vue'
 import StatusBadge from '@shared/components/StatusBadge.vue'
 import TableScrollWrapper from '@shared/components/TableScrollWrapper.vue'
 import TableStateRow from '@shared/components/TableStateRow.vue'
-import { formatRupiah, formatTanggal, formatKertasOrder } from '@shared/utils/formatters'
+import MobileBottomNav from '@shared/components/MobileBottomNav.vue'
+import DateFilterBar from '@shared/components/DateFilterBar.vue'
+import type { BottomNavItem } from '@shared/components/MobileBottomNav.vue'
+import { formatRupiah, formatTanggal, formatKertasOrder, isDateInFilterRange } from '@shared/utils/formatters'
+import type { DateFilterValue } from '@shared/types'
 
+const route = useRoute()
 const orderStore = useOrderStore()
+const syncStore = useSyncStore()
 const router = useIonRouter()
+
+const mobileLeftItems = computed<BottomNavItem[]>(() => [
+  { id: 'home', path: '/home', label: 'Beranda' },
+  { id: 'order-list', path: '/order/list', label: 'Pesanan', badge: orderStore.orders.length || undefined },
+])
+
+const mobileCenterItem: BottomNavItem = {
+  id: 'new-order',
+  path: '/order/new',
+  label: 'Order Baru',
+}
+
+const mobileRightItems = computed<BottomNavItem[]>(() => [
+  { id: 'klien', path: '/klien', label: 'Klien' },
+  {
+    id: 'sync-log',
+    path: '/sync-log',
+    label: 'Log Sync',
+    badge: (syncStore.pendingCount + syncStore.failedCount) > 0 ? (syncStore.pendingCount + syncStore.failedCount) : undefined,
+  },
+])
+
+function navigate(path: string) {
+  router.push(path)
+}
 
 const search = ref('')
 const activeFilter = ref('all')
+const dateFilter = ref<DateFilterValue>({ mode: 'ALL' })
 const updatingOrderId = ref<string | null>(null)
 let searchTimer: ReturnType<typeof setTimeout>
 
@@ -154,15 +189,20 @@ async function toggleOrderStatus(order: any) {
   }
 }
 
+const dateFilteredOrders = computed(() => {
+  if (dateFilter.value.mode === 'ALL') return orderStore.orders
+  return orderStore.orders.filter((o) => isDateInFilterRange(o.tanggal, dateFilter.value))
+})
+
 const filterTabs = computed(() => [
-  { value: 'all', label: 'Semua', count: orderStore.orders.length },
-  { value: 'PROSES', label: 'Proses', count: orderStore.orders.filter((o) => o.status_order === 'PROSES').length },
-  { value: 'SELESAI', label: 'Selesai', count: orderStore.orders.filter((o) => o.status_order === 'SELESAI').length },
-  { value: 'BATAL', label: 'Batal', count: orderStore.orders.filter((o) => o.status_order === 'BATAL').length },
+  { value: 'all', label: 'Semua', count: dateFilteredOrders.value.length },
+  { value: 'PROSES', label: 'Proses', count: dateFilteredOrders.value.filter((o) => o.status_order === 'PROSES').length },
+  { value: 'SELESAI', label: 'Selesai', count: dateFilteredOrders.value.filter((o) => o.status_order === 'SELESAI').length },
+  { value: 'BATAL', label: 'Batal', count: dateFilteredOrders.value.filter((o) => o.status_order === 'BATAL').length },
 ])
 
 const filteredOrders = computed(() => {
-  let result = orderStore.orders
+  let result = dateFilteredOrders.value
   if (activeFilter.value !== 'all') {
     result = result.filter((o) => o.status_order === activeFilter.value)
   }
@@ -186,5 +226,19 @@ function debouncedSearch() {
   // Pencarian dilakukan 100% lokal di memori browser via computed filteredOrders (Hemat kuota GAS)
 }
 
-onMounted(() => orderStore.fetchOrders())
+onMounted(() => {
+  if (route.query.q) {
+    search.value = String(route.query.q)
+  }
+  orderStore.fetchOrders()
+})
+
+watch(
+  () => route.query.q,
+  (newQ) => {
+    if (newQ !== undefined) {
+      search.value = String(newQ || '')
+    }
+  }
+)
 </script>
