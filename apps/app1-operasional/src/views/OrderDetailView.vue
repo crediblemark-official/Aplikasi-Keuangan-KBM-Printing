@@ -123,17 +123,9 @@
               </template>
             </SectionHeader>
 
-            <!-- Row 1 Specs (Line 1: lg:h-[48px]) -->
+            <!-- Spesifikasi Cetak Grid (Mobile: 2 cols x 3 rows pas; Desktop: 3 cols x 2 rows, lg:h-[48px]) -->
             <div class="grid grid-cols-2 sm:grid-cols-3 bg-slate-200 gap-px border-b border-slate-200">
-              <div v-for="spec in specList.slice(0, 3)" :key="spec.label" class="px-4 py-2 lg:h-[48px] bg-white flex flex-col justify-center">
-                <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider leading-none">{{ spec.label }}</p>
-                <p class="text-xs text-slate-800 font-bold mt-1 font-mono leading-tight truncate" :title="spec.value">{{ spec.value }}</p>
-              </div>
-            </div>
-
-            <!-- Row 2 Specs (Line 2: lg:h-[48px]) -->
-            <div class="grid grid-cols-2 sm:grid-cols-3 bg-slate-200 gap-px border-b border-slate-200">
-              <div v-for="spec in specList.slice(3, 6)" :key="spec.label" class="px-4 py-2 lg:h-[48px] bg-white flex flex-col justify-center">
+              <div v-for="spec in specList" :key="spec.label" class="px-4 py-2 lg:h-[48px] bg-white flex flex-col justify-center">
                 <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider leading-none">{{ spec.label }}</p>
                 <p class="text-xs text-slate-800 font-bold mt-1 font-mono leading-tight truncate" :title="spec.value">{{ spec.value }}</p>
               </div>
