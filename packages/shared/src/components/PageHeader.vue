@@ -7,21 +7,19 @@
           v-if="showBack"
           type="button"
           @click="onBack"
-          class="inline-flex items-center gap-1.5 h-8 px-2 sm:px-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 transition-all active:scale-95 cursor-pointer border border-slate-200 text-xs font-bold shrink-0"
-          :title="`Kembali ke ${backLabel || 'halaman sebelumnya'}`"
+          class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 flex items-center justify-center transition-all active:scale-95 cursor-pointer border border-slate-200 shrink-0"
+          :title="backLabel ? `Kembali ke ${backLabel}` : 'Kembali'"
+          aria-label="Kembali"
         >
-          <svg class="w-3.5 h-3.5 shrink-0 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg class="w-4 h-4 text-slate-700 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
           </svg>
-          <span class="truncate max-w-[120px] sm:max-w-none">{{ backLabel || 'Kembali' }}</span>
         </button>
         <!-- Mobile KBM brand logo when on root pages -->
         <div v-else-if="showLogo" class="lg:hidden flex-shrink-0 flex items-center">
           <KbmLogo size="sm" variant="icon" />
         </div>
       </slot>
-
-      <span v-if="showBack" class="hidden sm:inline-block h-4 w-px bg-slate-200 shrink-0"></span>
 
       <slot name="title">
         <div class="min-w-0">
