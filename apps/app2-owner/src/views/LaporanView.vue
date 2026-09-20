@@ -106,7 +106,7 @@
           <div class="flex items-center justify-between mb-4">
             <div>
               <h3 class="text-slate-900 font-bold text-sm sm:text-base tracking-tight">Distribusi Pemasukan per Sumber Kas</h3>
-              <p class="text-xs text-slate-500 font-medium">Proporsi penerimaan kasir tunai, transfer bank, dan QRIS</p>
+              <p class="text-xs text-slate-500 font-medium">Proporsi penerimaan Tunai, Bank, dan QRIS</p>
             </div>
             <span class="text-xs font-mono font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200/60">
               Total: {{ formatRupiah(totalMasuk) }}

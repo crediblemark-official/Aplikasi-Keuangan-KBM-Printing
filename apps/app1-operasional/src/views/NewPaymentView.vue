@@ -109,7 +109,7 @@
                 <ul class="list-disc list-inside space-y-1 text-slate-500 text-xs">
                   <li>Pilih jenis pembayaran: <strong class="text-slate-700">Uang Muka (DP)</strong> atau <strong class="text-slate-700">Pelunasan</strong>.</li>
                   <li>Gunakan pilihan cepat nominal (50%, 100%, sisa tagihan) untuk mengisi cepat.</li>
-                  <li>Pilih metode pembayaran (Tunai, transfer BCA, atau scan QRIS).</li>
+                  <li>Pilih metode pembayaran (Tunai, Bank, atau QRIS).</li>
                   <li>Unggah foto struk atau bukti transfer jika ada untuk verifikasi.</li>
                 </ul>
               </div>
@@ -224,7 +224,7 @@
                     <label class="text-xs font-semibold text-slate-600">Keterangan / Catatan Pembayaran (opsional)</label>
                     <input
                       v-model="form.keterangan"
-                      placeholder="Contoh: Transfer via m-BCA a.n. Penerbit..."
+                      placeholder="Contoh: Transfer Bank a.n. Penerbit..."
                       class="form-input text-xs py-2 rounded-lg border-slate-200 focus:border-red-500 focus:ring-red-100"
                     />
                   </div>
@@ -358,8 +358,8 @@ const jenisPembayaranOptions = [
 
 const metodeOptions = [
   { value: 'KASIR_TUNAI', label: 'Tunai', desc: 'Pembayaran Tunai' },
-  { value: 'BANK_BCA', label: 'BCA', desc: 'Transfer Bank' },
-  { value: 'QRIS', label: 'QRIS', desc: 'Scan Statis/Dinamis' },
+  { value: 'BANK_BCA', label: 'Bank', desc: 'Transfer Bank' },
+  { value: 'QRIS', label: 'QRIS', desc: 'Scan Statis / Dinamis' },
 ]
 
 // Sum of all verified or recorded payments for this order

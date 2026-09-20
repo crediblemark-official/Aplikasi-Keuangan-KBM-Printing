@@ -70,11 +70,14 @@ export function getCurrentPeriode(): string {
  */
 export function formatMetode(metode: string): string {
   const map: Record<string, string> = {
-    KASIR_TUNAI: '💵 Kasir Tunai',
-    BANK_BCA: '🏦 Transfer BCA',
+    KASIR_TUNAI: '💵 Tunai',
+    TUNAI: '💵 Tunai',
+    BANK_BCA: '🏦 Bank',
+    BANK: '🏦 Bank',
+    TRANSFER: '🏦 Bank',
     QRIS: '📱 QRIS',
   }
-  return map[metode] ?? metode
+  return map[metode] ?? (metode === 'BANK_BCA' ? '🏦 Bank' : metode)
 }
 
 /**

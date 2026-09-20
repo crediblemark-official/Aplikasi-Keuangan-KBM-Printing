@@ -175,8 +175,8 @@ const summaryMetrics = computed<MetricItem[]>(() => [
 ])
 
 const kasPerSumber = computed(() => [
-  { label: 'Kasir Tunai', dotColor: 'bg-emerald-500', nilai: summary.value.kas_per_sumber.kasir_tunai },
-  { label: 'Bank BCA', dotColor: 'bg-blue-500', nilai: summary.value.kas_per_sumber.bank_bca },
+  { label: 'Tunai', dotColor: 'bg-emerald-500', nilai: summary.value.kas_per_sumber.kasir_tunai },
+  { label: 'Bank', dotColor: 'bg-blue-500', nilai: summary.value.kas_per_sumber.bank_bca },
   { label: 'QRIS', dotColor: 'bg-purple-500', nilai: summary.value.kas_per_sumber.qris },
 ])
 
@@ -273,7 +273,7 @@ function renderCharts() {
     donutInstance = new Chart(donutCanvas.value, {
       type: 'doughnut',
       data: {
-        labels: ['Kasir Tunai', 'BCA', 'QRIS'],
+        labels: ['Tunai', 'Bank', 'QRIS'],
         datasets: [{
           data: [
             summary.value.kas_per_sumber.kasir_tunai,

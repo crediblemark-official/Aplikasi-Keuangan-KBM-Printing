@@ -277,8 +277,8 @@ const summaryMetrics = computed(() => [
 
 const sumberList = ['KASIR_TUNAI', 'BANK_BCA', 'QRIS']
 const sumberConfig: Record<string, { label: string; dotColor: string }> = {
-  KASIR_TUNAI: { label: 'Kasir Tunai', dotColor: 'bg-emerald-500' },
-  BANK_BCA: { label: 'Bank BCA', dotColor: 'bg-blue-500' },
+  KASIR_TUNAI: { label: 'Tunai', dotColor: 'bg-emerald-500' },
+  BANK_BCA: { label: 'Bank', dotColor: 'bg-blue-500' },
   QRIS: { label: 'QRIS', dotColor: 'bg-purple-500' },
 }
 
