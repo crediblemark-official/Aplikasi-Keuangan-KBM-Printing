@@ -115,6 +115,21 @@ export function formatKertas(kertas: string): string {
 }
 
 /**
+ * Format kombinasi kertas (mendukung 2 jenis kertas jika BW & Warna berbeda)
+ */
+export function formatKertasOrder(order: { kertas: string; kertas_bw?: string; kertas_fc?: string; cetak_bw?: number; cetak_fc?: number }): string {
+  const bwKertas = order.kertas_bw || order.kertas
+  const fcKertas = order.kertas_fc || order.kertas
+  const hasBw = (order.cetak_bw || 0) > 0
+  const hasFc = (order.cetak_fc || 0) > 0
+
+  if (hasBw && hasFc && bwKertas !== fcKertas) {
+    return `${formatKertas(bwKertas)} (BW) + ${formatKertas(fcKertas)} (Warna)`
+  }
+  return formatKertas(bwKertas || order.kertas)
+}
+
+/**
  * Format finishing array untuk display
  */
 export function formatFinishing(finishing: string[]): string {

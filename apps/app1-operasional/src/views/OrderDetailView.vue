@@ -283,7 +283,7 @@ import StatusBadge from '@shared/components/StatusBadge.vue'
 import BaseButton from '@shared/components/BaseButton.vue'
 import { api } from '@shared/api/gasClient'
 import type { KasMasuk } from '@shared/types'
-import { formatRupiah, formatTanggal, formatMetode, formatFinishing, formatKertas } from '@shared/utils/formatters'
+import { formatRupiah, formatTanggal, formatMetode, formatFinishing, formatKertas, formatKertasOrder } from '@shared/utils/formatters'
 
 const route = useRoute()
 const router = useIonRouter()
@@ -327,14 +327,21 @@ const sisaTagihan = computed(() =>
 
 const specList = computed(() => {
   if (!order.value) return []
-  return [
+  const list = [
     { label: 'Jumlah Oplah', value: `${order.value.jml_pcs} pcs` },
     { label: 'Ukuran Buku', value: order.value.ukuran_custom || order.value.ukuran },
-    { label: 'Jenis Kertas', value: formatKertas(order.value.kertas) },
+    { label: 'Jenis Kertas', value: formatKertasOrder(order.value) },
     { label: 'Halaman BW', value: `${order.value.cetak_bw} hal` },
     { label: 'Halaman FC', value: `${order.value.cetak_fc} hal` },
     { label: 'Finishing Jilid', value: formatFinishing(order.value.finishing) || '-' },
   ]
+  if (order.value.packing_dus_tipe || (order.value.biaya_packing && order.value.biaya_packing > 0)) {
+    const boxName = order.value.packing_dus_tipe === 'DUS_BESAR' ? 'Dus Besar' : 'Dus Kecil'
+    const qty = order.value.packing_dus_qty || 1
+    const cost = order.value.biaya_packing ? ` (${formatRupiah(order.value.biaya_packing)})` : ''
+    list.push({ label: 'Packing Dus', value: `${qty}x ${boxName}${cost}` })
+  }
+  return list
 })
 
 function kirimWA() {

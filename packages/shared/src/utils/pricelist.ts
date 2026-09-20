@@ -9,9 +9,13 @@ export interface PriceCalcInput {
   jml_pcs: number
   ukuran: UkuranBuku
   kertas: JenisKertas
+  kertas_bw?: JenisKertas
+  kertas_fc?: JenisKertas
   cetak_bw: number
   cetak_fc: number
   finishing: JenisFinishing[]
+  packing_dus_tipe?: 'DUS_KECIL' | 'DUS_BESAR' | null
+  packing_dus_qty?: number
 }
 
 export interface PriceCalcResult {
@@ -20,6 +24,7 @@ export interface PriceCalcResult {
   biaya_cetak_fc_per_pcs: number
   biaya_finishing_per_pcs: number
   diskon_finishing_persen: number
+  biaya_packing_total: number
   total_harga: number
 }
 
@@ -156,6 +161,7 @@ export function calculateOrderPriceDetailed(input: PriceCalcInput): PriceCalcRes
       biaya_cetak_fc_per_pcs: 0,
       biaya_finishing_per_pcs: 0,
       diskon_finishing_persen: 0,
+      biaya_packing_total: 0,
       total_harga: 0,
     }
   }
@@ -164,14 +170,18 @@ export function calculateOrderPriceDetailed(input: PriceCalcInput): PriceCalcRes
   const fcPages = Math.max(0, cetak_fc || 0)
   const totalHalaman = bwPages + fcPages
 
+  // Dukungan 2 jenis kertas dalam 1 buku: kertas BW & kertas Warna (FC)
+  const paperBW = input.kertas_bw || input.kertas
+  const paperFC = input.kertas_fc || input.kertas
+
   // Biaya cetak per halaman per pcs
-  const tarifBW = getTarifBWPerHalaman(ukuran, kertas)
-  const tarifFC = getTarifFCPerHalaman(ukuran, kertas)
+  const tarifBW = getTarifBWPerHalaman(ukuran, paperBW)
+  const tarifFC = getTarifFCPerHalaman(ukuran, paperFC)
 
   const biaya_cetak_bw_per_pcs = bwPages * tarifBW
   const biaya_cetak_fc_per_pcs = fcPages * tarifFC
 
-  // Biaya finishing per pcs
+  // Biaya finishing per pcs (tanpa packing dus)
   let baseFinishingPerPcs = 0
 
   if (finishing.includes('HARD_COVER')) {
@@ -189,20 +199,30 @@ export function calculateOrderPriceDetailed(input: PriceCalcInput): PriceCalcRes
     }
   }
 
-  // Tambahan packing dus (Berdasarkan Book2: Dus Kecil Rp 5.000, Dus Besar Rp 10.000)
-  if (finishing.includes('PACKING_DUS_BESAR')) {
-    baseFinishingPerPcs += 100 // Rp 10.000 per dus (~100 buku)
-  } else if (finishing.includes('PACKING_DUS') || finishing.includes('PACKING_DUS_KECIL')) {
-    baseFinishingPerPcs += 50  // Rp 5.000 per dus (~100 buku)
-  }
-
-  // Diskon finishing berdasarkan oplah
+  // Diskon finishing buku berdasarkan oplah (syarat: cover offset + min 200 hal)
   const diskonPersen = getDiskonFinishing(jml_pcs, totalHalaman)
   const biaya_finishing_per_pcs = Math.round(baseFinishingPerPcs * (1 - diskonPersen))
 
+  // Biaya packing dus: dihitung berdasarkan kuantitas dus yang dibutuhkan (misal: 20 dus)
+  let biaya_packing_total = 0
+  const qtyDus = Math.max(0, input.packing_dus_qty || 0)
+
+  if (input.packing_dus_tipe === 'DUS_BESAR') {
+    biaya_packing_total = qtyDus * 10000
+  } else if (input.packing_dus_tipe === 'DUS_KECIL') {
+    biaya_packing_total = qtyDus * 5000
+  } else if (finishing.includes('PACKING_DUS_BESAR')) {
+    // Estimasi otomatis jika dipilih via checklist tanpa qty
+    const autoQty = qtyDus > 0 ? qtyDus : Math.max(1, Math.ceil(jml_pcs / 100))
+    biaya_packing_total = autoQty * 10000
+  } else if (finishing.includes('PACKING_DUS') || finishing.includes('PACKING_DUS_KECIL')) {
+    const autoQty = qtyDus > 0 ? qtyDus : Math.max(1, Math.ceil(jml_pcs / 100))
+    biaya_packing_total = autoQty * 5000
+  }
+
   // Total per buku / pcs
   const harga_per_pcs = biaya_cetak_bw_per_pcs + biaya_cetak_fc_per_pcs + biaya_finishing_per_pcs
-  const total_harga = Math.round(harga_per_pcs * jml_pcs)
+  const total_harga = Math.round(harga_per_pcs * jml_pcs) + biaya_packing_total
 
   return {
     harga_per_pcs,
@@ -210,6 +230,7 @@ export function calculateOrderPriceDetailed(input: PriceCalcInput): PriceCalcRes
     biaya_cetak_fc_per_pcs,
     biaya_finishing_per_pcs,
     diskon_finishing_persen: Math.round(diskonPersen * 100),
+    biaya_packing_total,
     total_harga,
   }
 }

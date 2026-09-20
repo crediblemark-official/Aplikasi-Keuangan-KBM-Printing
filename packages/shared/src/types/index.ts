@@ -52,9 +52,14 @@ export interface Order {
   ukuran: UkuranBuku
   ukuran_custom?: string    // jika CUSTOM
   kertas: JenisKertas
+  kertas_bw?: JenisKertas   // Kertas khusus halaman BW (jika berbeda)
+  kertas_fc?: JenisKertas   // Kertas khusus halaman FC (jika berbeda)
   cetak_bw: number          // jumlah halaman BW
   cetak_fc: number          // jumlah halaman FC
   finishing: JenisFinishing[]
+  packing_dus_tipe?: 'DUS_KECIL' | 'DUS_BESAR' | null
+  packing_dus_qty?: number
+  biaya_packing?: number
   total_harga: number
   status_order: StatusOrder
   catatan?: string

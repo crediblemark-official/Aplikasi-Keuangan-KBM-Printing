@@ -79,7 +79,8 @@
                   <div class="flex items-center gap-1 text-[11px] text-slate-600">
                     <span class="px-1.5 py-0.5 rounded bg-slate-100 font-semibold text-slate-700">{{ order.jml_pcs }} pcs</span>
                     <span class="px-1.5 py-0.5 rounded bg-slate-100">{{ order.ukuran }}</span>
-                    <span v-if="order.kertas" class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">{{ formatKertas(order.kertas) }}</span>
+                    <span v-if="order.kertas" class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">{{ formatKertasOrder(order) }}</span>
+                    <span v-if="order.packing_dus_tipe" class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 font-semibold">{{ order.packing_dus_qty || 1 }}x Dus</span>
                   </div>
                 </td>
                 <td class="text-right font-extrabold font-mono text-xs text-red-600 whitespace-nowrap">
@@ -143,7 +144,7 @@ import BaseButton from '@shared/components/BaseButton.vue'
 import StatusBadge from '@shared/components/StatusBadge.vue'
 import TableScrollWrapper from '@shared/components/TableScrollWrapper.vue'
 import TableStateRow from '@shared/components/TableStateRow.vue'
-import { formatRupiah, formatTanggal } from '@shared/utils/formatters'
+import { formatRupiah, formatTanggal, formatKertasOrder } from '@shared/utils/formatters'
 
 const orderStore = useOrderStore()
 const router = useIonRouter()

@@ -550,7 +550,7 @@ import { useOrderStore } from '../stores/orders'
 import { useCompanyStore, type CompanyProfile } from '@shared/stores/companyStore'
 import { api } from '@shared/api/gasClient'
 import type { KasMasuk } from '@shared/types'
-import { formatRupiah, formatTanggal, formatFinishing, formatKertas } from '@shared/utils/formatters'
+import { formatRupiah, formatTanggal, formatFinishing, formatKertas, formatKertasOrder } from '@shared/utils/formatters'
 import { calculateOrderPriceDetailed } from '@shared/utils/pricelist'
 
 const route = useRoute()
@@ -609,7 +609,7 @@ const sisaTagihan = computed(() =>
   Math.max(0, (order.value?.total_harga ?? 0) - totalMasuk.value),
 )
 
-// Dynamic Table Breakdown (Cetak Isi + Finishing)
+// Dynamic Table Breakdown (Cetak Isi + Finishing + Packing)
 const invoiceItems = computed(() => {
   if (!order.value) return []
   const o = order.value
@@ -617,21 +617,34 @@ const invoiceItems = computed(() => {
     jml_pcs: o.jml_pcs || 1,
     ukuran: o.ukuran,
     kertas: o.kertas,
+    kertas_bw: o.kertas_bw,
+    kertas_fc: o.kertas_fc,
     cetak_bw: o.cetak_bw || 0,
     cetak_fc: o.cetak_fc || 0,
     finishing: o.finishing || [],
+    packing_dus_tipe: o.packing_dus_tipe,
+    packing_dus_qty: o.packing_dus_qty,
   })
 
-  // Check if total matches calculated standard pricelist
+  const paperLabel = formatKertasOrder(o)
   const isPricelist = Math.abs(detailed.total_harga - o.total_harga) <= 50
+  const items: Array<{
+    sl: number
+    title: string
+    desc: string
+    qty: number
+    rate: number
+    amount: number
+  }> = []
+
   if (isPricelist && detailed.biaya_finishing_per_pcs > 0 && (detailed.biaya_cetak_bw_per_pcs + detailed.biaya_cetak_fc_per_pcs) > 0) {
     const cetakUnit = detailed.biaya_cetak_bw_per_pcs + detailed.biaya_cetak_fc_per_pcs
     const finishingUnit = detailed.biaya_finishing_per_pcs
-    return [
+    items.push(
       {
         sl: 1,
         title: `Cetak Isi Buku: "${o.judul_buku || o.judul_penulis}"`,
-        desc: `Ukuran ${o.ukuran_custom || o.ukuran} • Kertas ${formatKertas(o.kertas)} • ${o.cetak_bw || 0} hal BW + ${o.cetak_fc || 0} hal FC`,
+        desc: `Ukuran ${o.ukuran_custom || o.ukuran} • Kertas ${paperLabel} • ${o.cetak_bw || 0} hal BW + ${o.cetak_fc || 0} hal FC`,
         qty: o.jml_pcs,
         rate: cetakUnit,
         amount: cetakUnit * o.jml_pcs,
@@ -644,21 +657,38 @@ const invoiceItems = computed(() => {
         rate: finishingUnit,
         amount: finishingUnit * o.jml_pcs,
       },
-    ]
-  }
-
-  // Single comprehensive line item
-  const unitRate = Math.round(o.total_harga / (o.jml_pcs || 1))
-  return [
-    {
+    )
+  } else {
+    // Single comprehensive line item for production
+    const boxCost = o.biaya_packing || (detailed.biaya_packing_total || 0)
+    const productionTotal = Math.max(0, o.total_harga - boxCost)
+    const unitRate = Math.round(productionTotal / (o.jml_pcs || 1))
+    items.push({
       sl: 1,
       title: `Produksi Cetak Buku: "${o.judul_buku || o.judul_penulis}"`,
-      desc: `Ukuran ${o.ukuran_custom || o.ukuran} • Kertas ${formatKertas(o.kertas)} • ${o.cetak_bw || 0} hal BW + ${o.cetak_fc || 0} hal FC • Finishing: ${formatFinishing(o.finishing)}`,
+      desc: `Ukuran ${o.ukuran_custom || o.ukuran} • Kertas ${paperLabel} • ${o.cetak_bw || 0} hal BW + ${o.cetak_fc || 0} hal FC • Finishing: ${formatFinishing(o.finishing)}`,
       qty: o.jml_pcs,
       rate: unitRate,
-      amount: o.total_harga,
-    },
-  ]
+      amount: productionTotal,
+    })
+  }
+
+  // If there is box packing, add row item
+  if (o.packing_dus_tipe && o.packing_dus_qty && o.packing_dus_qty > 0) {
+    const boxName = o.packing_dus_tipe === 'DUS_BESAR' ? 'Dus Besar' : 'Dus Kecil'
+    const boxRate = o.packing_dus_tipe === 'DUS_BESAR' ? 10000 : 5000
+    const boxAmount = o.biaya_packing || (o.packing_dus_qty * boxRate)
+    items.push({
+      sl: items.length + 1,
+      title: `Packing Pengiriman: ${boxName}`,
+      desc: `Kardus packing standar koli ekspedisi KBM Printing (${o.packing_dus_qty} dus)`,
+      qty: o.packing_dus_qty,
+      rate: boxRate,
+      amount: boxAmount,
+    })
+  }
+
+  return items
 })
 
 const emptyRowCount = computed(() => Math.max(1, 5 - invoiceItems.value.length))
@@ -684,13 +714,20 @@ async function sendWhatsApp() {
   isSendingWA.value = true
 
   try {
+    const o = order.value
+    const paperStr = formatKertasOrder(o)
+    const packingStr = (o.packing_dus_tipe && o.packing_dus_qty)
+      ? `\n📦 *Packing:* ${o.packing_dus_qty}x ${o.packing_dus_tipe === 'DUS_BESAR' ? 'Dus Besar' : 'Dus Kecil'}`
+      : ''
     const message = encodeURIComponent(
       `Halo! Berikut invoice untuk pesanan Anda:\n\n` +
       `📋 *${nomorInvoice.value}*\n` +
-      `🏢 ${order.value.nama_penerbit}\n` +
-      `📚 ${order.value.judul_penulis}\n` +
-      `💰 Total: ${formatRupiah(order.value.total_harga)}\n` +
-      `💳 Sisa: ${formatRupiah(sisaTagihan.value)}\n\n` +
+      `🏢 ${o.nama_penerbit}\n` +
+      `📚 ${o.judul_penulis}\n` +
+      `📄 Kertas: ${paperStr}` +
+      packingStr + `\n` +
+      `💰 *Total: ${formatRupiah(o.total_harga)}*\n` +
+      `💳 Sisa Tagihan: ${formatRupiah(sisaTagihan.value)}\n\n` +
       `Terima kasih telah mempercayakan percetakan kepada ${company.value.nama} 🙏`,
     )
     window.open(`https://wa.me/?text=${message}`, '_blank')

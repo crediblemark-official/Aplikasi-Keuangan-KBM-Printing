@@ -173,13 +173,26 @@
                   </div>
                 </div>
 
-                <!-- Kertas -->
+                <!-- Jenis Kertas -->
                 <div>
-                  <div class="flex items-center justify-between mb-1.5">
-                    <label class="form-label mb-0">Jenis Kertas Isi *</label>
-                    <span class="text-[10px] text-slate-400 font-normal">Pricelist KBM</span>
+                  <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                      <label class="form-label mb-0">Jenis Kertas</label>
+                      <span class="text-[10px] text-slate-400 font-normal">Pricelist KBM</span>
+                    </div>
+                    <!-- Toggle 2 Jenis Kertas jika ada BW & FC -->
+                    <button
+                      type="button"
+                      @click="toggleKertasDual"
+                      class="text-[11px] font-semibold px-2 py-0.5 rounded-full border transition-all cursor-pointer flex items-center gap-1"
+                      :class="!form.is_kertas_sama ? 'bg-amber-50 text-amber-800 border-amber-300 font-bold' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'"
+                    >
+                      <span>{{ form.is_kertas_sama ? '+ 2 Jenis Kertas (Beda BW/Warna)' : '✓ 2 Jenis Kertas Aktif' }}</span>
+                    </button>
                   </div>
-                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+
+                  <!-- Mode 1: Kertas Sama untuk Seluruh Buku -->
+                  <div v-if="form.is_kertas_sama" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <div
                       v-for="k in kertasOptions"
                       :key="k.value"
@@ -194,6 +207,57 @@
                       <div class="min-w-0">
                         <p class="text-slate-900 text-xs font-bold truncate">{{ k.label }}</p>
                         <p class="text-slate-500 text-[10px] truncate">{{ k.sub }}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Mode 2: Pemisahan Kertas BW & Kertas Warna (FC) -->
+                  <div v-else class="space-y-3 p-3 rounded-xl bg-amber-50/60 border border-amber-200">
+                    <div>
+                      <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                          <span class="w-2 h-2 rounded-full bg-slate-900"></span>
+                          Kertas Isi BW (Halaman Teks Hitam Putih)
+                        </span>
+                        <span class="text-[10px] text-slate-600 font-mono font-bold bg-white px-1.5 py-0.5 rounded border border-amber-200">
+                          Tarif: Rp {{ tarifBW }}/hal
+                        </span>
+                      </div>
+                      <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                        <div
+                          v-for="k in kertasOptions"
+                          :key="'bw-' + k.value"
+                          @click="setKertasBW(k.value as JenisKertas)"
+                          class="option-card cursor-pointer p-2 text-xs"
+                          :class="{ selected: form.kertas_bw === k.value }"
+                        >
+                          <p class="font-bold truncate text-xs">{{ k.label }}</p>
+                          <p class="text-[9px] text-slate-500 truncate">{{ k.sub }}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-amber-200/60">
+                      <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                          <span class="w-2 h-2 rounded-full bg-red-600"></span>
+                          Kertas Isi Warna / FC (Halaman Foto / Full Color)
+                        </span>
+                        <span class="text-[10px] text-slate-600 font-mono font-bold bg-white px-1.5 py-0.5 rounded border border-amber-200">
+                          Tarif: Rp {{ tarifFC }}/hal
+                        </span>
+                      </div>
+                      <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                        <div
+                          v-for="k in kertasOptions"
+                          :key="'fc-' + k.value"
+                          @click="setKertasFC(k.value as JenisKertas)"
+                          class="option-card cursor-pointer p-2 text-xs"
+                          :class="{ selected: form.kertas_fc === k.value }"
+                        >
+                          <p class="font-bold truncate text-xs">{{ k.label }}</p>
+                          <p class="text-[9px] text-slate-500 truncate">{{ k.sub }}</p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -246,11 +310,11 @@
                   </div>
                 </div>
 
-                <!-- Finishing -->
+                <!-- Finishing Buku -->
                 <div>
                   <div class="flex items-center justify-between mb-1.5">
-                    <label class="form-label mb-0">Finishing</label>
-                    <span class="text-[10px] text-slate-400 font-normal">Pilih opsi pengerjaan</span>
+                    <label class="form-label mb-0">Finishing Buku</label>
+                    <span class="text-[10px] text-slate-400 font-normal">Pilih opsi pengerjaan cover & jilid</span>
                   </div>
                   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                     <div
@@ -269,6 +333,71 @@
                         <p class="text-slate-500 text-[10px] truncate">{{ f.sub }}</p>
                       </div>
                     </div>
+                  </div>
+                </div>
+
+                <!-- Packing Kardus / Dus Pengiriman -->
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2.5">
+                  <div class="flex items-center justify-between">
+                    <label class="form-label mb-0 flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                      <span>📦</span>
+                      <span>Packing Kardus / Dus Pengiriman</span>
+                    </label>
+                    <span v-if="form.packing_dus_qty > 0 && form.packing_dus_tipe" class="text-[10px] font-bold text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded font-mono">
+                      + {{ formatRupiah(priceBreakdown.biaya_packing_total) }}
+                    </span>
+                  </div>
+
+                  <!-- Tipe Dus Options -->
+                  <div class="grid grid-cols-3 gap-2 text-xs">
+                    <button
+                      type="button"
+                      @click="setPackingTipe(null)"
+                      class="px-2.5 py-2 rounded-lg border text-left transition-all cursor-pointer"
+                      :class="!form.packing_dus_tipe ? 'border-red-500 bg-white ring-1 ring-red-500 font-bold text-red-700' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100'"
+                    >
+                      <p class="text-xs">Tanpa Dus</p>
+                      <p class="text-[9px] text-slate-400">Plastik / Standar</p>
+                    </button>
+                    <button
+                      type="button"
+                      @click="setPackingTipe('DUS_KECIL')"
+                      class="px-2.5 py-2 rounded-lg border text-left transition-all cursor-pointer"
+                      :class="form.packing_dus_tipe === 'DUS_KECIL' ? 'border-red-500 bg-white ring-1 ring-red-500 font-bold text-red-700' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100'"
+                    >
+                      <p class="text-xs">Dus Kecil</p>
+                      <p class="text-[9px] text-slate-500">Rp 5.000 / dus</p>
+                    </button>
+                    <button
+                      type="button"
+                      @click="setPackingTipe('DUS_BESAR')"
+                      class="px-2.5 py-2 rounded-lg border text-left transition-all cursor-pointer"
+                      :class="form.packing_dus_tipe === 'DUS_BESAR' ? 'border-red-500 bg-white ring-1 ring-red-500 font-bold text-red-700' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100'"
+                    >
+                      <p class="text-xs">Dus Besar</p>
+                      <p class="text-[9px] text-slate-500">Rp 10.000 / dus</p>
+                    </button>
+                  </div>
+
+                  <!-- Input Kuantitas Dus -->
+                  <div v-if="form.packing_dus_tipe" class="flex items-center gap-3 pt-2 border-t border-slate-200/60">
+                    <label class="text-xs font-semibold text-slate-700 shrink-0">Kuantitas Dus Dibutuhkan:</label>
+                    <div class="flex rounded-lg border border-slate-300 overflow-hidden bg-white max-w-[130px] focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500">
+                      <input
+                        v-model.number="form.packing_dus_qty"
+                        type="number"
+                        min="1"
+                        placeholder="Contoh: 20"
+                        class="w-full px-2.5 py-1 text-xs font-mono font-bold text-slate-800 outline-none border-0"
+                        @input="recalculatePriceAuto"
+                      />
+                      <span class="inline-flex items-center px-2 bg-slate-100 text-[10px] font-bold text-slate-500 border-l border-slate-200">
+                        dus
+                      </span>
+                    </div>
+                    <span class="text-xs text-slate-600 font-mono font-bold">
+                      = {{ formatRupiah(priceBreakdown.biaya_packing_total) }}
+                    </span>
                   </div>
                 </div>
 
@@ -684,15 +813,13 @@ const kertasOptions = [
   { value: 'LAIN_LAIN', label: 'Lain-lain', sub: 'Khusus' },
 ]
 
-// Finishing Options based on PDF Pricelist
+// Finishing Options based on PDF Pricelist (Opsi pengerjaan buku)
 const finishingOptions = [
   { value: 'SOFT_COVER', label: 'Soft Cover', sub: 'Cover + Lam + Binding + Shrink' },
   { value: 'HARD_COVER', label: 'Hard Cover', sub: 'Cover + Lam + Binding + Shrink + Pita' },
   { value: 'BINDING_POTONG', label: 'Binding + Potong', sub: 'Jilid lem & potong rapi' },
-  { value: 'LAMINASI_DOFF', label: 'Laminasi Doff', sub: 'Doff doff lembut' },
+  { value: 'LAMINASI_DOFF', label: 'Laminasi Doff', sub: 'Doff lembut' },
   { value: 'LAMINASI_GLOSSY', label: 'Laminasi Glossy', sub: 'Glossy kilap' },
-  { value: 'PACKING_DUS_KECIL', label: 'Dus Kecil', sub: 'Kardus kecil (Rp 5.000)' },
-  { value: 'PACKING_DUS_BESAR', label: 'Dus Besar', sub: 'Kardus besar (Rp 10.000)' },
   { value: 'SHRINK_WRAP', label: 'Shrink Wrap', sub: 'Plastik segel' },
 ]
 
@@ -707,6 +834,11 @@ const form = ref({
   ukuran: 'A5' as UkuranBuku,
   ukuran_custom: '',
   kertas: 'BP_57' as JenisKertas,
+  kertas_bw: 'BP_57' as JenisKertas,
+  kertas_fc: 'HVS_80' as JenisKertas,
+  is_kertas_sama: true,
+  packing_dus_tipe: null as 'DUS_KECIL' | 'DUS_BESAR' | null,
+  packing_dus_qty: 0,
   cetak_bw: 150,
   cetak_fc: 0,
   finishing: ['SOFT_COVER'] as JenisFinishing[],
@@ -720,14 +852,25 @@ const priceBreakdown = computed(() => {
     jml_pcs: form.value.jml_pcs || 0,
     ukuran: form.value.ukuran,
     kertas: form.value.kertas,
+    kertas_bw: form.value.is_kertas_sama ? form.value.kertas : form.value.kertas_bw,
+    kertas_fc: form.value.is_kertas_sama ? form.value.kertas : form.value.kertas_fc,
     cetak_bw: form.value.cetak_bw || 0,
     cetak_fc: form.value.cetak_fc || 0,
     finishing: form.value.finishing,
+    packing_dus_tipe: form.value.packing_dus_tipe,
+    packing_dus_qty: form.value.packing_dus_qty,
   })
 })
 
-const tarifBW = computed(() => getTarifBWPerHalaman(form.value.ukuran, form.value.kertas))
-const tarifFC = computed(() => getTarifFCPerHalaman(form.value.ukuran, form.value.kertas))
+const tarifBW = computed(() => {
+  const k = form.value.is_kertas_sama ? form.value.kertas : (form.value.kertas_bw || form.value.kertas)
+  return getTarifBWPerHalaman(form.value.ukuran, k)
+})
+
+const tarifFC = computed(() => {
+  const k = form.value.is_kertas_sama ? form.value.kertas : (form.value.kertas_fc || form.value.kertas)
+  return getTarifFCPerHalaman(form.value.ukuran, k)
+})
 
 const isFormValid = computed(() =>
   String(form.value.nama_penerbit || '').trim() !== '' &&
@@ -746,6 +889,36 @@ function setUkuran(u: UkuranBuku) {
 
 function setKertas(k: JenisKertas) {
   form.value.kertas = k
+  form.value.kertas_bw = k
+  recalculatePriceAuto()
+}
+
+function toggleKertasDual() {
+  form.value.is_kertas_sama = !form.value.is_kertas_sama
+  if (!form.value.is_kertas_sama) {
+    form.value.kertas_bw = form.value.kertas
+    if (!form.value.kertas_fc) form.value.kertas_fc = 'HVS_80'
+  }
+  recalculatePriceAuto()
+}
+
+function setKertasBW(k: JenisKertas) {
+  form.value.kertas_bw = k
+  recalculatePriceAuto()
+}
+
+function setKertasFC(k: JenisKertas) {
+  form.value.kertas_fc = k
+  recalculatePriceAuto()
+}
+
+function setPackingTipe(tipe: 'DUS_KECIL' | 'DUS_BESAR' | null) {
+  form.value.packing_dus_tipe = tipe
+  if (tipe && (!form.value.packing_dus_qty || form.value.packing_dus_qty <= 0)) {
+    form.value.packing_dus_qty = Math.max(1, Math.ceil((form.value.jml_pcs || 100) / 100))
+  } else if (!tipe) {
+    form.value.packing_dus_qty = 0
+  }
   recalculatePriceAuto()
 }
 
@@ -782,6 +955,11 @@ function resetForm() {
     ukuran: 'A5',
     ukuran_custom: '',
     kertas: 'BP_57',
+    kertas_bw: 'BP_57',
+    kertas_fc: 'HVS_80',
+    is_kertas_sama: true,
+    packing_dus_tipe: null,
+    packing_dus_qty: 0,
     cetak_bw: 150,
     cetak_fc: 0,
     finishing: ['SOFT_COVER'],
@@ -807,7 +985,12 @@ async function submitOrder() {
     jml_pcs: Number(form.value.jml_pcs) || 1,
     ukuran: form.value.ukuran,
     ukuran_custom: form.value.ukuran_custom ? String(form.value.ukuran_custom).trim() : '',
-    kertas: form.value.kertas,
+    kertas: form.value.kertas_bw || form.value.kertas,
+    kertas_bw: form.value.is_kertas_sama ? (form.value.kertas_bw || form.value.kertas) : form.value.kertas_bw,
+    kertas_fc: form.value.is_kertas_sama ? (form.value.kertas_bw || form.value.kertas) : form.value.kertas_fc,
+    packing_dus_tipe: form.value.packing_dus_tipe,
+    packing_dus_qty: form.value.packing_dus_qty,
+    biaya_packing: priceBreakdown.value.biaya_packing_total,
     cetak_bw: Number(form.value.cetak_bw) || 0,
     cetak_fc: Number(form.value.cetak_fc) || 0,
     finishing: form.value.finishing,

@@ -66,7 +66,7 @@
             </td>
             <td class="text-center font-semibold text-slate-700">{{ row.order.jml_pcs }}</td>
             <td class="text-slate-700 font-medium text-xs">{{ row.order.ukuran_custom || row.order.ukuran }}</td>
-            <td class="text-slate-700 font-medium text-xs">{{ row.order.kertas }}</td>
+            <td class="text-slate-700 font-medium text-xs">{{ formatKertasOrder(row.order) }}</td>
             <td class="text-center text-xs text-slate-600">{{ row.order.cetak_bw }}</td>
             <td class="text-center text-xs text-slate-600">{{ row.order.cetak_fc }}</td>
             <td class="text-xs text-slate-500 max-w-[160px] truncate" :title="formatFinishing(row.order.finishing)">
@@ -109,7 +109,7 @@ import MetricStrip from '@shared/components/MetricStrip.vue'
 import TableStateRow from '@shared/components/TableStateRow.vue'
 import TableScrollWrapper from '@shared/components/TableScrollWrapper.vue'
 import { api } from '@shared/api/gasClient'
-import { formatRupiah, formatFinishing, hitungStatusBayar } from '@shared/utils/formatters'
+import { formatRupiah, formatFinishing, hitungStatusBayar, formatKertasOrder } from '@shared/utils/formatters'
 import type { Order, KasMasuk, PiutangRow } from '@shared/types'
 
 const isLoading = ref(false)
