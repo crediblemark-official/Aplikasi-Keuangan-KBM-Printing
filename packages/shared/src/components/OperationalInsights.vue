@@ -87,43 +87,42 @@
       
       <!-- Chart Left: Tren Volume Produksi 7 Hari Terakhir (8 cols on lg) -->
       <div class="lg:col-span-7 xl:col-span-8 p-3 sm:p-4 border-b lg:border-b-0 lg:border-r border-slate-200">
-        <div class="flex items-center justify-between mb-2 sm:mb-3">
-          <div>
-            <h3 class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-              <span class="w-1.5 h-1.5 rounded-full bg-red-600"></span>
-              <span>Tren Produksi (7 Hari)</span>
-            </h3>
-            <p class="text-[10px] text-slate-400">Total oplah (pcs) & pesanan masuk</p>
+        <div class="flex items-center justify-between mb-1.5">
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span class="w-1.5 h-1.5 rounded-full bg-red-600 shrink-0"></span>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-600 truncate">
+              Tren Produksi (7 Hari)
+            </span>
           </div>
-          <span class="text-[10px] font-bold text-slate-600 font-mono bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+          <span class="text-[9px] font-bold text-slate-500 font-mono bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 shrink-0">
             {{ formatRibuan(last7DaysTotalPcs) }} pcs
           </span>
         </div>
 
         <!-- Canvas Container -->
-        <div class="h-48 sm:h-56 relative w-full">
+        <div class="h-44 sm:h-52 relative w-full">
           <canvas ref="productionChartCanvas"></canvas>
         </div>
       </div>
 
       <!-- Chart Right: Komposisi Bahan & Ukuran Buku (4 cols on lg) -->
       <div class="lg:col-span-5 xl:col-span-4 p-3 sm:p-4">
-        <div class="flex items-center justify-between mb-2 sm:mb-3">
-          <div>
-            <h3 class="text-xs font-bold text-slate-800">
-              Distribusi Produksi
-            </h3>
-            <p class="text-[10px] text-slate-400">Kertas, ukuran, atau status</p>
+        <div class="flex items-center justify-between mb-1.5 gap-1.5">
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0"></span>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-600 truncate">
+              Distribusi
+            </span>
           </div>
           <!-- Toggle Breakdown Type -->
-          <div class="inline-flex items-center gap-1 rounded-lg bg-slate-100 p-0.5 border border-slate-200 text-[11px] font-semibold shadow-2xs">
+          <div class="inline-flex items-center gap-0.5 rounded-md bg-slate-100 p-0.5 border border-slate-200 text-[9px] font-semibold shrink-0">
             <button
               type="button"
               @click="activeBreakdown = 'kertas'"
               :class="[
-                'px-2 py-0.5 rounded-md transition-all cursor-pointer text-[11px]',
+                'px-1.5 py-0.5 rounded text-[9px] transition-all cursor-pointer',
                 activeBreakdown === 'kertas'
-                  ? 'bg-white text-red-600 shadow-xs font-bold'
+                  ? 'bg-white text-red-600 shadow-2xs font-bold'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
               ]"
             >
@@ -133,9 +132,9 @@
               type="button"
               @click="activeBreakdown = 'ukuran'"
               :class="[
-                'px-2 py-0.5 rounded-md transition-all cursor-pointer text-[11px]',
+                'px-1.5 py-0.5 rounded text-[9px] transition-all cursor-pointer',
                 activeBreakdown === 'ukuran'
-                  ? 'bg-white text-red-600 shadow-xs font-bold'
+                  ? 'bg-white text-red-600 shadow-2xs font-bold'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
               ]"
             >
@@ -145,9 +144,9 @@
               type="button"
               @click="activeBreakdown = 'status'"
               :class="[
-                'px-2 py-0.5 rounded-md transition-all cursor-pointer text-[11px]',
+                'px-1.5 py-0.5 rounded text-[9px] transition-all cursor-pointer',
                 activeBreakdown === 'status'
-                  ? 'bg-white text-red-600 shadow-xs font-bold'
+                  ? 'bg-white text-red-600 shadow-2xs font-bold'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
               ]"
             >
@@ -157,7 +156,7 @@
         </div>
 
         <!-- Donut Canvas Container -->
-        <div class="h-48 sm:h-56 relative w-full flex items-center justify-center">
+        <div class="h-44 sm:h-52 relative w-full flex items-center justify-center">
           <canvas ref="distributionChartCanvas"></canvas>
         </div>
       </div>
@@ -373,18 +372,18 @@ function renderProductionChart() {
           position: 'top',
           align: 'end',
           labels: {
-            boxWidth: 10,
-            boxHeight: 10,
-            font: { size: 11, weight: 'bold' },
+            boxWidth: 8,
+            boxHeight: 8,
+            font: { size: 9, weight: 'bold' },
             color: '#475569',
           },
         },
         tooltip: {
           backgroundColor: '#0f172a',
-          titleFont: { size: 12, weight: 'bold' },
-          bodyFont: { size: 11 },
-          padding: 10,
-          cornerRadius: 8,
+          titleFont: { size: 11, weight: 'bold' },
+          bodyFont: { size: 10 },
+          padding: 8,
+          cornerRadius: 6,
           callbacks: {
             label: (ctx) => {
               if (ctx.datasetIndex === 0) {
@@ -398,7 +397,7 @@ function renderProductionChart() {
       scales: {
         x: {
           grid: { display: false },
-          ticks: { font: { size: 10 }, color: '#64748b' },
+          ticks: { font: { size: 9 }, color: '#64748b' },
         },
         y: {
           type: 'linear',
@@ -406,7 +405,7 @@ function renderProductionChart() {
           beginAtZero: true,
           grid: { color: '#f1f5f9' },
           ticks: {
-            font: { size: 10 },
+            font: { size: 9 },
             color: '#64748b',
             callback: (val) => formatRibuan(val as number),
           },
@@ -417,7 +416,7 @@ function renderProductionChart() {
           beginAtZero: true,
           grid: { display: false },
           ticks: {
-            font: { size: 10 },
+            font: { size: 9 },
             color: '#64748b',
             stepSize: 1,
           },
@@ -470,11 +469,11 @@ function renderDistributionChart() {
         legend: {
           position: 'bottom',
           labels: {
-            boxWidth: 10,
-            boxHeight: 10,
-            font: { size: 10, weight: 'bold' },
+            boxWidth: 8,
+            boxHeight: 8,
+            font: { size: 9, weight: 'bold' },
             color: '#475569',
-            padding: 8,
+            padding: 6,
           },
         },
         tooltip: {
