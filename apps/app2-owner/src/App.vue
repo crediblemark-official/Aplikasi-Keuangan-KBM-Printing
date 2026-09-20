@@ -14,12 +14,23 @@
 </template>
 
 <script setup lang="ts">
-import { watch } from 'vue'
+import { watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import DeviceLockOverlay from '@shared/components/DeviceLockOverlay.vue'
 import { screenWakeLock } from '@shared/utils/wakeLock'
+import { setupAndroidBackButton } from '@shared/utils/backButton'
 import { useAuthStore } from './stores/auth'
 
 const authStore = useAuthStore()
+const router = useRouter()
+
+onMounted(() => {
+  setupAndroidBackButton({
+    router,
+    isRootRoute: (path) => path === '/dashboard/summary' || path === '/dashboard' || path === '/' || path === '',
+    fallbackRootPath: '/dashboard/summary',
+  })
+})
 
 // Jaga layar HP Android tetap menyala tanpa sleep/lock selama login
 watch(
