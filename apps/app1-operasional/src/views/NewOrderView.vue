@@ -349,34 +349,57 @@
                   </div>
 
                   <!-- Tipe Dus Options -->
-                  <div class="grid grid-cols-3 gap-2 text-xs">
-                    <button
-                      type="button"
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div
                       @click="setPackingTipe(null)"
-                      class="px-2.5 py-2 rounded-lg border text-left transition-all cursor-pointer"
-                      :class="!form.packing_dus_tipe ? 'border-red-500 bg-white ring-1 ring-red-500 font-bold text-red-700' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100'"
+                      class="option-card cursor-pointer p-2.5"
+                      :class="{ selected: !form.packing_dus_tipe }"
                     >
-                      <p class="text-xs">Tanpa Dus</p>
-                      <p class="text-[9px] text-slate-400">Plastik / Standar</p>
-                    </button>
-                    <button
-                      type="button"
+                      <div
+                        class="w-6 h-6 rounded-md flex items-center justify-center font-bold text-xs flex-shrink-0"
+                        :class="!form.packing_dus_tipe ? 'bg-red-600 text-white' : 'bg-slate-100 text-slate-400'"
+                      >
+                        {{ !form.packing_dus_tipe ? '✓' : '•' }}
+                      </div>
+                      <div class="min-w-0">
+                        <p class="text-slate-900 text-xs font-bold truncate">Tanpa Dus</p>
+                        <p class="text-slate-500 text-[10px] truncate">Packing Standar (Rp 0)</p>
+                      </div>
+                    </div>
+
+                    <div
                       @click="setPackingTipe('DUS_KECIL')"
-                      class="px-2.5 py-2 rounded-lg border text-left transition-all cursor-pointer"
-                      :class="form.packing_dus_tipe === 'DUS_KECIL' ? 'border-red-500 bg-white ring-1 ring-red-500 font-bold text-red-700' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100'"
+                      class="option-card cursor-pointer p-2.5"
+                      :class="{ selected: form.packing_dus_tipe === 'DUS_KECIL' }"
                     >
-                      <p class="text-xs">Dus Kecil</p>
-                      <p class="text-[9px] text-slate-500">Rp 5.000 / dus</p>
-                    </button>
-                    <button
-                      type="button"
+                      <div
+                        class="w-6 h-6 rounded-md flex items-center justify-center font-bold text-xs flex-shrink-0"
+                        :class="form.packing_dus_tipe === 'DUS_KECIL' ? 'bg-red-600 text-white' : 'bg-slate-100 text-slate-400'"
+                      >
+                        {{ form.packing_dus_tipe === 'DUS_KECIL' ? '✓' : '•' }}
+                      </div>
+                      <div class="min-w-0">
+                        <p class="text-slate-900 text-xs font-bold truncate">Dus Kecil</p>
+                        <p class="text-red-700 text-[10px] font-semibold truncate">Rp 5.000 / dus</p>
+                      </div>
+                    </div>
+
+                    <div
                       @click="setPackingTipe('DUS_BESAR')"
-                      class="px-2.5 py-2 rounded-lg border text-left transition-all cursor-pointer"
-                      :class="form.packing_dus_tipe === 'DUS_BESAR' ? 'border-red-500 bg-white ring-1 ring-red-500 font-bold text-red-700' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100'"
+                      class="option-card cursor-pointer p-2.5"
+                      :class="{ selected: form.packing_dus_tipe === 'DUS_BESAR' }"
                     >
-                      <p class="text-xs">Dus Besar</p>
-                      <p class="text-[9px] text-slate-500">Rp 10.000 / dus</p>
-                    </button>
+                      <div
+                        class="w-6 h-6 rounded-md flex items-center justify-center font-bold text-xs flex-shrink-0"
+                        :class="form.packing_dus_tipe === 'DUS_BESAR' ? 'bg-red-600 text-white' : 'bg-slate-100 text-slate-400'"
+                      >
+                        {{ form.packing_dus_tipe === 'DUS_BESAR' ? '✓' : '•' }}
+                      </div>
+                      <div class="min-w-0">
+                        <p class="text-slate-900 text-xs font-bold truncate">Dus Besar</p>
+                        <p class="text-red-700 text-[10px] font-semibold truncate">Rp 10.000 / dus</p>
+                      </div>
+                    </div>
                   </div>
 
                   <!-- Input Kuantitas Dus -->
