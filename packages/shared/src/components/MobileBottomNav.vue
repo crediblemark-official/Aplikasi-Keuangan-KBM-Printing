@@ -21,7 +21,10 @@
       </div>
 
       <!-- Main Navigation Bar Container -->
-      <div class="relative bg-red-600 border-t border-red-500/80 px-2 sm:px-4 py-1.5 shadow-[0_-6px_25px_rgba(220,38,38,0.35)] flex items-center justify-between">
+      <div
+        class="relative bg-red-600 border-t border-red-500/80 px-2 sm:px-4 py-1.5 shadow-[0_-6px_25px_rgba(220,38,38,0.35)] flex items-center justify-between"
+        style="padding-bottom: max(env(safe-area-inset-bottom, 0px), 6px);"
+      >
 
         <!-- Left Items Wing -->
         <div class="flex-1 flex items-center justify-around">

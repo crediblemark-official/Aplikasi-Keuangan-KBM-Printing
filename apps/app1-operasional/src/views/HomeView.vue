@@ -28,7 +28,7 @@
     </ion-header>
 
     <ion-content :fullscreen="true">
-      <div class="w-full min-h-full bg-white">
+      <div class="w-full min-h-full bg-white pb-28">
 
         <!-- 1. Metric Strip (Edge-to-edge, same as App 2) -->
         <MetricStrip :items="shiftMetrics" />
