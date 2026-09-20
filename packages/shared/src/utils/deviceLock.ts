@@ -1,122 +1,81 @@
-/**
- * Utility untuk autentikasi menggunakan Kunci Layar / Biometrik Bawaan Android (WebAuthn Platform Authenticator)
- */
+import { Capacitor, registerPlugin } from '@capacitor/core'
 
 export interface DeviceLockOptions {
-  rpName?: string
-  userName?: string
-  userDisplayName?: string
+  title?: string
+  description?: string
 }
 
 export interface DeviceLockResult {
   success: boolean
   error?: string
-  isFallback?: boolean
+  isSecure?: boolean
+  notEnrolled?: boolean
 }
 
+export interface NativeDeviceLockPluginInterface {
+  isDeviceSecure(): Promise<{ isSecure: boolean }>
+  authenticate(options?: { title?: string; description?: string }): Promise<{
+    success: boolean
+    isSecure?: boolean
+    notEnrolled?: boolean
+    error?: string
+  }>
+}
+
+export const NativeDeviceLock = registerPlugin<NativeDeviceLockPluginInterface>('NativeDeviceLock')
+
 /**
- * Cek apakah platform authenticator (Kunci Layar Android / Biometrik bawaan) tersedia
+ * Cek apakah perangkat memiliki kunci layar (PIN, Pola, Password, atau Biometrik).
+ * Jika user tidak mengaktifkan kunci layar pada HP, maka tidak perlu dikunci.
  */
-export async function isPlatformAuthenticatorAvailable(): Promise<boolean> {
-  if (typeof window === 'undefined') return false
-  if (!window.isSecureContext) return false
-  if (!window.PublicKeyCredential) return false
+export async function checkDeviceLockRequirement(): Promise<{ shouldLock: boolean; isSecure: boolean }> {
+  // Jika dijalankan di browser biasa (bukan APK native Android)
+  if (!Capacitor.isNativePlatform()) {
+    return { shouldLock: false, isSecure: false }
+  }
 
   try {
-    if (typeof window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
-      const available = await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
-      return available
+    const res = await NativeDeviceLock.isDeviceSecure()
+    // Jika user TIDAK mengaktifkan PIN/Pola/Kunci Layar di HP-nya -> jangan kunci
+    if (!res || !res.isSecure) {
+      return { shouldLock: false, isSecure: false }
     }
-    return false
+    return { shouldLock: true, isSecure: true }
   } catch (err) {
-    console.warn('Gagal memeriksa platform authenticator:', err)
-    return false
+    console.warn('Gagal mengecek status kunci layar:', err)
+    return { shouldLock: false, isSecure: false }
   }
 }
 
 /**
- * Panggil dialog kunci bawaan Android (Sidik Jari / PIN / Pola layar HP)
+ * Panggil dialog kunci bawaan Android (PIN, Pola, Sandi, atau Sidik Jari).
  */
 export async function promptAndroidDeviceLock(options: DeviceLockOptions = {}): Promise<DeviceLockResult> {
-  if (typeof window === 'undefined') {
-    return { success: false, error: 'Window tidak tersedia' }
-  }
-
-  // Jika bukan konteks aman (bukan HTTPS dan bukan localhost)
-  if (!window.isSecureContext) {
-    return {
-      success: false,
-      error: 'Fitur kunci layar memerlukan koneksi aman (HTTPS atau localhost).',
-      isFallback: true,
-    }
-  }
-
-  // Cek ketersediaan WebAuthn platform authenticator
-  const available = await isPlatformAuthenticatorAvailable()
-  if (!available) {
-    return {
-      success: false,
-      error: 'Kunci biometrik / kunci layar bawaan tidak terdeteksi pada perangkat ini.',
-      isFallback: true,
-    }
+  // Jika di browser / non-native, langsung izinkan tanpa kunci
+  if (!Capacitor.isNativePlatform()) {
+    return { success: true, isSecure: false }
   }
 
   try {
-    const challenge = new Uint8Array(32)
-    window.crypto.getRandomValues(challenge)
-
-    const userId = new Uint8Array(16)
-    window.crypto.getRandomValues(userId)
-
-    const hostname = window.location.hostname
-    const rpEntity: PublicKeyCredentialRpEntity = {
-      name: options.rpName || 'KBM Percetakan',
-    }
-
-    // WebAuthn melarang raw IPv4 sebagai rp.id, tapi localhost diperbolehkan
-    if (hostname && !/^[0-9.]+$/.test(hostname)) {
-      rpEntity.id = hostname
-    }
-
-    const creationOptions: PublicKeyCredentialCreationOptions = {
-      challenge,
-      rp: rpEntity,
-      user: {
-        id: userId,
-        name: options.userName || 'kbm_user',
-        displayName: options.userDisplayName || 'KBM User',
-      },
-      pubKeyCredParams: [
-        { alg: -7, type: 'public-key' },  // ES256
-        { alg: -257, type: 'public-key' }, // RS256
-      ],
-      authenticatorSelection: {
-        authenticatorAttachment: 'platform', // Menggunakan kunci layar Android bawaan
-        userVerification: 'required',        // Wajib biometrik/PIN/pola layar
-        residentKey: 'preferred',
-        requireResidentKey: false,
-      },
-      timeout: 60000,
-      attestation: 'none',
-    }
-
-    const credential = await navigator.credentials.create({
-      publicKey: creationOptions,
+    const res = await NativeDeviceLock.authenticate({
+      title: options.title || 'KBM Percetakan',
+      description: options.description || 'Gunakan PIN, Pola, atau Sidik Jari untuk membuka aplikasi',
     })
 
-    if (credential) {
-      return { success: true }
-    } else {
-      return { success: false, error: 'Verifikasi kunci dibatalkan' }
+    if (res && res.success) {
+      return { success: true, isSecure: res.isSecure }
+    }
+
+    return {
+      success: false,
+      isSecure: res?.isSecure ?? true,
+      error: res?.error || 'Kunci layar dibatalkan',
     }
   } catch (err: any) {
-    console.warn('Device lock verification error:', err)
-    if (err.name === 'NotAllowedError') {
-      return { success: false, error: 'Kunci layar dibatalkan atau tidak cocok' }
+    console.warn('Device lock error:', err)
+    return {
+      success: false,
+      error: err?.message || 'Gagal memanggil kunci layar Android',
     }
-    if (err.name === 'AbortError') {
-      return { success: false, error: 'Proses verifikasi dihentikan' }
-    }
-    return { success: false, error: err.message || 'Gagal memverifikasi kunci perangkat' }
   }
 }

@@ -16,16 +16,16 @@
             <KbmLogo size="md" variant="stacked" :subtitle="roleTitle || 'Sistem Percetakan Terproteksi'" />
           </div>
 
-          <!-- Fingerprint Graphic with Pulsing Wave -->
+          <!-- Security Graphic with Pulsing Wave -->
           <div class="relative my-4 flex items-center justify-center">
             <!-- Pulsing Rings when waiting -->
             <div v-if="isPrompting" class="absolute w-24 h-24 rounded-full bg-red-500/20 animate-ping"></div>
             <div class="w-20 h-20 rounded-2xl bg-gradient-to-tr from-red-600 to-rose-500 flex items-center justify-center text-white shadow-lg shadow-red-500/30 transition-transform active:scale-95 cursor-pointer"
                  @click="handleUnlock">
-              <!-- Fingerprint SVG -->
+              <!-- Security Lock / Device Key Icon -->
               <svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" 
-                      d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 004 11m0 0a8.003 8.003 0 0115.357-2m1.026 5.862A17.95 17.95 0 0119 17" />
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
           </div>
@@ -35,7 +35,7 @@
             Kunci Layar Android
           </h2>
           <p class="text-slate-500 text-xs leading-relaxed max-w-[260px] mb-5">
-            Gunakan sidik jari, pola, atau PIN bawaan HP Anda untuk membuka aplikasi
+            Gunakan PIN, pola, atau sidik jari bawaan HP Anda untuk membuka aplikasi
           </p>
 
           <!-- Error Feedback -->
@@ -58,21 +58,9 @@
             <span>{{ isPrompting ? 'Menunggu Kunci Layar...' : 'Buka Kunci Layar Android' }}</span>
           </button>
 
-          <!-- Fallback Bypass for Desktop Dev / Non-biometric Devices -->
-          <div v-if="showFallback" class="mt-4 pt-3 border-t border-slate-100 w-full">
-            <p class="text-[11px] text-slate-400 mb-2">
-              Perangkat tanpa biometrik atau mode uji coba:
-            </p>
-            <button type="button"
-                    @click="bypassUnlock"
-                    class="text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 py-2 px-3 rounded-lg w-full transition-colors cursor-pointer">
-              Buka Langsung (Mode Desktop / Dev)
-            </button>
-          </div>
-
           <!-- Footer version notice -->
           <p class="text-slate-400 text-[10px] mt-5">
-            Proteksi Kunci Bawaan Android &middot; KBM System
+            Proteksi Kunci Layar Bawaan Android &middot; KBM System
           </p>
         </div>
 
@@ -84,14 +72,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import KbmLogo from './KbmLogo.vue'
-import { promptAndroidDeviceLock, isPlatformAuthenticatorAvailable } from '../utils/deviceLock'
+import { promptAndroidDeviceLock, checkDeviceLockRequirement } from '../utils/deviceLock'
 
 const props = defineProps<{
   modelValue: boolean
   roleTitle?: string
-  rpName?: string
-  userName?: string
-  userDisplayName?: string
+  title?: string
+  description?: string
 }>()
 
 const emit = defineEmits<{
@@ -101,7 +88,6 @@ const emit = defineEmits<{
 
 const isPrompting = ref(false)
 const errorMessage = ref('')
-const showFallback = ref(false)
 
 async function handleUnlock() {
   if (isPrompting.value) return
@@ -110,9 +96,8 @@ async function handleUnlock() {
 
   try {
     const res = await promptAndroidDeviceLock({
-      rpName: props.rpName || 'KBM Percetakan',
-      userName: props.userName || 'kbm_user',
-      userDisplayName: props.userDisplayName || 'KBM User',
+      title: props.title || 'KBM Percetakan',
+      description: props.description || 'Gunakan PIN, Pola, atau Sidik Jari untuk membuka aplikasi',
     })
 
     if (res.success) {
@@ -120,37 +105,32 @@ async function handleUnlock() {
       emit('unlocked')
     } else {
       errorMessage.value = res.error || 'Verifikasi kunci layar dibatalkan'
-      if (res.isFallback) {
-        showFallback.value = true
-      }
     }
   } catch (err: any) {
-    errorMessage.value = err.message || 'Gagal mengakses kunci layar'
-    showFallback.value = true
+    errorMessage.value = err?.message || 'Gagal mengakses kunci layar'
   } finally {
     isPrompting.value = false
   }
 }
 
-function bypassUnlock() {
-  emit('update:modelValue', false)
-  emit('unlocked')
-}
-
 onMounted(async () => {
-  // Cek ketersediaan platform authenticator terlebih dahulu
-  const available = await isPlatformAuthenticatorAvailable()
-  if (!available) {
-    showFallback.value = true
+  // Cek apakah HP user memiliki kunci layar aktif
+  const { shouldLock } = await checkDeviceLockRequirement()
+  
+  // Jika user TIDAK mengaktifkan kunci layar di Android (atau di web browser), langsung buka tanpa kunci
+  if (!shouldLock) {
+    emit('update:modelValue', false)
+    emit('unlocked')
+    return
   }
 
-  // Jika sedang terkunci, otomatis munculkan prompt kunci bawaan Android setelah mount singkat
+  // Jika HP memiliki kunci layar dan sedang terkunci, otomatis munculkan prompt kunci bawaan Android
   if (props.modelValue) {
     setTimeout(() => {
-      if (props.modelValue && available) {
+      if (props.modelValue) {
         handleUnlock()
       }
-    }, 350)
+    }, 200)
   }
 })
 </script>

@@ -6,9 +6,8 @@
     <DeviceLockOverlay
       :model-value="!authStore.isAuthenticated"
       role-title="Owner & Keuangan KBM"
-      rp-name="KBM Owner Dashboard"
-      user-name="owner@kbm.local"
-      user-display-name="Owner KBM"
+      title="KBM Owner"
+      description="Gunakan PIN, Pola, atau Sidik Jari untuk membuka aplikasi"
       @unlocked="handleUnlocked"
     />
   </div>

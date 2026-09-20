@@ -47,9 +47,8 @@
     <DeviceLockOverlay
       :model-value="!authStore.isAuthenticated"
       role-title="KBM Operasional Percetakan"
-      rp-name="KBM Operasional"
-      user-name="operasional@kbm.local"
-      user-display-name="Tim Operasional KBM"
+      title="KBM Operasional"
+      description="Gunakan PIN, Pola, atau Sidik Jari untuk membuka aplikasi"
       @unlocked="handleUnlocked"
     />
   </ion-app>
