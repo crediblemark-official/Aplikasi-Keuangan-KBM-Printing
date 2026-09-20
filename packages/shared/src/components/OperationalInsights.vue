@@ -115,39 +115,41 @@
             </span>
           </div>
           <!-- Toggle Breakdown Type -->
-          <div class="inline-flex items-center gap-0.5 rounded-md bg-slate-100 p-0.5 border border-slate-200 text-[9px] font-semibold shrink-0">
+          <div class="inline-flex items-center rounded-lg bg-slate-100 p-0.5 border border-slate-200 text-[9px] font-semibold shrink-0">
             <button
               type="button"
               @click="activeBreakdown = 'kertas'"
               :class="[
-                'px-1.5 py-0.5 rounded text-[9px] transition-all cursor-pointer',
+                'px-2 py-0.5 rounded-md text-[9px] transition-all cursor-pointer',
                 activeBreakdown === 'kertas'
-                  ? 'bg-white text-red-600 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                  ? 'bg-white text-red-600 shadow-xs font-bold border border-slate-200/80'
+                  : 'text-slate-600 hover:text-slate-900'
               ]"
             >
               Kertas
             </button>
+            <span class="w-px h-3 bg-slate-300 mx-0.5"></span>
             <button
               type="button"
               @click="activeBreakdown = 'ukuran'"
               :class="[
-                'px-1.5 py-0.5 rounded text-[9px] transition-all cursor-pointer',
+                'px-2 py-0.5 rounded-md text-[9px] transition-all cursor-pointer',
                 activeBreakdown === 'ukuran'
-                  ? 'bg-white text-red-600 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                  ? 'bg-white text-red-600 shadow-xs font-bold border border-slate-200/80'
+                  : 'text-slate-600 hover:text-slate-900'
               ]"
             >
               Ukuran
             </button>
+            <span class="w-px h-3 bg-slate-300 mx-0.5"></span>
             <button
               type="button"
               @click="activeBreakdown = 'status'"
               :class="[
-                'px-1.5 py-0.5 rounded text-[9px] transition-all cursor-pointer',
+                'px-2 py-0.5 rounded-md text-[9px] transition-all cursor-pointer',
                 activeBreakdown === 'status'
-                  ? 'bg-white text-red-600 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                  ? 'bg-white text-red-600 shadow-xs font-bold border border-slate-200/80'
+                  : 'text-slate-600 hover:text-slate-900'
               ]"
             >
               Status
