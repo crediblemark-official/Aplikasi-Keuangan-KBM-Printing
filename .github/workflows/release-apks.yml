@@ -48,21 +48,21 @@ jobs:
         run: |
           npm run cap:sync:all
 
-      - name: 📱 Build APK App 1 - KBM Operasional
+      - name: 📱 Build APK App 1 - KBM Operasional (Signed Release)
         run: |
           cd apps/app1-operasional/android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleRelease
           mkdir -p ../../../build-artifacts
-          cp app/build/outputs/apk/debug/app-debug.apk ../../../build-artifacts/KBM-Operasional.apk
+          cp app/build/outputs/apk/release/app-release.apk ../../../build-artifacts/KBM-Operasional.apk
 
-      - name: 📱 Build APK App 2 - Owner Dashboard
+      - name: 📱 Build APK App 2 - Owner Dashboard (Signed Release)
         run: |
           cd apps/app2-owner/android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleRelease
           mkdir -p ../../../build-artifacts
-          cp app/build/outputs/apk/debug/app-debug.apk ../../../build-artifacts/KBM-Owner-Dashboard.apk
+          cp app/build/outputs/apk/release/app-release.apk ../../../build-artifacts/KBM-Owner-Dashboard.apk
 
       - name: 📤 Upload Build Artifacts to Actions
         uses: actions/upload-artifact@v4
