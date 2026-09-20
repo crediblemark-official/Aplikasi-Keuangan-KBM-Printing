@@ -1,7 +1,7 @@
 <template>
-  <header class="app-header h-14 w-full flex items-center justify-between px-[8px] sm:px-[15px] lg:px-[20px] bg-white border-b border-slate-200">
+  <header class="app-header h-14 w-full flex items-center justify-between px-2 sm:px-3 lg:px-4 bg-white border-b border-slate-200 gap-1.5 sm:gap-2">
     <!-- Left side: Leading / Back + Title -->
-    <div class="flex items-center gap-2 sm:gap-2.5 min-w-0">
+    <div class="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
       <slot name="leading">
         <button
           v-if="showBack"
@@ -34,7 +34,7 @@
     </div>
 
     <!-- Right side: Actions slot -->
-    <div v-if="$slots.actions" class="flex items-center gap-2 flex-shrink-0">
+    <div v-if="$slots.actions" class="flex items-center gap-1.5 sm:gap-2 shrink-0">
       <slot name="actions" />
     </div>
   </header>

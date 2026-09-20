@@ -3,13 +3,13 @@
     type="button"
     @click="$emit('click')"
     :class="[
-      'sync-indicator-pill inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer border shadow-2xs select-none',
+      'sync-indicator-pill inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer border shadow-2xs select-none shrink-0',
       statusClass,
     ]"
     :title="tooltipText"
   >
     <!-- Status Dot with Pulse -->
-    <span class="relative flex h-2 w-2">
+    <span class="relative flex h-2 w-2 shrink-0">
       <span
         v-if="syncStore.pendingCount > 0 || syncStore.isSyncingAll"
         :class="['animate-ping absolute inline-flex h-full w-full rounded-full opacity-75', pulseColor]"
@@ -20,26 +20,26 @@
     <!-- Status Label & Percentage -->
     <span class="truncate font-mono tracking-tight text-[11px]">
       <template v-if="!syncStore.isOnline">
-        Offline ({{ syncStore.syncPercentage }}%)
+        Offline
       </template>
       <template v-else-if="syncStore.isSyncingAll">
-        Sinkronisasi...
+        Sync...
       </template>
       <template v-else-if="syncStore.failedCount > 0">
-        {{ syncStore.failedCount }} Gagal ({{ syncStore.syncPercentage }}%)
+        {{ syncStore.failedCount }} Gagal
       </template>
       <template v-else-if="syncStore.pendingCount > 0">
-        {{ syncStore.pendingCount }} Menunggu ({{ syncStore.syncPercentage }}%)
+        {{ syncStore.pendingCount }} Pending
       </template>
       <template v-else>
-        {{ syncStore.syncPercentage }}% Tersinkron
+        Tersinkron
       </template>
     </span>
 
     <!-- Refresh Icon / Spinner if syncing -->
     <svg
       v-if="syncStore.isSyncingAll"
-      class="w-3 h-3 animate-spin text-red-600"
+      class="w-3 h-3 animate-spin text-red-600 shrink-0"
       fill="none"
       viewBox="0 0 24 24"
     >

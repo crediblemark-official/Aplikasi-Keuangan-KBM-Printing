@@ -6,23 +6,22 @@
         :show-back="false"
       >
         <template #leading>
-          <div class="flex items-center">
+          <div class="flex items-center shrink-0">
             <KbmLogo size="sm" variant="icon" />
           </div>
         </template>
         <template #actions>
           <SyncIndicatorPill @click="router.push('/sync-log')" />
-          <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 bg-slate-100 border border-slate-200 font-mono shadow-2xs">
+          <span class="hidden md:inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 bg-slate-100 border border-slate-200 font-mono shadow-2xs">
             {{ currentDate }}
           </span>
           <button
             type="button"
             @click="logout"
             title="Keluar / Logout"
-            class="lg:hidden flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100 transition-colors text-xs font-semibold cursor-pointer ml-1"
+            class="flex items-center justify-center w-8 h-8 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100 transition-colors text-xs font-semibold cursor-pointer shrink-0"
           >
-            <ion-icon :icon="logOutOutline" class="text-base"></ion-icon>
-            <span class="hidden sm:inline">Keluar</span>
+            <ion-icon :icon="logOutOutline" class="text-lg"></ion-icon>
           </button>
         </template>
       </PageHeader>
