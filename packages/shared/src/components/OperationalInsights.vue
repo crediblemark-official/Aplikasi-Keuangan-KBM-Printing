@@ -113,13 +113,15 @@
             Distribusi Produksi
           </h3>
           <!-- Toggle Breakdown Type -->
-          <div class="inline-flex rounded-lg bg-slate-100 p-0.5 border border-slate-200 text-[11px] font-semibold">
+          <div class="inline-flex items-center gap-1 rounded-xl bg-slate-100 p-1 border border-slate-200 text-xs font-semibold shadow-2xs">
             <button
               type="button"
               @click="activeBreakdown = 'kertas'"
               :class="[
-                'px-2 py-0.5 rounded-md transition-all cursor-pointer',
-                activeBreakdown === 'kertas' ? 'bg-white text-red-600 shadow-xs font-bold' : 'text-slate-500 hover:text-slate-800'
+                'px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs',
+                activeBreakdown === 'kertas'
+                  ? 'bg-white text-red-600 shadow-xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
               ]"
             >
               Kertas
@@ -128,8 +130,10 @@
               type="button"
               @click="activeBreakdown = 'ukuran'"
               :class="[
-                'px-2 py-0.5 rounded-md transition-all cursor-pointer',
-                activeBreakdown === 'ukuran' ? 'bg-white text-red-600 shadow-xs font-bold' : 'text-slate-500 hover:text-slate-800'
+                'px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs',
+                activeBreakdown === 'ukuran'
+                  ? 'bg-white text-red-600 shadow-xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
               ]"
             >
               Ukuran
@@ -138,8 +142,10 @@
               type="button"
               @click="activeBreakdown = 'status'"
               :class="[
-                'px-2 py-0.5 rounded-md transition-all cursor-pointer',
-                activeBreakdown === 'status' ? 'bg-white text-red-600 shadow-xs font-bold' : 'text-slate-500 hover:text-slate-800'
+                'px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs',
+                activeBreakdown === 'status'
+                  ? 'bg-white text-red-600 shadow-xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
               ]"
             >
               Status
