@@ -3,10 +3,15 @@
   "private": true,
   "version": "1.1.6",
   "type": "module",
+  "main": "electron/main.cjs",
+  "author": "KBM Printing",
+  "description": "Dashboard Keuangan & Laporan KBM Owner",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "build": "vite build",
+    "preview": "vite preview",
+    "electron:dev": "concurrently -k \"vite\" \"wait-on tcp:5174 && electron electron/main.cjs\"",
+    "electron:build:win": "vite build && electron-builder --win"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.2",
@@ -32,5 +37,35 @@
     "typescript": "~6.0.2",
     "vite": "^8.3.0",
     "vue-tsc": "^3.3.11"
+  },
+  "build": {
+    "electronVersion": "44.4.3",
+    "appId": "com.kbmprinting.owner",
+    "productName": "KBM Owner",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "KBM Owner"
+    }
   }
 }

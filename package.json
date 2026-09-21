@@ -11,10 +11,15 @@
     "dev:operasional": "npm run dev -w apps/app1-operasional",
     "dev:kasir": "npm run dev:operasional",
     "dev:owner": "npm run dev -w apps/app2-owner",
-    "build:operasional": "npm run build -w apps/app1-operasional",
+    "build:operasional": "(cd apps/app1-operasional && (npm run build 2>/dev/null || bun run build))",
     "build:kasir": "npm run build:operasional",
-    "build:owner": "npm run build -w apps/app2-owner",
+    "build:owner": "(cd apps/app2-owner && (npm run build 2>/dev/null || bun run build))",
     "build:all": "npm run build:operasional && npm run build:owner",
+    "electron:dev:operasional": "bun run --cwd apps/app1-operasional electron:dev",
+    "electron:dev:owner": "bun run --cwd apps/app2-owner electron:dev",
+    "build:win:operasional": "bun run --cwd apps/app1-operasional electron:build:win",
+    "build:win:owner": "bun run --cwd apps/app2-owner electron:build:win",
+    "build:win:all": "bun run build:win:operasional && bun run build:win:owner",
     "cap:sync:operasional": "npm run build:operasional && (cd apps/app1-operasional && npx cap sync android)",
     "cap:sync:kasir": "npm run cap:sync:operasional",
     "cap:sync:owner": "npm run build:owner && (cd apps/app2-owner && npx cap sync android)",
@@ -24,7 +29,10 @@
   },
   "devDependencies": {
     "concurrently": "^10.0.5",
-    "husky": "^9.1.7"
+    "electron": "44.4.3",
+    "electron-builder": "^26.15.3",
+    "husky": "^9.1.7",
+    "wait-on": "^9.1.0"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.1"

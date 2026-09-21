@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from '@ionic/vue-router'
+import { createRouter, createWebHistory, createWebHashHistory } from '@ionic/vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 
 const routes: RouteRecordRaw[] = [
@@ -55,8 +55,14 @@ const routes: RouteRecordRaw[] = [
   },
 ]
 
+const isElectron = typeof window !== 'undefined' && (
+  window.location.protocol === 'file:' ||
+  navigator.userAgent.toLowerCase().includes('electron') ||
+  import.meta.env.VITE_APP_PLATFORM === 'electron'
+)
+
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: isElectron ? createWebHashHistory() : createWebHistory(import.meta.env.BASE_URL),
   routes,
 })
 

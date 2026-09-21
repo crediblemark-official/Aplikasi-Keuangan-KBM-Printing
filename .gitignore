@@ -7,8 +7,10 @@ yarn-error.log*
 
 # Build outputs
 dist/
+dist-electron/
 build/
 build-artifacts/
+build-windows/
 *.local
 
 # Environment & Temp

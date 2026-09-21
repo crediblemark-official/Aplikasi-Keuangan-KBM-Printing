@@ -1,0 +1,109 @@
+name: Build Windows Apps (.exe)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Tag Rilis (contoh: v1.1.6)'
+        required: false
+        default: 'v1.1.6'
+      release_name:
+        description: 'Nama / Judul Rilis'
+        required: false
+        default: 'KBM Percetakan Windows Desktop Release'
+      publish_release:
+        description: 'Publikasikan ke GitHub Releases?'
+        required: true
+        type: boolean
+        default: true
+
+jobs:
+  build-windows:
+    name: Build Windows Installers
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🥟 Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: 📦 Install Dependencies
+        run: bun install
+
+      - name: 🔨 Build App 1 - KBM Operasional (.exe Installer)
+        run: |
+          cd apps/app1-operasional
+          bun run electron:build:win
+
+      - name: 🔨 Build App 2 - KBM Owner (.exe Installer)
+        run: |
+          cd apps/app2-owner
+          bun run electron:build:win
+
+      - name: 📁 Collect Windows Installers
+        shell: bash
+        run: |
+          mkdir -p build-windows
+          cp apps/app1-operasional/dist-electron/*Setup*.exe build-windows/KBM-Operasional-Setup.exe || cp apps/app1-operasional/dist-electron/*.exe build-windows/KBM-Operasional-Setup.exe
+          cp apps/app2-owner/dist-electron/*Setup*.exe build-windows/KBM-Owner-Dashboard-Setup.exe || cp apps/app2-owner/dist-electron/*.exe build-windows/KBM-Owner-Dashboard-Setup.exe
+          ls -lh build-windows/
+
+      - name: 📤 Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: KBM-Windows-Installers
+          path: build-windows/*.exe
+          retention-days: 30
+
+      - name: 🏷️ Set Release Variables
+        id: release_vars
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.release_tag }}"
+            TITLE="${{ github.event.inputs.release_name }} - $TAG"
+          else
+            TAG="${{ github.ref_name }}"
+            TITLE="KBM Percetakan Windows Desktop - $TAG"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "title=$TITLE" >> $GITHUB_OUTPUT
+
+      - name: 🚀 Publish to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        if: (startsWith(github.ref, 'refs/tags/') || github.event.inputs.publish_release == 'true')
+        with:
+          tag_name: ${{ steps.release_vars.outputs.tag }}
+          name: ${{ steps.release_vars.outputs.title }}
+          draft: false
+          prerelease: false
+          files: |
+            build-windows/KBM-Operasional-Setup.exe
+            build-windows/KBM-Owner-Dashboard-Setup.exe
+          body: |
+            ## 🖥️ Aplikasi Desktop Windows KBM Percetakan Buku
+
+            Berikut adalah installer Windows (`.exe`) resmi untuk PC Kasir dan PC Manajemen:
+
+            ### 📦 Download Installer Windows:
+            1. 📑 **[KBM-Operasional-Setup.exe](https://github.com/${{ github.repository }}/releases/download/${{ steps.release_vars.outputs.tag }}/KBM-Operasional-Setup.exe)**
+               - Aplikasi Operasional & Kasir Toko/Percetakan.
+               - Cocok untuk PC Kasir Windows (cetak nota, input SPK order, kwitansi).
+            
+            2. 📊 **[KBM-Owner-Dashboard-Setup.exe](https://github.com/${{ github.repository }}/releases/download/${{ steps.release_vars.outputs.tag }}/KBM-Owner-Dashboard-Setup.exe)**
+               - Aplikasi Dashboard Keuangan & Laporan Owner KBM.
+               - Monitoring omset, laba rugi, buku kas, dan laporan keuangan.
+
+            ---
+            *Cukup unduh file `.exe` dan jalankan setup untuk memasang aplikasi di Windows.*

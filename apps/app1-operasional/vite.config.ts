@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { resolve } from 'path'
 
 export default defineConfig({
+  base: './',
   plugins: [tailwindcss(), vue()],
   cacheDir: resolve(import.meta.dirname, '../../node_modules/.vite/app1-operasional'),
   resolve: {
