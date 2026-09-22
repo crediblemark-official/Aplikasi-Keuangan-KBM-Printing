@@ -90,8 +90,8 @@
             </td>
             <td class="text-slate-500 text-xs">{{ item.diinput_oleh }}</td>
             <td>
-              <a v-if="item.file_id_nota"
-                 :href="`https://drive.google.com/file/d/${item.file_id_nota}/view`"
+              <a v-if="item.file_id_nota || item.link_nota"
+                 :href="item.link_nota || (item.file_id_nota && item.file_id_nota.startsWith('http') ? item.file_id_nota : `https://drive.google.com/file/d/${item.file_id_nota}/view`)"
                  target="_blank" rel="noopener"
                  class="text-blue-600 hover:text-blue-800 text-xs font-semibold underline inline-flex items-center gap-1">
                 <span>Lihat Nota</span>

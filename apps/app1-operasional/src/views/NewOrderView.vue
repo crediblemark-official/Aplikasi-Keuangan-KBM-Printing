@@ -583,10 +583,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import {
-  IonPage, IonHeader, IonContent, IonSpinner, IonToast, useIonRouter,
+  IonPage, IonHeader, IonContent, IonSpinner, IonToast, useIonRouter, onIonViewWillEnter,
 } from '@ionic/vue'
 import PageHeader from '@shared/components/PageHeader.vue'
 import SectionHeader from '@shared/components/SectionHeader.vue'
@@ -962,6 +962,14 @@ function toggleFinishing(item: JenisFinishing) {
   if (idx !== -1) {
     form.value.finishing.splice(idx, 1)
   } else {
+    // Saling mengunci antara Soft Cover dan Hard Cover
+    if (item === 'HARD_COVER') {
+      const scIdx = form.value.finishing.indexOf('SOFT_COVER')
+      if (scIdx !== -1) form.value.finishing.splice(scIdx, 1)
+    } else if (item === 'SOFT_COVER') {
+      const hcIdx = form.value.finishing.indexOf('HARD_COVER')
+      if (hcIdx !== -1) form.value.finishing.splice(hcIdx, 1)
+    }
     form.value.finishing.push(item)
   }
   recalculatePriceAuto()
@@ -1060,6 +1068,27 @@ async function loadExistingOrder() {
     const derivedJudul = existing.judul_buku || parts[0]?.trim() || ''
     const derivedPenulis = existing.nama_penulis || (parts.length > 1 ? parts.slice(1).join(' / ').trim() : '')
 
+    // Parsing finishing aman (Array, string JSON, atau nama finishing)
+    let parsedFinishing: JenisFinishing[] = ['SOFT_COVER']
+    if (Array.isArray(existing.finishing)) {
+      parsedFinishing = [...existing.finishing]
+    } else if (typeof existing.finishing === 'string') {
+      const raw = (existing.finishing as string).trim()
+      if (raw.startsWith('[') && raw.endsWith(']')) {
+        try {
+          const parsed = JSON.parse(raw)
+          if (Array.isArray(parsed) && parsed.length > 0) parsedFinishing = parsed
+        } catch {}
+      } else {
+        const upper = raw.toUpperCase()
+        if (upper.includes('HARD_COVER') || upper.includes('HARDCOVER')) {
+          parsedFinishing = ['HARD_COVER']
+        } else if (upper.includes('SOFT_COVER') || upper.includes('SOFTCOVER')) {
+          parsedFinishing = ['SOFT_COVER']
+        }
+      }
+    }
+
     form.value = {
       nama_penerbit: existing.nama_penerbit || '',
       judul_buku: derivedJudul,
@@ -1077,7 +1106,7 @@ async function loadExistingOrder() {
       packing_dus_qty: existing.packing_dus_qty || 0,
       cetak_bw: existing.cetak_bw || 0,
       cetak_fc: existing.cetak_fc || 0,
-      finishing: Array.isArray(existing.finishing) ? [...existing.finishing] : ['SOFT_COVER'],
+      finishing: parsedFinishing,
       total_harga: existing.total_harga || 0,
       catatan: existing.catatan || '',
     }
@@ -1139,7 +1168,7 @@ async function submitOrder() {
   }
 }
 
-onMounted(async () => {
+async function initView() {
   recalculatePriceAuto()
   try {
     const res = await api.getClients()
@@ -1163,5 +1192,26 @@ onMounted(async () => {
       if (matched.alamat && !form.value.alamat_penerbit) form.value.alamat_penerbit = matched.alamat
     }
   }
+}
+
+onMounted(async () => {
+  await initView()
 })
+
+onIonViewWillEnter(async () => {
+  if (isEditMode.value) {
+    await loadExistingOrder()
+  }
+})
+
+watch(
+  () => editOrderId.value,
+  async (newId) => {
+    if (newId) {
+      await loadExistingOrder()
+    } else {
+      resetForm()
+    }
+  }
+)
 </script>

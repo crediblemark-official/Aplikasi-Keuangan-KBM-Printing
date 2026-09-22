@@ -196,7 +196,7 @@
               <td class="text-center whitespace-nowrap">
                 <a
                   v-if="row.fileId"
-                  :href="`https://drive.google.com/file/d/${row.fileId}/view`"
+                  :href="row.fileId.startsWith('http') ? row.fileId : `https://drive.google.com/file/d/${row.fileId}/view`"
                   target="_blank"
                   rel="noopener"
                   class="text-blue-600 hover:text-blue-800 text-xs font-semibold underline inline-flex items-center gap-1 cursor-pointer"

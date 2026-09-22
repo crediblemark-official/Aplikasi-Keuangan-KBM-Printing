@@ -187,7 +187,20 @@ export function formatKertasOrder(order: { kertas: string; kertas_bw?: string; k
 /**
  * Format finishing array untuk display
  */
-export function formatFinishing(finishing: string[]): string {
+export function formatFinishing(finishing: string[] | string | undefined | null): string {
+  if (!finishing) return '-'
+  let arr: string[] = []
+  if (Array.isArray(finishing)) {
+    arr = finishing
+  } else if (typeof finishing === 'string') {
+    try {
+      const parsed = JSON.parse(finishing)
+      if (Array.isArray(parsed)) arr = parsed
+      else arr = [finishing]
+    } catch {
+      arr = [finishing]
+    }
+  }
   const map: Record<string, string> = {
     SOFT_COVER: 'Soft Cover',
     HARD_COVER: 'Hard Cover',
@@ -201,7 +214,7 @@ export function formatFinishing(finishing: string[]): string {
     SPIRAL: 'Spiral',
     JILID_LEM: 'Jilid Lem Panas',
   }
-  return finishing.map((f) => map[f] ?? f).join(', ')
+  return arr.map((f) => map[f] ?? f).join(', ')
 }
 
 /**

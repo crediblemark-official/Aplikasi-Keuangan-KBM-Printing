@@ -189,6 +189,11 @@ export const useOrderStore = defineStore('orders', () => {
           ukuran: orderData.ukuran,
           ukuran_custom: orderData.ukuran_custom,
           kertas: orderData.kertas,
+          kertas_bw: orderData.kertas_bw,
+          kertas_fc: orderData.kertas_fc,
+          packing_dus_tipe: orderData.packing_dus_tipe,
+          packing_dus_qty: orderData.packing_dus_qty,
+          biaya_packing: orderData.biaya_packing,
           cetak_bw: orderData.cetak_bw,
           cetak_fc: orderData.cetak_fc,
           finishing: orderData.finishing,
@@ -196,6 +201,7 @@ export const useOrderStore = defineStore('orders', () => {
           catatan: orderData.catatan,
           alamat_penerbit: orderData.alamat_penerbit,
           kontak_penerbit: orderData.kontak_penerbit,
+          link_bukti: orderData.link_bukti || '',
         }
 
         orders.value = [localOrder, ...orders.value.filter((o) => o.id_order !== localOrder.id_order)]
@@ -222,6 +228,11 @@ export const useOrderStore = defineStore('orders', () => {
             ukuran: orderData.ukuran,
             ukuran_custom: orderData.ukuran_custom,
             kertas: orderData.kertas,
+            kertas_bw: orderData.kertas_bw,
+            kertas_fc: orderData.kertas_fc,
+            packing_dus_tipe: orderData.packing_dus_tipe,
+            packing_dus_qty: orderData.packing_dus_qty,
+            biaya_packing: orderData.biaya_packing,
             cetak_bw: orderData.cetak_bw,
             cetak_fc: orderData.cetak_fc,
             finishing: orderData.finishing,
@@ -229,6 +240,7 @@ export const useOrderStore = defineStore('orders', () => {
             catatan: orderData.catatan,
             alamat_penerbit: orderData.alamat_penerbit,
             kontak_penerbit: orderData.kontak_penerbit,
+            link_bukti: orderData.link_bukti || '',
           }
 
           orders.value = [offlineOrder, ...orders.value]
@@ -320,6 +332,10 @@ export const useOrderStore = defineStore('orders', () => {
     currentOrderId.value = id
   }
 
+  async function refreshOrders() {
+    return fetchOrders(undefined, true)
+  }
+
   return {
     orders,
     isLoading,
@@ -329,6 +345,7 @@ export const useOrderStore = defineStore('orders', () => {
     kasMasukList,
     getPaymentStatus,
     fetchOrders,
+    refreshOrders,
     fetchKasMasuk,
     createOrder,
     updateOrder,

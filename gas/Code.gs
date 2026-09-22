@@ -19,9 +19,7 @@
 // ---- KONFIGURASI ----
 const SPREADSHEET_ID = '1Q3cmSsYGOncEjWE7SZMiMjHGjkT0OrE3-7MKdNzEjhA';
 const DRIVE_FOLDER_ID = '1ZOov_iTND9DFNYbR7U5iBt5fMNCQEifS'; // Google Drive Root Folder
-const DRIVE_FOLDER_NAME = 'Percetakan_System_Drive';
-const PIN_KASIR = '1234'; // Ganti sesuai kebutuhan
-const PASSWORD_OWNER = 'kbm2026'; // Ganti dengan password kuat
+const DRIVE_FOLDER_NAME = 'KBM Printing';
 
 // Sheet names
 const SHEET_ORDERS = 'Orders';
@@ -44,18 +42,39 @@ function jsonResponse(data) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-// ---- MAIN ROUTER ----
+// ---- ROUTING UTAMA ----
 function doGet(e) {
-  return route(e);
+  try {
+    const action = e.parameter.action;
+    if (!action) {
+      return jsonResponse({ success: false, error: 'Action parameter diperlukan' });
+    }
+
+    const handlers = {
+      'ping': () => ({ success: true, message: 'pong', timestamp: Date.now() }),
+      'getOrders': () => handleGetOrders(e.parameter),
+      'getOrderById': () => handleGetOrderById(e.parameter),
+      'getKasMasuk': () => handleGetKasMasuk(e.parameter),
+      'getKasKeluar': () => handleGetKasKeluar(e.parameter),
+      'getClients': () => handleGetClients(),
+      'getSummary': () => handleGetSummary(e.parameter),
+      'getAuditLogs': () => handleGetAuditLogs(e.parameter),
+      'getBukuKas': () => handleGetBukuKas(e.parameter),
+    };
+
+    if (handlers[action]) {
+      return jsonResponse(handlers[action]());
+    }
+    return jsonResponse({ success: false, error: 'Aksi tidak dikenal: ' + action });
+  } catch (err) {
+    return jsonResponse({ success: false, error: err.toString() });
+  }
 }
 
 function doPost(e) {
-  return route(e);
-}
-
-function route(e) {
   try {
-    let action, body = {};
+    let action;
+    let body = {};
 
     if (e.postData && e.postData.contents) {
       body = JSON.parse(e.postData.contents);
@@ -66,31 +85,24 @@ function route(e) {
 
     const handlers = {
       'ping': () => ({ success: true, message: 'pong', timestamp: Date.now() }),
-      'validatePin': () => handleValidatePin(body),
-      'validatePassword': () => handleValidatePassword(body),
       'getOrders': () => handleGetOrders(e.parameter),
       'createOrder': () => handleCreateOrder(body),
       'updateOrder': () => handleUpdateOrder(body),
       'deleteOrder': () => handleDeleteOrder(body),
       'updateOrderStatus': () => handleUpdateOrderStatus(body),
-      'getKasMasuk': () => handleGetKasMasuk(e.parameter),
       'createKasMasuk': () => handleCreateKasMasuk(body),
-      'updateKasMasuk': () => handleUpdateKasMasuk(body),
-      'deleteKasMasuk': () => handleDeleteKasMasuk(body),
-      'verifyKasMasuk': () => handleVerifyKasMasuk(body),
-      'attachBuktiKasMasuk': () => handleAttachBuktiKasMasuk(body),
-      'getKasKeluar': () => handleGetKasKeluar(e.parameter),
+      'updateStatusVerifikasi': () => handleUpdateStatusVerifikasi(body),
       'createKasKeluar': () => handleCreateKasKeluar(body),
-      'updateKasKeluar': () => handleUpdateKasKeluar(body),
       'deleteKasKeluar': () => handleDeleteKasKeluar(body),
-      'getSummaryReport': () => handleGetSummaryReport(e.parameter),
+      'saveClient': () => handleSaveClient(body),
+      'deleteClient': () => handleDeleteClient(body),
       'savePDFtoDrive': () => handleSavePDFtoDrive(body),
-      'getClients': () => handleGetClients(),
+      'uploadFile': () => handleUploadFile(body),
       'resetData': () => handleResetData(body),
     };
 
-    if (!action || !handlers[action]) {
-      return jsonResponse({ success: false, error: 'Action tidak dikenal: ' + action });
+    if (!handlers[action]) {
+      return jsonResponse({ success: false, error: 'Aksi tidak dikenal: ' + action });
     }
 
     return jsonResponse(handlers[action]());
@@ -99,22 +111,7 @@ function route(e) {
   }
 }
 
-// ---- AUTH ----
-function handleValidatePin(body) {
-  if (body.pin === PIN_KASIR) {
-    return { success: true, data: { role: 'KASIR', nama: 'Kasir KBM' } };
-  }
-  return { success: false, error: 'PIN salah' };
-}
-
-function handleValidatePassword(body) {
-  if (body.password === PASSWORD_OWNER) {
-    return { success: true, data: { role: 'OWNER', nama: 'Owner KBM' } };
-  }
-  return { success: false, error: 'Password salah' };
-}
-
-// ---- CACHING SERVICE HELPERS (Hemat Kuota Eksekusi GAS) ----
+// ---- CACHING SERVICE HELPERS (Hemat Kuota Eksekusi GAS) ------
 const CACHE_TTL_SECONDS = 120; // 2 menit
 
 function getScriptCache(key) {
@@ -174,7 +171,7 @@ function getSheet(name) {
 
 function initSheetHeaders(sheet, name) {
   const headers = {
-    [SHEET_ORDERS]: ['id_order','tanggal','nama_penerbit','judul_penulis','judul_buku','nama_penulis','jml_pcs','ukuran','ukuran_custom','kertas','cetak_bw','cetak_fc','finishing','total_harga','status_order','catatan','alamat_penerbit','kontak_penerbit'],
+    [SHEET_ORDERS]: ['id_order','tanggal','nama_penerbit','judul_penulis','judul_buku','nama_penulis','jml_pcs','ukuran','ukuran_custom','kertas','cetak_bw','cetak_fc','finishing','total_harga','status_order','catatan','alamat_penerbit','kontak_penerbit','packing_dus_tipe','packing_dus_qty','biaya_packing','kertas_bw','kertas_fc','link_bukti'],
     [SHEET_KAS_MASUK]: ['id_kas_masuk','tanggal','id_order','jenis_pembayaran','nominal','metode','diinput_oleh','status_verifikasi','file_id_bukti','nama_penerbit','keterangan'],
     [SHEET_KAS_KELUAR]: ['id_kas_keluar','tanggal','kategori','rincian','nominal','sumber_kas','diinput_oleh','file_id_nota'],
     [SHEET_CLIENTS]: ['nama_penerbit','kontak','alamat'],
@@ -195,7 +192,11 @@ function ensureOrderHeaders(sheet) {
     return;
   }
   const currentHeaders = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
-  const required = ['judul_buku', 'nama_penulis', 'alamat_penerbit', 'kontak_penerbit'];
+  const required = [
+    'judul_buku', 'nama_penulis', 'alamat_penerbit', 'kontak_penerbit',
+    'packing_dus_tipe', 'packing_dus_qty', 'biaya_packing', 'kertas_bw', 'kertas_fc',
+    'link_bukti'
+  ];
   const toAdd = required.filter(h => !currentHeaders.includes(h));
   if (toAdd.length > 0) {
     sheet.getRange(1, lastCol + 1, 1, toAdd.length).setValues([toAdd]).setFontWeight('bold');
@@ -274,10 +275,15 @@ function saveBase64ToDrive(base64, filename, folderPath) {
 }
 
 function getYearMonthPath() {
-  const now = new Date();
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  return `${DRIVE_FOLDER_NAME}/${yyyy}/${mm}`;
+  return '';
+}
+
+function extractDriveFileId(val) {
+  if (!val) return '';
+  const str = String(val).trim();
+  const match = str.match(/\/d\/([a-zA-Z0-9_-]+)/) || str.match(/id=([a-zA-Z0-9_-]+)/);
+  if (match) return match[1];
+  return str;
 }
 
 // ---- ORDERS ----
@@ -307,15 +313,21 @@ function handleGetOrders(params) {
   // Parse finishing JSON & support separated book fields
   data = data.map(o => ({
     ...o,
-    finishing: tryParseJSON(o.finishing, []),
-    jml_pcs: Number(o.jml_pcs),
-    cetak_bw: Number(o.cetak_bw),
-    cetak_fc: Number(o.cetak_fc),
-    total_harga: Number(o.total_harga),
+    finishing: parseFinishingSafely(o.finishing),
+    jml_pcs: Number(o.jml_pcs) || 0,
+    cetak_bw: Number(o.cetak_bw) || 0,
+    cetak_fc: Number(o.cetak_fc) || 0,
+    packing_dus_qty: Number(o.packing_dus_qty) || 0,
+    biaya_packing: Number(o.biaya_packing) || 0,
+    packing_dus_tipe: o.packing_dus_tipe || null,
+    kertas_bw: o.kertas_bw || o.kertas || '',
+    kertas_fc: o.kertas_fc || o.kertas || '',
+    total_harga: Number(o.total_harga) || 0,
     judul_buku: o.judul_buku || (o.judul_penulis ? String(o.judul_penulis).split(' / ')[0] : ''),
     nama_penulis: o.nama_penulis || (o.judul_penulis && String(o.judul_penulis).includes(' / ') ? String(o.judul_penulis).split(' / ').slice(1).join(' / ') : ''),
     alamat_penerbit: o.alamat_penerbit || '',
     kontak_penerbit: o.kontak_penerbit || '',
+    link_bukti: o.link_bukti || '',
     tanggal: o.tanggal instanceof Date
       ? Utilities.formatDate(o.tanggal, 'Asia/Jakarta', 'yyyy-MM-dd')
       : String(o.tanggal),
@@ -358,14 +370,20 @@ function handleCreateOrder(body) {
         case 'ukuran': return order.ukuran || '';
         case 'ukuran_custom': return order.ukuran_custom || '';
         case 'kertas': return order.kertas || '';
+        case 'kertas_bw': return order.kertas_bw || order.kertas || '';
+        case 'kertas_fc': return order.kertas_fc || order.kertas || '';
         case 'cetak_bw': return Number(order.cetak_bw) || 0;
         case 'cetak_fc': return Number(order.cetak_fc) || 0;
         case 'finishing': return JSON.stringify(order.finishing || []);
+        case 'packing_dus_tipe': return order.packing_dus_tipe || '';
+        case 'packing_dus_qty': return Number(order.packing_dus_qty) || 0;
+        case 'biaya_packing': return Number(order.biaya_packing) || 0;
         case 'total_harga': return Number(order.total_harga) || 0;
         case 'status_order': return 'PROSES';
         case 'catatan': return order.catatan || '';
         case 'alamat_penerbit': return order.alamat_penerbit || '';
         case 'kontak_penerbit': return order.kontak_penerbit || '';
+        case 'link_bukti': return order.link_bukti || '';
         default: return order[h] || '';
       }
     });
@@ -414,6 +432,7 @@ function handleUpdateOrder(body) {
   lock.waitLock(30000);
   try {
     const sheet = getSheet(SHEET_ORDERS);
+    ensureOrderHeaders(sheet);
     const data = sheet.getDataRange().getValues();
     if (data.length <= 1) return { success: false, error: 'Data order kosong' };
 
@@ -479,6 +498,14 @@ function handleUpdateOrder(body) {
           if (order.kertas !== undefined) val = order.kertas;
           else shouldUpdate = false;
           break;
+        case 'kertas_bw':
+          if (order.kertas_bw !== undefined) val = order.kertas_bw;
+          else shouldUpdate = false;
+          break;
+        case 'kertas_fc':
+          if (order.kertas_fc !== undefined) val = order.kertas_fc;
+          else shouldUpdate = false;
+          break;
         case 'cetak_bw':
           if (order.cetak_bw !== undefined) val = Number(order.cetak_bw) || 0;
           else shouldUpdate = false;
@@ -489,6 +516,18 @@ function handleUpdateOrder(body) {
           break;
         case 'finishing':
           if (order.finishing !== undefined) val = JSON.stringify(order.finishing || []);
+          else shouldUpdate = false;
+          break;
+        case 'packing_dus_tipe':
+          if (order.packing_dus_tipe !== undefined) val = order.packing_dus_tipe || '';
+          else shouldUpdate = false;
+          break;
+        case 'packing_dus_qty':
+          if (order.packing_dus_qty !== undefined) val = Number(order.packing_dus_qty) || 0;
+          else shouldUpdate = false;
+          break;
+        case 'biaya_packing':
+          if (order.biaya_packing !== undefined) val = Number(order.biaya_packing) || 0;
           else shouldUpdate = false;
           break;
         case 'total_harga':
@@ -509,6 +548,10 @@ function handleUpdateOrder(body) {
           break;
         case 'kontak_penerbit':
           if (order.kontak_penerbit !== undefined) val = order.kontak_penerbit;
+          else shouldUpdate = false;
+          break;
+        case 'link_bukti':
+          if (order.link_bukti !== undefined) val = order.link_bukti;
           else shouldUpdate = false;
           break;
         default:
@@ -584,6 +627,8 @@ function handleGetKasMasuk(params) {
 
   data = data.map(k => ({
     ...k,
+    file_id_bukti: extractDriveFileId(k.file_id_bukti),
+    link_bukti: k.file_id_bukti ? (String(k.file_id_bukti).startsWith('http') ? k.file_id_bukti : `https://drive.google.com/file/d/${k.file_id_bukti}/view`) : '',
     nominal: Number(k.nominal),
     tanggal: k.tanggal instanceof Date
       ? Utilities.formatDate(k.tanggal, 'Asia/Jakarta', 'yyyy-MM-dd')
@@ -603,9 +648,10 @@ function handleCreateKasMasuk(body) {
   // 1. Upload ke Google Drive DI LUAR lock agar worker lain tidak tertahan antre
   let fileId = null;
   if (body.foto_base64) {
-    const path = `${getYearMonthPath()}/Bukti_Kas_Masuk`;
+    const path = 'Bukti_Kas_Masuk';
     fileId = saveBase64ToDrive(body.foto_base64, body.foto_filename || `bukti_${Date.now()}.jpg`, path);
   }
+  const driveUrl = fileId ? `https://drive.google.com/file/d/${fileId}/view` : '';
 
   // 2. Kunci skrip hanya selama pencatatan ID sequence dan penulisan baris sheet
   const lock = LockService.getScriptLock();
@@ -637,7 +683,7 @@ function handleCreateKasMasuk(body) {
         case 'metode': return body.metode;
         case 'diinput_oleh': return body.diinput_oleh;
         case 'status_verifikasi': return status_verifikasi;
-        case 'file_id_bukti': return fileId || '';
+        case 'file_id_bukti': return driveUrl || fileId || '';
         case 'nama_penerbit': return nama_penerbit;
         case 'keterangan': return body.keterangan || '';
         default: return body[h] || '';
@@ -648,7 +694,32 @@ function handleCreateKasMasuk(body) {
     SpreadsheetApp.flush();
     invalidateCache(['kas_masuk_all']);
 
-    return { success: true, data: { id_kas_masuk: id, file_id_bukti: fileId } };
+    // Sinkronkan link bukti bayar ke tabel Orders jika terkait order
+    if (body.id_order && driveUrl) {
+      try {
+        const orderSheet = getSheet(SHEET_ORDERS);
+        ensureOrderHeaders(orderSheet);
+        const orderData = orderSheet.getDataRange().getValues();
+        if (orderData.length > 1) {
+          const oHeaders = orderData[0];
+          const oIdCol = oHeaders.indexOf('id_order');
+          const oBuktiCol = oHeaders.indexOf('link_bukti');
+          if (oIdCol !== -1 && oBuktiCol !== -1) {
+            for (let i = 1; i < orderData.length; i++) {
+              if (String(orderData[i][oIdCol]).trim() === String(body.id_order).trim()) {
+                orderSheet.getRange(i + 1, oBuktiCol + 1).setValue(driveUrl);
+                invalidateCache(['orders_all']);
+                break;
+              }
+            }
+          }
+        }
+      } catch (e) {
+        Logger.log('Update order link_bukti notice: ' + e);
+      }
+    }
+
+    return { success: true, data: { id_kas_masuk: id, file_id_bukti: fileId, link_bukti: driveUrl } };
   } finally {
     lock.releaseLock();
   }
@@ -822,6 +893,8 @@ function handleGetKasKeluar(params) {
 
   data = data.map(k => ({
     ...k,
+    file_id_nota: extractDriveFileId(k.file_id_nota),
+    link_nota: k.file_id_nota ? (String(k.file_id_nota).startsWith('http') ? k.file_id_nota : `https://drive.google.com/file/d/${k.file_id_nota}/view`) : '',
     nominal: Number(k.nominal),
     tanggal: k.tanggal instanceof Date
       ? Utilities.formatDate(k.tanggal, 'Asia/Jakarta', 'yyyy-MM-dd')
@@ -837,9 +910,10 @@ function handleCreateKasKeluar(body) {
   // 1. Upload ke Google Drive DI LUAR lock
   let fileId = null;
   if (body.foto_base64) {
-    const path = `${getYearMonthPath()}/Nota_Kas_Keluar`;
+    const path = 'Nota_Kas_Keluar';
     fileId = saveBase64ToDrive(body.foto_base64, body.foto_filename || `nota_${Date.now()}.jpg`, path);
   }
+  const driveUrl = fileId ? `https://drive.google.com/file/d/${fileId}/view` : '';
 
   // 2. Kunci skrip hanya selama sequence & append
   const lock = LockService.getScriptLock();
@@ -858,7 +932,7 @@ function handleCreateKasKeluar(body) {
         case 'nominal': return Number(body.nominal) || 0;
         case 'sumber_kas': return body.sumber_kas;
         case 'diinput_oleh': return body.diinput_oleh;
-        case 'file_id_nota': return fileId || '';
+        case 'file_id_nota': return driveUrl || fileId || '';
         default: return body[h] || '';
       }
     });
@@ -867,7 +941,7 @@ function handleCreateKasKeluar(body) {
     SpreadsheetApp.flush();
     invalidateCache(['kas_keluar_all']);
 
-    return { success: true, data: { id_kas_keluar: id, file_id_nota: fileId } };
+    return { success: true, data: { id_kas_keluar: id, file_id_nota: fileId, link_nota: driveUrl } };
   } finally {
     lock.releaseLock();
   }
@@ -1023,11 +1097,33 @@ function handleSavePDFtoDrive(body) {
   try {
     const bytes = Utilities.base64Decode(body.pdf_base64);
     const blob = Utilities.newBlob(bytes, 'application/pdf', `${body.nomor_invoice}.pdf`);
-    const path = `${DRIVE_FOLDER_NAME}/Generated_Invoices/${new Date().getFullYear()}/${String(new Date().getMonth()+1).padStart(2,'0')}`;
+    const path = 'Invoices';
     const folder = getOrCreateFolder(path);
     const file = folder.createFile(blob);
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
     return { success: true, data: { file_id: file.getId(), drive_url: file.getUrl() } };
+  } catch (e) {
+    return { success: false, error: e.toString() };
+  }
+}
+
+// ---- UPLOAD FILE UMUM ----
+function handleUploadFile(body) {
+  try {
+    const base64 = body.file_base64 || body.foto_base64 || body.base64;
+    if (!base64) return { success: false, error: 'Data file base64 tidak boleh kosong' };
+    const filename = body.filename || body.foto_filename || `file_${Date.now()}.jpg`;
+    const folderPath = body.folder_path || 'Uploads';
+    const fileId = saveBase64ToDrive(base64, filename, folderPath);
+    if (!fileId) return { success: false, error: 'Gagal menyimpan file ke Google Drive' };
+    return {
+      success: true,
+      data: {
+        file_id: fileId,
+        url: `https://drive.google.com/file/d/${fileId}/view`,
+        filename: filename,
+      }
+    };
   } catch (e) {
     return { success: false, error: e.toString() };
   }
@@ -1077,6 +1173,25 @@ function tryParseJSON(str, fallback) {
   catch (e) { return fallback; }
 }
 
+function parseFinishingSafely(val) {
+  if (Array.isArray(val)) return val;
+  if (!val) return ['SOFT_COVER'];
+  if (typeof val === 'string') {
+    val = val.trim();
+    if (val.startsWith('[') && val.endsWith(']')) {
+      try {
+        const arr = JSON.parse(val);
+        if (Array.isArray(arr) && arr.length > 0) return arr;
+      } catch (e) {}
+    }
+    const upper = val.toUpperCase().replace(/\s+/g, '_');
+    if (upper.includes('HARD_COVER') || upper.includes('HARDCOVER')) return ['HARD_COVER'];
+    if (upper.includes('SOFT_COVER') || upper.includes('SOFTCOVER')) return ['SOFT_COVER'];
+    if (upper.length > 0) return [upper];
+  }
+  return ['SOFT_COVER'];
+}
+
 /**
  * Jalankan fungsi ini satu kali di Google Apps Script Editor untuk inisialisasi semua sheet & folder Drive otomatis:
  */
@@ -1085,7 +1200,9 @@ function setupDatabase() {
   sheets.forEach(name => {
     getSheet(name);
   });
-  getOrCreateFolder(DRIVE_FOLDER_NAME);
+  getOrCreateFolder('Bukti_Kas_Masuk');
+  getOrCreateFolder('Nota_Kas_Keluar');
+  getOrCreateFolder('Invoices');
   Logger.log('Setup selesai! Seluruh sheet tab & folder Google Drive berhasil diinisialisasi.');
 }
 
@@ -1102,12 +1219,11 @@ function handleResetData(body) {
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
-    const pin = String(body.pin || '').trim();
-    const conf = String(body.confirmation || '').trim().toUpperCase();
-    const isAuthorized = (pin === PIN_KASIR) || (pin === PASSWORD_OWNER) || (conf === 'RESET');
+    const conf = String(body.confirmation || body.pin || '').trim().toUpperCase();
+    const isAuthorized = (conf === 'RESET');
 
     if (!isAuthorized) {
-      return { success: false, error: 'Otorisasi gagal. Masukkan PIN yang valid atau ketik RESET.' };
+      return { success: false, error: 'Otorisasi gagal. Masukkan konfirmasi: RESET.' };
     }
 
     const resetOrders = body.reset_orders !== false;
@@ -1161,7 +1277,7 @@ function handleResetData(body) {
 function testDrivePermission() {
   const root = DriveApp.getRootFolder();
   Logger.log('✅ DriveApp berhasil diotorisasi! Nama root: ' + root.getName());
-  const folder = getOrCreateFolder(`${DRIVE_FOLDER_NAME}/test`);
+  const folder = getOrCreateFolder('test');
   Logger.log('✅ Folder sistem siap: ' + folder.getName());
 }
 

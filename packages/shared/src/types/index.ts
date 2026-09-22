@@ -65,6 +65,7 @@ export interface Order {
   catatan?: string
   alamat_penerbit?: string
   kontak_penerbit?: string
+  link_bukti?: string       // Google Drive view URL
 }
 
 export interface KasMasuk {
@@ -77,6 +78,7 @@ export interface KasMasuk {
   diinput_oleh: string      // 'KASIR' | 'FINANCE' | 'OWNER'
   status_verifikasi: StatusVerifikasi
   file_id_bukti?: string    // Google Drive file ID
+  link_bukti?: string       // Google Drive view URL
   nama_penerbit?: string    // denormalized untuk display
   keterangan?: string
 }
@@ -90,6 +92,7 @@ export interface KasKeluar {
   sumber_kas: SumberKas
   diinput_oleh: string
   file_id_nota?: string     // Google Drive file ID
+  link_nota?: string        // Google Drive view URL
 }
 
 export interface Client {

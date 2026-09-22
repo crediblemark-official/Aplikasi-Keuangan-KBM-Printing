@@ -162,8 +162,8 @@
                 <div class="text-right flex flex-col items-end gap-1">
                   <div class="flex items-center gap-2">
                     <a
-                      v-if="km.file_id_bukti"
-                      :href="`https://drive.google.com/file/d/${km.file_id_bukti}/view`"
+                      v-if="km.file_id_bukti || km.link_bukti"
+                      :href="km.link_bukti || (km.file_id_bukti && km.file_id_bukti.startsWith('http') ? km.file_id_bukti : `https://drive.google.com/file/d/${km.file_id_bukti}/view`)"
                       target="_blank"
                       rel="noopener"
                       class="inline-flex items-center gap-1 text-[11px] font-semibold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-200/80 px-2 py-0.5 rounded transition-colors cursor-pointer"

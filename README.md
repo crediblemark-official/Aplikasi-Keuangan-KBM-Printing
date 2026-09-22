@@ -52,12 +52,11 @@ Sistem manajemen operasional dan keuangan percetakan buku terintegrasi (*2-Apps 
    - Pada spreadsheet tersebut, klik menu **Extensions (Ekstensi)** > **Apps Script**.
    - Hapus kode bawaan di `Code.gs`.
    - Buka file [`gas/Code.gs`](file:///media/rasyiqi/7653717A1C07B131/KBM-Pinting/gas/Code.gs) dari proyek ini, lalu salin dan tempelkan seluruh kodenya ke editor Apps Script.
-   - Ubah baris konfigurasi di baris 20-23:
+   - Ubah baris konfigurasi di baris 20-22:
      ```javascript
      const SPREADSHEET_ID = 'TEMPEL_SPREADSHEET_ID_ANDA_DI_SINI';
-     const DRIVE_FOLDER_NAME = 'Percetakan_System_Drive';
-     const PIN_KASIR = '1234';       // PIN login Kasir/CS
-     const PASSWORD_OWNER = 'kbm2026'; // Password login Owner
+     const DRIVE_FOLDER_ID = '1ZOov_iTND9DFNYbR7U5iBt5fMNCQEifS'; // Google Drive Root Folder
+     const DRIVE_FOLDER_NAME = 'KBM Printing';
      ```
 
 3. **Inisialisasi Database Otomatis:**
