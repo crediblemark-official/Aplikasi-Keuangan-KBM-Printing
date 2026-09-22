@@ -162,7 +162,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { IonPage, IonHeader, IonContent, IonIcon, useIonRouter } from '@ionic/vue'
+import { IonPage, IonHeader, IonContent, IonIcon, useIonRouter, onIonViewWillEnter } from '@ionic/vue'
 import { chevronForwardOutline, logOutOutline } from 'ionicons/icons'
 import { useAuthStore } from '../stores/auth'
 import { useOrderStore } from '../stores/orders'
@@ -273,6 +273,10 @@ async function toggleOrderStatus(order: any) {
 }
 
 onMounted(() => {
+  orderStore.fetchOrders()
+})
+
+onIonViewWillEnter(() => {
   orderStore.fetchOrders()
 })
 

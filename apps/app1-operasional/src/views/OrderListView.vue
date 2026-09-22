@@ -125,7 +125,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import {
-  IonPage, IonHeader, IonContent, useIonRouter,
+  IonPage, IonHeader, IonContent, useIonRouter, onIonViewWillEnter,
 } from '@ionic/vue'
 import PageHeader from '@shared/components/PageHeader.vue'
 import FilterTabs from '@shared/components/FilterTabs.vue'
@@ -227,6 +227,13 @@ function debouncedSearch() {
 }
 
 onMounted(() => {
+  if (route.query.q) {
+    search.value = String(route.query.q)
+  }
+  orderStore.fetchOrders()
+})
+
+onIonViewWillEnter(() => {
   if (route.query.q) {
     search.value = String(route.query.q)
   }

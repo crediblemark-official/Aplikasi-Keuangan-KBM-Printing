@@ -51,7 +51,7 @@ function withTimeout<T>(promise: Promise<T>, ms = 30000): Promise<T> {
 // ---- GET request ----
 export async function gasGet<T = unknown>(
   action: string,
-  params: Record<string, string | number | boolean> = {},
+  params: Record<string, string | number | boolean | undefined | null> = {},
   timeoutMs = 30000,
 ): Promise<ApiResponse<T>> {
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -68,7 +68,11 @@ export async function gasGet<T = unknown>(
   if (action === 'ping') {
     url.searchParams.set('_t', String(Date.now()))
   }
-  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, String(v)))
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== '') {
+      url.searchParams.set(k, String(v))
+    }
+  })
 
   try {
     const res = await withTimeout(

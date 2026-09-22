@@ -145,7 +145,8 @@ export const useOrderStore = defineStore('orders', () => {
     isLoading.value = true
     error.value = null
     try {
-      const res = await api.getOrders({ search })
+      const cleanSearch = search && search.trim() !== '' ? search.trim() : undefined
+      const res = await api.getOrders(cleanSearch ? { search: cleanSearch } : undefined)
 
       if (res.success && res.data) {
         lastFetchOrdersTime = Date.now()

@@ -289,7 +289,10 @@ function extractDriveFileId(val) {
 // ---- ORDERS ----
 function handleGetOrders(params) {
   params = params || {};
-  const isDefaultQuery = (!params.status || params.status === '') && (!params.search || params.search === '');
+  const status = (params.status && params.status !== 'undefined' && params.status !== 'null' && params.status !== 'all') ? String(params.status).trim() : '';
+  const search = (params.search && params.search !== 'undefined' && params.search !== 'null') ? String(params.search).trim() : '';
+
+  const isDefaultQuery = !status && !search;
   if (isDefaultQuery) {
     const cached = getScriptCache('orders_all');
     if (cached) return { success: true, data: cached, _cached: true };
@@ -298,15 +301,15 @@ function handleGetOrders(params) {
   const sheet = getSheet(SHEET_ORDERS);
   let data = sheetToObjects(sheet);
 
-  if (params.status) {
-    data = data.filter(o => o.status_order === params.status);
+  if (status) {
+    data = data.filter(o => o.status_order === status);
   }
-  if (params.search) {
-    const q = params.search.toLowerCase();
+  if (search) {
+    const q = search.toLowerCase();
     data = data.filter(o =>
-      String(o.nama_penerbit).toLowerCase().includes(q) ||
-      String(o.judul_penulis).toLowerCase().includes(q) ||
-      String(o.id_order).toLowerCase().includes(q)
+      String(o.nama_penerbit || '').toLowerCase().includes(q) ||
+      String(o.judul_penulis || '').toLowerCase().includes(q) ||
+      String(o.id_order || '').toLowerCase().includes(q)
     );
   }
 
@@ -609,7 +612,10 @@ function handleDeleteOrder(body) {
 // ---- KAS MASUK ----
 function handleGetKasMasuk(params) {
   params = params || {};
-  const isDefaultQuery = (!params.id_order || params.id_order === '') && (!params.status || params.status === '');
+  const idOrder = (params.id_order && params.id_order !== 'undefined' && params.id_order !== 'null') ? String(params.id_order).trim() : '';
+  const status = (params.status && params.status !== 'undefined' && params.status !== 'null' && params.status !== 'all') ? String(params.status).trim() : '';
+
+  const isDefaultQuery = !idOrder && !status;
   if (isDefaultQuery) {
     const cached = getScriptCache('kas_masuk_all');
     if (cached) return { success: true, data: cached, _cached: true };
@@ -618,11 +624,11 @@ function handleGetKasMasuk(params) {
   const sheet = getSheet(SHEET_KAS_MASUK);
   let data = sheetToObjects(sheet);
 
-  if (params.id_order) {
-    data = data.filter(k => k.id_order === params.id_order);
+  if (idOrder) {
+    data = data.filter(k => k.id_order === idOrder);
   }
-  if (params.status) {
-    data = data.filter(k => k.status_verifikasi === params.status);
+  if (status) {
+    data = data.filter(k => k.status_verifikasi === status);
   }
 
   data = data.map(k => ({
@@ -875,19 +881,20 @@ function checkAndUpdateOrderStatus(id_order) {
 // ---- KAS KELUAR ----
 function handleGetKasKeluar(params) {
   params = params || {};
-  const cacheKey = 'kas_keluar_' + (params.periode || 'all');
+  const periode = (params.periode && params.periode !== 'undefined' && params.periode !== 'null' && params.periode !== 'all') ? String(params.periode).trim() : '';
+  const cacheKey = 'kas_keluar_' + (periode || 'all');
   const cached = getScriptCache(cacheKey);
   if (cached) return { success: true, data: cached, _cached: true };
 
   const sheet = getSheet(SHEET_KAS_KELUAR);
   let data = sheetToObjects(sheet);
 
-  if (params.periode) {
+  if (periode) {
     data = data.filter(k => {
       const tgl = k.tanggal instanceof Date
         ? Utilities.formatDate(k.tanggal, 'Asia/Jakarta', 'yyyy-MM')
         : String(k.tanggal).substring(0, 7);
-      return tgl === params.periode;
+      return tgl === periode;
     });
   }
 
