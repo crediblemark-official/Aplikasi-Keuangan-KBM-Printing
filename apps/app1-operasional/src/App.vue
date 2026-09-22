@@ -5,7 +5,7 @@
         v-if="showSidebar"
         brand-title="KBM Operasional"
         brand-subtitle="Order & Percetakan Buku"
-        brand-badge="Operasional"
+        brand-badge="Ops"
         :nav-items="navItems"
         :current-path="route.path"
         :user-name="authStore.nama || 'Tim Operasional'"

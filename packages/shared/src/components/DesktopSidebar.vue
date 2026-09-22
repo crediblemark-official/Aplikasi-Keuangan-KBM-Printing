@@ -1,17 +1,17 @@
 <template>
   <aside class="desktop-sidebar hidden lg:flex flex-col w-64 bg-white border-r border-slate-200 h-screen sticky top-0 flex-shrink-0 z-30 select-none">
     <!-- Brand Header (h-14, aligns with PageHeader) -->
-    <div class="h-14 px-4 border-b border-slate-200 flex items-center justify-between flex-shrink-0 bg-white">
+    <div class="h-14 px-4 border-b border-slate-200 flex items-center justify-between gap-2 flex-shrink-0 bg-white">
       <div class="flex items-center gap-2.5 min-w-0">
         <slot name="brand-icon">
           <KbmLogo size="sm" variant="icon" />
         </slot>
         <div class="min-w-0">
-          <p class="text-slate-900 font-bold text-xs tracking-tight leading-tight">{{ brandTitle }}</p>
-          <p class="text-[10px] font-semibold text-slate-400 leading-none mt-0.5">{{ brandSubtitle }}</p>
+          <p class="text-slate-900 font-bold text-xs tracking-tight leading-tight truncate">{{ brandTitle }}</p>
+          <p class="text-[10px] font-semibold text-slate-400 leading-none mt-0.5 truncate">{{ brandSubtitle }}</p>
         </div>
       </div>
-      <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-50 text-red-600 border border-red-100 font-mono">{{ brandBadge }}</span>
+      <span v-if="brandBadge" class="flex-shrink-0 px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-50 text-red-600 border border-red-100 font-mono">{{ brandBadge }}</span>
     </div>
 
     <!-- Navigation Menu -->
