@@ -64,8 +64,24 @@
 
 @media (min-width: 1024px) {
   .desktop-sidebar {
-    display: flex  !important;
-    width:   16rem !important; /* 256px / w-64 */
+    display: flex !important;
+    width: 16rem; /* 256px / w-64 */
+    transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .desktop-sidebar.is-collapsed {
+    width: 56px !important;
+  }
+  .desktop-sidebar.is-collapsed nav {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+  .desktop-sidebar nav button {
+    margin-bottom: 6px !important;
+    flex-shrink: 0 !important;
+  }
+  .desktop-sidebar nav button:last-child {
+    margin-bottom: 0 !important;
   }
 }
 

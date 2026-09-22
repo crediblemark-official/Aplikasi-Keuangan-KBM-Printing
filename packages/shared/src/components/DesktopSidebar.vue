@@ -1,12 +1,13 @@
 <template>
   <aside
     class="desktop-sidebar hidden lg:flex flex-col bg-white border-r border-slate-200 h-screen sticky top-0 flex-shrink-0 z-30 select-none transition-all duration-300 ease-in-out"
-    :class="isCollapsed ? 'w-[72px]' : 'w-64'"
+    :class="isCollapsed ? 'is-collapsed w-[56px]' : 'w-64'"
+    :style="{ width: isCollapsed ? '56px' : '256px' }"
   >
     <!-- Brand Header (h-14, aligns with PageHeader) -->
     <div
       class="h-14 border-b border-slate-200 flex items-center flex-shrink-0 bg-white transition-all overflow-hidden"
-      :class="isCollapsed ? 'px-2 justify-center' : 'px-3.5 justify-between gap-1.5'"
+      :class="isCollapsed ? 'px-1 justify-center' : 'px-3.5 justify-between gap-1.5'"
     >
       <!-- Expanded Brand Header -->
       <template v-if="!isCollapsed">
@@ -57,8 +58,8 @@
 
     <!-- Navigation Menu -->
     <nav
-      class="flex-1 py-3 overflow-y-auto space-y-1.5 transition-all"
-      :class="isCollapsed ? 'px-2' : 'px-3'"
+      class="flex-1 py-3 overflow-y-auto transition-all"
+      :class="isCollapsed ? 'px-1.5 flex flex-col items-center' : 'px-3 space-y-1.5'"
     >
       <button
         v-for="item in navItems"
@@ -66,13 +67,14 @@
         type="button"
         @click="emit('navigate', item.path)"
         :title="isCollapsed ? (item.label + (item.badge ? ` (${item.badge})` : '')) : undefined"
-        class="w-full flex items-center rounded-xl text-xs transition-all cursor-pointer group relative"
+        class="flex items-center rounded-xl text-xs transition-all cursor-pointer group relative"
         :class="[
-          isCollapsed ? 'justify-center p-1.5' : 'gap-3 px-3 py-2 text-left',
+          isCollapsed ? 'w-10 h-10 justify-center p-0' : 'w-full gap-3 px-3 py-2 text-left',
           isActive(item.path)
             ? 'bg-red-50 text-red-600 font-semibold'
             : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium'
         ]"
+        :style="{ marginBottom: '6px', flexShrink: 0 }"
       >
         <!-- Icon Container -->
         <div
@@ -119,15 +121,16 @@
 
     <!-- Bottom Collapse Toggle Bar -->
     <div
-      class="border-t border-slate-100 transition-all flex items-center"
-      :class="isCollapsed ? 'p-2 justify-center' : 'px-3 py-2 justify-between'"
+      class="border-t border-slate-100 transition-all flex items-center flex-shrink-0"
+      :class="isCollapsed ? 'py-2 justify-center' : 'px-3 py-2 justify-between'"
     >
       <span v-if="!isCollapsed" class="text-[11px] font-medium text-slate-400">Tampilan Menu</span>
       <button
         type="button"
         @click="toggleCollapse"
         :title="isCollapsed ? 'Perluas Sidebar' : 'Ciutkan Sidebar'"
-        class="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 active:bg-slate-200 transition-colors cursor-pointer"
+        class="inline-flex items-center gap-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 active:bg-slate-200 transition-colors cursor-pointer"
+        :class="isCollapsed ? 'w-9 h-8 justify-center p-0' : 'px-2 py-1.5'"
       >
         <svg
           class="w-4 h-4 transition-transform duration-300"
