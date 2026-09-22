@@ -1,6 +1,8 @@
 <template>
-  <div class="p-3 border-t border-slate-200 bg-white flex-shrink-0 relative">
+  <div class="border-t border-slate-200 bg-white flex-shrink-0 relative" :class="isCollapsed ? 'p-2 flex flex-col items-center gap-2' : 'p-3'">
+    <!-- Expanded View -->
     <div
+      v-if="!isCollapsed"
       class="flex items-center justify-between gap-2.5 p-2 rounded-xl bg-white border border-slate-200 shadow-2xs relative overflow-hidden transition-all select-none"
       :class="{ 'ring-2 ring-indigo-500/50 bg-indigo-50/20': isPressing }"
     >
@@ -56,6 +58,49 @@
         </svg>
       </button>
     </div>
+
+    <!-- Collapsed View -->
+    <template v-else>
+      <div
+        class="relative flex items-center justify-center cursor-pointer select-none"
+        @pointerdown="startLongPress"
+        @pointerup="cancelLongPress"
+        @pointerleave="cancelLongPress"
+        @pointercancel="cancelLongPress"
+        :title="`${name} (${roleText}) - Tahan 1.5 detik untuk Pengaturan Reset Data`"
+      >
+        <div
+          class="w-9 h-9 rounded-xl text-white font-bold flex items-center justify-center text-xs shadow-2xs transition-transform"
+          :class="[
+            avatarBg || 'bg-gradient-to-tr from-red-600 to-rose-600',
+            isPressing ? 'scale-90 ring-2 ring-rose-400' : ''
+          ]"
+        >
+          {{ userInitial }}
+        </div>
+        <span
+          class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 ring-white transition-colors"
+          :class="syncStore.isOnline ? 'bg-emerald-500' : 'bg-rose-500'"
+          :title="syncStore.isOnline ? 'Online' : 'Offline'"
+        ></span>
+        <div
+          v-if="isPressing"
+          class="absolute -inset-1 rounded-2xl border-2 border-rose-500 animate-pulse pointer-events-none"
+        ></div>
+      </div>
+
+      <!-- Compact Logout Button -->
+      <button
+        type="button"
+        @click="emit('logout')"
+        :title="`Keluar / Logout (${name})`"
+        class="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100 transition-colors cursor-pointer"
+      >
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        </svg>
+      </button>
+    </template>
 
     <!-- SECRET RESET DATA MODAL -->
     <BaseModal
@@ -200,11 +245,13 @@ const props = withDefaults(
     name?: string
     roleText?: string
     avatarBg?: string
+    isCollapsed?: boolean
   }>(),
   {
     name: 'User',
     roleText: 'Aktif',
     avatarBg: '',
+    isCollapsed: false,
   }
 )
 
