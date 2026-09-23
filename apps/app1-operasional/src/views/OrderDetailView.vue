@@ -68,9 +68,9 @@
             <button
               type="button"
               @click="toggleOrderStatus"
-              :disabled="isUpdatingStatus"
+              :disabled="isUpdatingStatus || order.status_order === 'BATAL'"
               class="group inline-flex items-center cursor-pointer transition-transform active:scale-95 disabled:opacity-60"
-              :title="order.status_order === 'PROSES' ? 'Klik untuk tandai SELESAI' : 'Klik untuk kembalikan ke PROSES'"
+              :title="order.status_order === 'PROSES' ? 'Klik untuk tandai SELESAI' : order.status_order === 'BATAL' ? 'Order dibatalkan — tidak dapat diubah status' : 'Klik untuk kembalikan ke PROSES'"
             >
               <StatusBadge
                 :status="order.status_order"
@@ -78,7 +78,7 @@
                 :loading="isUpdatingStatus"
               />
             </button>
-            <StatusBadge :status="sisaTagihan === 0 ? 'LUNAS' : totalMasuk > 0 ? 'DP' : 'BELUM_BAYAR'" size="xs" />
+            <StatusBadge :status="sisaTagihan === 0 ? 'LUNAS' : totalMasuk > 0 ? 'DP' : 'BELUM_BAYAR'" :verification="getVerificationStatus(kasMasukList)" size="xs" />
             <span class="text-[11px] text-slate-400 font-medium ml-auto font-mono">
               {{ formatTanggal(order.tanggal) }}
             </span>
@@ -189,7 +189,7 @@
             <!-- Line 0: Header (h-9 = 36px) -->
             <SectionHeader title="Status Pembayaran">
               <template #actions>
-                <StatusBadge :status="sisaTagihan === 0 ? 'LUNAS' : totalMasuk > 0 ? 'DP' : 'BELUM_BAYAR'" size="xs" />
+                <StatusBadge :status="sisaTagihan === 0 ? 'LUNAS' : totalMasuk > 0 ? 'DP' : 'BELUM_BAYAR'" :verification="getVerificationStatus(kasMasukList)" size="xs" />
               </template>
             </SectionHeader>
 
@@ -284,7 +284,7 @@ import StatusBadge from '@shared/components/StatusBadge.vue'
 import BaseButton from '@shared/components/BaseButton.vue'
 import { api } from '@shared/api/gasClient'
 import type { KasMasuk } from '@shared/types'
-import { formatRupiah, formatTanggal, formatMetode, formatFinishing, formatKertas, formatKertasOrder } from '@shared/utils/formatters'
+import { formatRupiah, formatTanggal, formatMetode, formatFinishing, formatKertas, formatKertasOrder, getVerificationStatus } from '@shared/utils/formatters'
 
 const route = useRoute()
 const router = useIonRouter()
@@ -298,6 +298,7 @@ const isUpdatingStatus = ref(false)
 
 async function toggleOrderStatus() {
   if (!order.value || isUpdatingStatus.value) return
+  if (order.value.status_order === 'BATAL') return
   const nextStatus = order.value.status_order === 'PROSES' ? 'SELESAI' : 'PROSES'
   isUpdatingStatus.value = true
   try {
@@ -372,8 +373,6 @@ onMounted(() => {
 })
 
 onIonViewWillEnter(() => {
-  if (!order.value) {
-    loadData()
-  }
+  loadData()
 })
 </script>

@@ -738,7 +738,7 @@ const depositSummary = computed(() => {
 
   // Top-up deposit masuk
   kasMasukList.value.forEach((k) => {
-    if (k.jenis_pembayaran === 'DEPOSIT' && (k as any).status_verifikasi !== 'BATAL') {
+    if (k.jenis_pembayaran === 'DEPOSIT' && (k as any).status_verifikasi === 'VERIFIED') {
       const name = (k.nama_penerbit || 'Penerbit Lain').trim().toLowerCase()
       const curr = map.get(name) || { masuk: 0, keluar: 0 }
       curr.masuk += k.nominal
@@ -748,7 +748,7 @@ const depositSummary = computed(() => {
 
   // Pemakaian deposit untuk bayar order
   kasMasukList.value.forEach((k) => {
-    if (k.metode === 'SALDO_DEPOSIT' && (k as any).status_verifikasi !== 'BATAL') {
+    if (k.metode === 'SALDO_DEPOSIT' && (k as any).status_verifikasi === 'VERIFIED') {
       const order = ordersList.value.find((o) => o.id_order === k.id_order)
       const name = (k.nama_penerbit || order?.nama_penerbit || 'Penerbit Lain').trim().toLowerCase()
       const curr = map.get(name) || { masuk: 0, keluar: 0 }

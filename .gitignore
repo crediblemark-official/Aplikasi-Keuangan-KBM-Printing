@@ -33,6 +33,11 @@ build-windows/
 *.apk
 *.aab
 
+# Signing keystore & credentials — JANGAN commit (rahasia produksi)
+*.jks
+keystore/
+keystore.properties
+
 # Don't ignore Gradle wrapper
 !**/gradle/wrapper/gradle-wrapper.jar
 !**/gradlew

@@ -279,6 +279,7 @@ async function submitKasKeluar() {
   isSubmitting.value = true
   try {
     const res = await api.createKasKeluar({
+      tanggal: form.value.tanggal,
       kategori: form.value.kategori,
       rincian: form.value.rincian,
       nominal: form.value.nominal,

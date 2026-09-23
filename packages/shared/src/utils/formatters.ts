@@ -51,10 +51,23 @@ export function parseRupiah(str: string): number {
 }
 
 /**
- * Get current date as YYYY-MM-DD
+ * Format sebuah Date ke string YYYY-MM-DD di zona waktu tertentu.
+ * Default Asia/Jakarta agar konsisten dengan zona waktu server GAS.
+ */
+export function toDateStringInTimeZone(date: Date, timeZone = 'Asia/Jakarta'): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date)
+}
+
+/**
+ * Get current date as YYYY-MM-DD (zona waktu Asia/Jakarta — WIB)
  */
 export function getTodayISO(): string {
-  return new Date().toISOString().split('T')[0]
+  return toDateStringInTimeZone(new Date())
 }
 
 /**
@@ -235,4 +248,23 @@ export function hitungStatusBayar(
   if (totalMasuk <= 0) return 'BELUM_BAYAR'
   if (totalMasuk >= totalHarga) return 'LUNAS'
   return 'DP'
+}
+
+/**
+ * Status verifikasi agregat untuk badge "sudut pandang owner":
+ * - 'VERIFIED' jika semua pembayaran tercatat (non-BATAL) sudah diverifikasi
+ * - 'PENDING'   jika ada pembayaran yang belum diverifikasi
+ * - ''          jika belum ada pembayaran sama sekali
+ */
+export function getVerificationStatus(
+  payments: Array<{ status_verifikasi?: string | null }>,
+): 'VERIFIED' | 'PENDING' | '' {
+  const relevant = (payments || []).filter(
+    (k) => k.status_verifikasi && String(k.status_verifikasi).toUpperCase() !== 'BATAL',
+  )
+  if (relevant.length === 0) return ''
+  const allVerified = relevant.every(
+    (k) => String(k.status_verifikasi).toUpperCase() === 'VERIFIED',
+  )
+  return allVerified ? 'VERIFIED' : 'PENDING'
 }

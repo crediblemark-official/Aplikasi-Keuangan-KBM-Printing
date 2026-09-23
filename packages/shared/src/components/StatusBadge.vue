@@ -49,7 +49,11 @@
       :class="dotClass"
     ></span>
 
-    <span class="truncate">{{ displayLabel }}</span>
+    <span class="truncate">
+      {{ displayLabel }}<template v-if="verificationSuffix">
+        <span :class="verificationAccentClass"> {{ verificationGlyph }} {{ verificationSuffix }}</span>
+      </template>
+    </span>
   </span>
 </template>
 
@@ -63,6 +67,7 @@ const props = withDefaults(
     showDot?: boolean
     label?: string
     loading?: boolean
+    verification?: string
   }>(),
   {
     status: '',
@@ -70,10 +75,39 @@ const props = withDefaults(
     showDot: true,
     label: '',
     loading: false,
+    verification: '',
   }
 )
 
 const normalizedStatus = computed(() => (props.status || '').toUpperCase().trim())
+
+const normalizedVerification = computed(() => (props.verification || '').toUpperCase().trim())
+
+// Status verifikasi pembayaran (dimensi "sudut pandang owner") yang ditambahkan ke badge
+// status pembayaran utama (dimensi "sudut pandang operasional").
+const verificationSuffix = computed(() => {
+  const v = normalizedVerification.value
+  if (v === 'VERIFIED') return 'Terverifikasi'
+  if (v === 'PENDING' || v === 'MENUNGGU_VERIFIKASI') return 'Menunggu Verifikasi'
+  if (v === 'BATAL') return 'Dibatalkan'
+  return ''
+})
+
+const verificationGlyph = computed(() => {
+  const v = normalizedVerification.value
+  if (v === 'VERIFIED') return '✓'
+  if (v === 'PENDING' || v === 'MENUNGGU_VERIFIKASI') return '⏳'
+  if (v === 'BATAL') return '✕'
+  return ''
+})
+
+const verificationAccentClass = computed(() => {
+  const v = normalizedVerification.value
+  if (v === 'VERIFIED') return 'text-emerald-600'
+  if (v === 'PENDING' || v === 'MENUNGGU_VERIFIKASI') return 'text-amber-600'
+  if (v === 'BATAL') return 'text-rose-600'
+  return ''
+})
 
 const isLoading = computed(() => {
   if (props.loading) return true
@@ -143,6 +177,11 @@ const badgeClasses = computed(() => {
 
 const dotClass = computed(() => {
   const s = normalizedStatus.value
+  const v = normalizedVerification.value
+  // Dimensi verifikasi lebih informatif untuk titik penanda saat disediakan
+  if (['PENDING', 'MENUNGGU_VERIFIKASI'].includes(v)) return 'bg-amber-500'
+  if (v === 'VERIFIED') return 'bg-emerald-500'
+  if (v === 'BATAL') return 'bg-rose-500'
   if (['SELESAI', 'LUNAS', 'VERIFIED', 'SYNCED'].includes(s)) return 'bg-emerald-500'
   if (['SYNCING'].includes(s)) return 'bg-blue-500'
   if (['PROSES', 'DP', 'KURANG', 'MENUNGGU_VERIFIKASI', 'PENDING'].includes(s)) return 'bg-amber-500'

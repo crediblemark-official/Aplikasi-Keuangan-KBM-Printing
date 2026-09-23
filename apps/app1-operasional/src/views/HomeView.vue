@@ -116,9 +116,9 @@
                     <button
                       type="button"
                       @click="toggleOrderStatus(order)"
-                      :disabled="updatingOrderId === order.id_order"
+                      :disabled="updatingOrderId === order.id_order || order.status_order === 'BATAL'"
                       class="group inline-flex items-center cursor-pointer transition-transform hover:scale-105 active:scale-95 disabled:opacity-60"
-                      :title="order.status_order === 'PROSES' ? 'Klik untuk tandai SELESAI' : 'Klik untuk kembalikan ke PROSES'"
+                      :title="order.status_order === 'PROSES' ? 'Klik untuk tandai SELESAI' : order.status_order === 'BATAL' ? 'Order dibatalkan — tidak dapat diubah status' : 'Klik untuk kembalikan ke PROSES'"
                     >
                       <StatusBadge
                         :status="order.status_order"
@@ -129,7 +129,8 @@
                     </button>
                   </td>
                   <td class="text-center whitespace-nowrap">
-                    <StatusBadge :status="orderStore.getPaymentStatus(order.id_order, order.total_harga)" size="xs" />
+                    <StatusBadge :status="orderStore.getPaymentStatus(order.id_order, order.total_harga)"
+                      :verification="getVerificationStatus(orderStore.kasMasukList.filter(k => k.id_order === order.id_order))" size="xs" />
                   </td>
                   <td class="text-center whitespace-nowrap">
                     <button
@@ -167,7 +168,7 @@ import { chevronForwardOutline, logOutOutline } from 'ionicons/icons'
 import { useAuthStore } from '../stores/auth'
 import { useOrderStore } from '../stores/orders'
 import { useSyncStore } from '@shared/stores/syncStore'
-import { formatTanggal, formatRupiah, getTodayISO, formatKertasOrder } from '@shared/utils/formatters'
+import { formatTanggal, formatRupiah, getTodayISO, formatKertasOrder, getVerificationStatus } from '@shared/utils/formatters'
 import SyncIndicatorPill from '@shared/components/SyncIndicatorPill.vue'
 
 // Modular Shared Components
@@ -191,9 +192,13 @@ const router = useIonRouter()
 const currentDate = computed(() => formatTanggal(getTodayISO()))
 const updatingOrderId = ref<string | null>(null)
 
-const todayOrders = computed(() => orderStore.orders.length)
+const todayOrders = computed(() =>
+  orderStore.orders.filter((o) => o.tanggal === getTodayISO()).length
+)
 const todayTotal = computed(() =>
-  orderStore.orders.reduce((sum, o) => sum + (o.total_harga || 0), 0)
+  orderStore.orders
+    .filter((o) => o.tanggal === getTodayISO())
+    .reduce((sum, o) => sum + (o.total_harga || 0), 0)
 )
 const prosesCount = computed(() =>
   orderStore.orders.filter((o) => o.status_order === 'PROSES').length
@@ -201,7 +206,11 @@ const prosesCount = computed(() =>
 const selesaiCount = computed(() =>
   orderStore.orders.filter((o) => o.status_order === 'SELESAI').length
 )
-const recentOrders = computed(() => orderStore.orders.slice(0, 5))
+const recentOrders = computed(() =>
+  [...orderStore.orders]
+    .sort((a, b) => String(b.tanggal || '').localeCompare(String(a.tanggal || '')))
+    .slice(0, 5)
+)
 
 const shiftMetrics = computed(() => [
   {
@@ -262,7 +271,8 @@ function formatKertas(kertas: string) {
 }
 
 async function toggleOrderStatus(order: any) {
-  if (updatingOrderId.value) return
+  if (order.status_order === 'BATAL') return
+  if (updatingOrderId.value === order.id_order) return
   const nextStatus = order.status_order === 'PROSES' ? 'SELESAI' : 'PROSES'
   updatingOrderId.value = order.id_order
   try {

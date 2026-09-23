@@ -3,7 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { api } from '@shared/api/gasClient'
 import { useSyncStore } from '@shared/stores/syncStore'
 import type { Order, KasMasuk } from '@shared/types'
-import { hitungStatusBayar } from '@shared/utils/formatters'
+import { hitungStatusBayar, getTodayISO } from '@shared/utils/formatters'
 
 const STORAGE_KEY = 'kbm_cached_orders_v2'
 const KM_STORAGE_KEY = 'kbm_cached_kas_masuk_v2'
@@ -125,10 +125,15 @@ export const useOrderStore = defineStore('orders', () => {
       return
     }
     try {
-      const kmRes = await api.getKasMasuk()
+      const kmRes = await api.getKasMasuk(force ? { nocache: 'true' } : undefined)
       if (kmRes.success && kmRes.data) {
-        kasMasukList.value = kmRes.data
         lastFetchKasMasukTime = Date.now()
+        const backendKmIds = new Set(kmRes.data.map((k) => k.id_kas_masuk.trim()))
+        // Hanya pertahankan data lokal jika berstatus offline pending (KM-OFFLINE-*)
+        const localPendingKm = kasMasukList.value.filter(
+          (k) => k.id_kas_masuk.startsWith('KM-OFFLINE-') && !backendKmIds.has(k.id_kas_masuk.trim())
+        )
+        kasMasukList.value = [...localPendingKm, ...kmRes.data]
       }
     } catch (e) {
       console.warn('Failed to fetch kas masuk:', e)
@@ -146,13 +151,20 @@ export const useOrderStore = defineStore('orders', () => {
     error.value = null
     try {
       const cleanSearch = search && search.trim() !== '' ? search.trim() : undefined
-      const res = await api.getOrders(cleanSearch ? { search: cleanSearch } : undefined)
+      const res = await api.getOrders(
+        cleanSearch ? { search: cleanSearch } : (force ? { nocache: 'true' } : undefined),
+      )
 
       if (res.success && res.data) {
         lastFetchOrdersTime = Date.now()
-        // Merge with existing local orders so newly created orders (including offline ones) are not dropped
+        // Merge with existing local orders:
+        // HANYA pertahankan data lokal yang berstatus offline pending (ORD-OFFLINE-*).
+        // Order reguler yang tidak ada di respon backend berarti sudah dihapus dari Sheet,
+        // sehingga harus dibuang dari memori lokal dan localStorage.
         const backendIds = new Set(res.data.map((o) => o.id_order.trim()))
-        const localPending = orders.value.filter((o) => !backendIds.has(o.id_order.trim()))
+        const localPending = orders.value.filter(
+          (o) => o.id_order.startsWith('ORD-OFFLINE-') && !backendIds.has(o.id_order.trim()),
+        )
         orders.value = [...localPending, ...res.data]
       } else if (!res.isOffline) {
         error.value = res.error ?? 'Gagal memuat data'
@@ -180,7 +192,7 @@ export const useOrderStore = defineStore('orders', () => {
         // Berhasil terkirim online ke server GAS
         const localOrder: Order = {
           id_order: res.data.id_order,
-          tanggal: new Date().toISOString().split('T')[0],
+          tanggal: getTodayISO(),
           status_order: 'PROSES',
           nama_penerbit: orderData.nama_penerbit,
           judul_penulis: orderData.judul_penulis,
@@ -219,7 +231,7 @@ export const useOrderStore = defineStore('orders', () => {
 
           const offlineOrder: Order = {
             id_order: tempId,
-            tanggal: new Date().toISOString().split('T')[0],
+            tanggal: getTodayISO(),
             status_order: 'PROSES',
             nama_penerbit: orderData.nama_penerbit,
             judul_penulis: orderData.judul_penulis,

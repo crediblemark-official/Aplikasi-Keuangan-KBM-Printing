@@ -1,5 +1,14 @@
 apply plugin: 'com.android.application'
 
+// --- Konfigurasi signing release (RAHASIA) ---
+// Password & keystore TIDAK boleh dikomit. Dibaca dari env (GitHub Actions secret) atau env lokal.
+// File keystore dilindungi .gitignore (*.jks). Jika env tidak ada, build release berjalan UNSIGNED.
+def kbmStoreFile = System.getenv('KBM_STORE_FILE') ?: 'kbm-release.jks'
+def kbmStorePassword = System.getenv('KBM_STORE_PASSWORD')
+def kbmKeyAlias = System.getenv('KBM_KEY_ALIAS') ?: 'kbmprinting'
+def kbmKeyPassword = System.getenv('KBM_KEY_PASSWORD')
+def kbmSigningReady = kbmStorePassword != null && kbmKeyPassword != null
+
 android {
     namespace = "com.kbm.owner"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -18,17 +27,21 @@ android {
     }
     signingConfigs {
         release {
-            storeFile file('kbm-release.jks')
-            storePassword 'REDACTED'
-            keyAlias 'kbmprinting'
-            keyPassword 'REDACTED'
+            if (kbmSigningReady) {
+                storeFile file(kbmStoreFile)
+                storePassword kbmStorePassword
+                keyAlias kbmKeyAlias
+                keyPassword kbmKeyPassword
+            }
             v1SigningEnabled true
             v2SigningEnabled true
         }
     }
     buildTypes {
         release {
-            signingConfig signingConfigs.release
+            if (kbmSigningReady) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

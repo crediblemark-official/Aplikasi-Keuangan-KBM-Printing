@@ -77,15 +77,16 @@
                   {{ formatRupiah(order.total_harga) }}
                 </td>
                 <td class="text-center whitespace-nowrap" @click.stop>
-                  <button type="button" @click="toggleOrderStatus(order)" :disabled="updatingOrderId === order.id_order"
+                  <button type="button" @click="toggleOrderStatus(order)" :disabled="updatingOrderId === order.id_order || order.status_order === 'BATAL'"
                     class="group inline-flex items-center cursor-pointer transition-transform hover:scale-105 active:scale-95 disabled:opacity-60"
-                    :title="order.status_order === 'PROSES' ? 'Klik untuk tandai SELESAI' : 'Klik untuk kembalikan ke PROSES'">
+                    :title="order.status_order === 'PROSES' ? 'Klik untuk tandai SELESAI' : order.status_order === 'BATAL' ? 'Order dibatalkan — tidak dapat diubah status' : 'Klik untuk kembalikan ke PROSES'">
                     <StatusBadge :status="order.status_order" size="xs" :loading="updatingOrderId === order.id_order"
                       class="group-hover:ring-2 group-hover:ring-red-400/40" />
                   </button>
                 </td>
                 <td class="text-center whitespace-nowrap">
-                  <StatusBadge :status="orderStore.getPaymentStatus(order.id_order, order.total_harga)" size="xs" />
+                  <StatusBadge :status="orderStore.getPaymentStatus(order.id_order, order.total_harga)"
+                      :verification="getVerificationStatus(orderStore.kasMasukList.filter(k => k.id_order === order.id_order))" size="xs" />
                 </td>
                 <td class="text-center whitespace-nowrap" @click.stop>
                   <div class="inline-flex items-center gap-1.5">
@@ -139,7 +140,7 @@ import TableStateRow from '@shared/components/TableStateRow.vue'
 import MobileBottomNav from '@shared/components/MobileBottomNav.vue'
 import DateFilterBar from '@shared/components/DateFilterBar.vue'
 import type { BottomNavItem } from '@shared/components/MobileBottomNav.vue'
-import { formatRupiah, formatTanggal, formatKertasOrder, isDateInFilterRange } from '@shared/utils/formatters'
+import { formatRupiah, formatTanggal, formatKertasOrder, isDateInFilterRange, getVerificationStatus } from '@shared/utils/formatters'
 import type { DateFilterValue } from '@shared/types'
 
 const route = useRoute()
@@ -179,7 +180,8 @@ const updatingOrderId = ref<string | null>(null)
 let searchTimer: ReturnType<typeof setTimeout>
 
 async function toggleOrderStatus(order: any) {
-  if (updatingOrderId.value) return
+  if (order.status_order === 'BATAL') return
+  if (updatingOrderId.value === order.id_order) return
   const nextStatus = order.status_order === 'PROSES' ? 'SELESAI' : 'PROSES'
   updatingOrderId.value = order.id_order
   try {

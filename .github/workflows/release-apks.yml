@@ -48,6 +48,20 @@ jobs:
         run: |
           npm run cap:sync:all
 
+      - name: 🔑 Restore Signing Keystore (dari Secret)
+        env:
+          KBM_KEYSTORE_B64: ${{ secrets.KBM_KEYSTORE_B64 }}
+        shell: bash
+        run: |
+          if [ -z "$KBM_KEYSTORE_B64" ]; then
+            echo "::error::Secret KBM_KEYSTORE_B64 belum di-set — build release signed tidak dapat dilakukan."
+            exit 1
+          fi
+          echo "$KBM_KEYSTORE_B64" | base64 -d > keystore/kbm-release.jks
+          chmod 600 keystore/kbm-release.jks
+          cp keystore/kbm-release.jks apps/app1-operasional/android/app/kbm-release.jks
+          cp keystore/kbm-release.jks apps/app2-owner/android/app/kbm-release.jks
+
       - name: 📱 Build APK App 1 - KBM Operasional (Signed Release)
         run: |
           cd apps/app1-operasional/android
@@ -55,6 +69,11 @@ jobs:
           ./gradlew assembleRelease
           mkdir -p ../../../build-artifacts
           cp app/build/outputs/apk/release/app-release.apk ../../../build-artifacts/KBM-Operasional.apk
+        env:
+          KBM_STORE_FILE: kbm-release.jks
+          KBM_STORE_PASSWORD: ${{ secrets.KBM_STORE_PASSWORD }}
+          KBM_KEY_ALIAS: ${{ secrets.KBM_KEY_ALIAS }}
+          KBM_KEY_PASSWORD: ${{ secrets.KBM_KEY_PASSWORD }}
 
       - name: 📱 Build APK App 2 - Owner Dashboard (Signed Release)
         run: |
@@ -63,6 +82,11 @@ jobs:
           ./gradlew assembleRelease
           mkdir -p ../../../build-artifacts
           cp app/build/outputs/apk/release/app-release.apk ../../../build-artifacts/KBM-Owner-Dashboard.apk
+        env:
+          KBM_STORE_FILE: kbm-release.jks
+          KBM_STORE_PASSWORD: ${{ secrets.KBM_STORE_PASSWORD }}
+          KBM_KEY_ALIAS: ${{ secrets.KBM_KEY_ALIAS }}
+          KBM_KEY_PASSWORD: ${{ secrets.KBM_KEY_PASSWORD }}
 
       - name: 📤 Upload Build Artifacts to Actions
         uses: actions/upload-artifact@v4

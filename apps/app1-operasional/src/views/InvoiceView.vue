@@ -603,7 +603,9 @@ const nomorInvoice = computed(() => {
 })
 
 const totalMasuk = computed(() =>
-  kasMasukList.value.reduce((s, k) => s + k.nominal, 0),
+  kasMasukList.value
+    .filter((k) => (k as any).status_verifikasi !== 'BATAL')
+    .reduce((s, k) => s + k.nominal, 0),
 )
 const sisaTagihan = computed(() =>
   Math.max(0, (order.value?.total_harga ?? 0) - totalMasuk.value),
@@ -766,8 +768,6 @@ onMounted(() => {
 })
 
 onIonViewWillEnter(() => {
-  if (!order.value) {
-    loadData()
-  }
+  loadData()
 })
 </script>

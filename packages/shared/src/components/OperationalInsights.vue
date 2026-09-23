@@ -171,6 +171,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { Chart, registerables } from 'chart.js'
+import { toDateStringInTimeZone } from '../utils/formatters'
 import type { Order } from '../types'
 
 Chart.register(...registerables)
@@ -254,7 +255,7 @@ const last7DaysData = computed(() => {
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today)
     d.setDate(d.getDate() - i)
-    const dateStr = d.toISOString().slice(0, 10)
+    const dateStr = toDateStringInTimeZone(d)
     const label = `${d.getDate()} ${formatMonthShort(d.getMonth())}`
     days.push({ dateStr, label, pcs: 0, ordersCount: 0 })
   }

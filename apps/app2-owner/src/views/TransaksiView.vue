@@ -295,7 +295,7 @@
 
             <!-- 8. Status Bayar Badge -->
             <td class="text-center whitespace-nowrap align-top py-3 bg-sky-50/30 group-hover/row:bg-sky-100/60 transition-colors">
-              <StatusBadge :status="row.status_bayar" />
+              <StatusBadge :status="row.status_bayar" :verification="getVerificationStatus(row.payments)" />
             </td>
 
             <!-- 9. Aksi -->
@@ -626,6 +626,7 @@ import {
   hitungStatusBayar,
   getTodayISO,
   isDateInFilterRange,
+  getVerificationStatus,
 } from '@shared/utils/formatters'
 import type { KasMasuk, Order, SumberKas, PiutangRow, DateFilterValue } from '@shared/types'
 
@@ -695,6 +696,9 @@ const allOrdersTx = computed<OrderTxRow[]>(() => {
       if (k.jenis_pembayaran === 'NON_ORDER' || k.jenis_pembayaran === 'DEPOSIT') {
         return false
       }
+      if (k.status_verifikasi === 'BATAL') {
+        return false
+      }
       return true
     })
     .map((k) => {
@@ -727,8 +731,9 @@ const piutangRows = computed<EnrichedPiutangRow[]>(() => {
       .filter((k) => k.status_verifikasi === 'VERIFIED')
       .reduce((s, k) => s + k.nominal, 0)
     const has_pending = payments.some((k) => k.status_verifikasi === 'PENDING')
-    const sisa_tagihan = Math.max(0, order.total_harga - total_masuk)
-    const status_bayar = hitungStatusBayar(total_masuk, order.total_harga)
+    // Sudut pandang owner: sisa tagihan & status bayar dihitung dari pembayaran TERVERIFIKASI saja
+    const sisa_tagihan = Math.max(0, order.total_harga - total_masuk_verified)
+    const status_bayar = hitungStatusBayar(total_masuk_verified, order.total_harga)
 
     return {
       order,
@@ -792,7 +797,7 @@ const filteredPiutangRows = computed(() => {
 })
 
 const totalTagihanPiutang = computed(() => filteredPiutangRows.value.reduce((s, r) => s + r.order.total_harga, 0))
-const totalMasukPiutang = computed(() => filteredPiutangRows.value.reduce((s, r) => s + (r.total_masuk ?? r.total_masuk_verified), 0))
+const totalMasukPiutang = computed(() => filteredPiutangRows.value.reduce((s, r) => s + r.total_masuk_verified, 0))
 const totalSisaPiutang = computed(() => filteredPiutangRows.value.reduce((s, r) => s + r.sisa_tagihan, 0))
 const orderLunasCount = computed(() => filteredPiutangRows.value.filter((r) => r.sisa_tagihan <= 0).length)
 const filteredPendingVerifikasiCount = computed(() => filteredPiutangRows.value.filter((r) => r.has_pending).length)
@@ -869,7 +874,7 @@ function openNewPaymentModal() {
 }
 
 function openPaymentModalForOrder(row: PiutangRow) {
-  const isPelunasan = row.status_bayar === 'DP' || row.status_bayar === 'KURANG_BAYAR'
+  const isPelunasan = row.status_bayar === 'DP'
   paymentForm.value = {
     tanggal: getTodayISO(),
     jenis_pembayaran: isPelunasan ? 'PELUNASAN' : 'DP',

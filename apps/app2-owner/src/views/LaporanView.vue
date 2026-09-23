@@ -447,7 +447,8 @@ const jenisBreakdown = computed(() => {
     .filter((k) => k.status_verifikasi === 'VERIFIED')
     .forEach((k) => {
       if (k.jenis_pembayaran === 'DP') dp += k.nominal
-      else pelunasan += k.nominal
+      else if (k.jenis_pembayaran === 'PELUNASAN') pelunasan += k.nominal
+      // DEPOSIT / NON_ORDER tidak termasuk dalam rasio DP vs Pelunasan
     })
   const total = dp + pelunasan || 1
   return {
@@ -471,11 +472,30 @@ function renderTrendChart() {
   if (!trendChartCanvas.value) return
   if (trendChartInstance) trendChartInstance.destroy()
 
-  const rawData = summaryReport.value.chart_data || []
-  const labels = rawData.map((d) => formatMonthLabel(d.bulan))
-  const masukData = rawData.map((d) => d.kas_masuk)
-  const keluarData = rawData.map((d) => d.kas_keluar)
-  const labaData = rawData.map((d) => d.kas_masuk - d.kas_keluar)
+  // Dihitung dari data lokal + filter tanggal aktif, agar grafik merespons perubahan filter
+  const masukMap = new Map<string, number>()
+  const keluarMap = new Map<string, number>()
+
+  kasMasukList.value
+    .filter((k) => k.status_verifikasi === 'VERIFIED' && isDateInFilterRange(k.tanggal, dateFilter.value))
+    .forEach((k) => {
+      const ym = String(k.tanggal || '').slice(0, 7)
+      if (!ym) return
+      masukMap.set(ym, (masukMap.get(ym) || 0) + (Number(k.nominal) || 0))
+    })
+  kasKeluarList.value
+    .filter((k) => isDateInFilterRange(k.tanggal, dateFilter.value))
+    .forEach((k) => {
+      const ym = String(k.tanggal || '').slice(0, 7)
+      if (!ym) return
+      keluarMap.set(ym, (keluarMap.get(ym) || 0) + (Number(k.nominal) || 0))
+    })
+
+  const months = Array.from(new Set([...masukMap.keys(), ...keluarMap.keys()])).sort().slice(-6)
+  const labels = months.map(formatMonthLabel)
+  const masukData = months.map((m) => masukMap.get(m) || 0)
+  const keluarData = months.map((m) => keluarMap.get(m) || 0)
+  const labaData = months.map((m, i) => masukData[i] - keluarData[i])
 
   const maxVal = Math.max(...masukData, ...keluarData, 0)
   const suggestedMax = maxVal === 0 ? 5_000_000 : maxVal * 1.2
@@ -665,6 +685,7 @@ watch(
   dateFilter,
   async () => {
     await nextTick()
+    renderTrendChart()
     renderKategoriDonut()
     renderSumberDonut()
   },

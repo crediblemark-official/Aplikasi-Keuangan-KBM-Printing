@@ -53,13 +53,10 @@ function doGet(e) {
     const handlers = {
       'ping': () => ({ success: true, message: 'pong', timestamp: Date.now() }),
       'getOrders': () => handleGetOrders(e.parameter),
-      'getOrderById': () => handleGetOrderById(e.parameter),
       'getKasMasuk': () => handleGetKasMasuk(e.parameter),
       'getKasKeluar': () => handleGetKasKeluar(e.parameter),
-      'getClients': () => handleGetClients(),
-      'getSummary': () => handleGetSummary(e.parameter),
-      'getAuditLogs': () => handleGetAuditLogs(e.parameter),
-      'getBukuKas': () => handleGetBukuKas(e.parameter),
+      'getClients': () => handleGetClients(e.parameter),
+      'getSummaryReport': () => handleGetSummaryReport(e.parameter),
     };
 
     if (handlers[action]) {
@@ -91,11 +88,13 @@ function doPost(e) {
       'deleteOrder': () => handleDeleteOrder(body),
       'updateOrderStatus': () => handleUpdateOrderStatus(body),
       'createKasMasuk': () => handleCreateKasMasuk(body),
-      'updateStatusVerifikasi': () => handleUpdateStatusVerifikasi(body),
+      'verifyKasMasuk': () => handleVerifyKasMasuk(body),
+      'updateKasMasuk': () => handleUpdateKasMasuk(body),
+      'deleteKasMasuk': () => handleDeleteKasMasuk(body),
+      'attachBuktiKasMasuk': () => handleAttachBuktiKasMasuk(body),
       'createKasKeluar': () => handleCreateKasKeluar(body),
+      'updateKasKeluar': () => handleUpdateKasKeluar(body),
       'deleteKasKeluar': () => handleDeleteKasKeluar(body),
-      'saveClient': () => handleSaveClient(body),
-      'deleteClient': () => handleDeleteClient(body),
       'savePDFtoDrive': () => handleSavePDFtoDrive(body),
       'uploadFile': () => handleUploadFile(body),
       'resetData': () => handleResetData(body),
@@ -139,14 +138,34 @@ function putScriptCache(key, data, ttlSeconds = CACHE_TTL_SECONDS) {
 function invalidateCache(keys) {
   try {
     const cache = CacheService.getScriptCache();
-    if (Array.isArray(keys)) {
-      cache.removeAll(keys);
-    } else {
-      cache.remove(keys);
+    let allKeys = Array.isArray(keys) ? keys.slice() : [keys];
+    // Selalu invalidasi cache laporan summary agar tidak basi setelah mutasi data
+    const summaryPeriods = getScriptCache('__summary_periods');
+    if (Array.isArray(summaryPeriods) && summaryPeriods.length) {
+      allKeys = allKeys.concat(summaryPeriods.map(p => 'summary_report_' + p));
     }
+    cache.removeAll(allKeys);
   } catch (e) {
     Logger.log('Cache invalidate notice: ' + e);
   }
+}
+
+function invalidateAllCaches() {
+  invalidateCache([
+    'orders_all',
+    'kas_masuk_all',
+    'dashboard_summary',
+    'clients_all',
+    'kas_keluar_all'
+  ]);
+}
+
+/**
+ * Trigger otomatis saat pengguna mengedit sel di Google Spreadsheet secara manual.
+ * Otomatis membersihkan cache agar data terbaru langsung tampil di Web App tanpa delay.
+ */
+function onEdit(e) {
+  invalidateAllCaches();
 }
 
 // ---- HELPERS (SINGLETON SPREADSHEET INSTANCE) ----
@@ -212,14 +231,33 @@ function sheetToObjects(sheet) {
   );
 }
 
+// Nama kolom ID per sheet (untuk generateId unik)
+const ID_COLUMN_BY_PREFIX = { ORD: 'id_order', KM: 'id_kas_masuk', KK: 'id_kas_keluar' };
+
 function generateId(prefix, sheet) {
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
     const now = new Date();
     const yyyymm = Utilities.formatDate(now, 'Asia/Jakarta', 'yyyyMM');
-    const rows = sheet.getLastRow() - 1; // minus header
-    const seq = String(rows + 1).padStart(3, '0');
+    // Ambil seq dari nilai ID maksimum yang sudah ada (prefix+bulan sama), bukan jumlah baris —
+    // supaya ID tidak duplikat setelah baris dihapus/dibuat ulang.
+    let maxSeq = 0;
+    const data = sheet.getDataRange().getValues();
+    if (data.length > 1) {
+      const headers = data[0];
+      const idCol = headers.indexOf(ID_COLUMN_BY_PREFIX[prefix] || 'id_order');
+      if (idCol !== -1) {
+        const idPrefix = `${prefix}-${yyyymm}-`;
+        for (let i = 1; i < data.length; i++) {
+          const id = String(data[i][idCol] || '').trim();
+          if (!id.startsWith(idPrefix)) continue;
+          const seqNum = parseInt(id.slice(idPrefix.length), 10);
+          if (!isNaN(seqNum) && seqNum > maxSeq) maxSeq = seqNum;
+        }
+      }
+    }
+    const seq = String(maxSeq + 1).padStart(3, '0');
     return `${prefix}-${yyyymm}-${seq}`;
   } finally {
     lock.releaseLock();
@@ -291,8 +329,9 @@ function handleGetOrders(params) {
   params = params || {};
   const status = (params.status && params.status !== 'undefined' && params.status !== 'null' && params.status !== 'all') ? String(params.status).trim() : '';
   const search = (params.search && params.search !== 'undefined' && params.search !== 'null') ? String(params.search).trim() : '';
+  const nocache = params.nocache === 'true' || params.nocache === true || params.force === 'true';
 
-  const isDefaultQuery = !status && !search;
+  const isDefaultQuery = !status && !search && !nocache;
   if (isDefaultQuery) {
     const cached = getScriptCache('orders_all');
     if (cached) return { success: true, data: cached, _cached: true };
@@ -418,6 +457,8 @@ function handleUpdateOrderStatus(body) {
   const headers = data[0];
   const idCol = headers.indexOf('id_order');
   const statusCol = headers.indexOf('status_order');
+  if (idCol === -1) return { success: false, error: 'Kolom id_order tidak ditemukan' };
+  if (statusCol === -1) return { success: false, error: 'Kolom status_order tidak ditemukan' };
 
   for (let i = 1; i < data.length; i++) {
     if (data[i][idCol] === body.id_order) {
@@ -591,6 +632,8 @@ function handleDeleteOrder(body) {
     const headers = data[0];
     const idCol = headers.indexOf('id_order');
     const statusCol = headers.indexOf('status_order');
+    if (idCol === -1) throw new Error('Kolom id_order tidak ditemukan di sheet order');
+    if (statusCol === -1) throw new Error('Kolom status_order tidak ditemukan di sheet order');
 
     const id_order = body.id_order;
     if (!id_order) return { success: false, error: 'id_order wajib diisi' };
@@ -614,8 +657,9 @@ function handleGetKasMasuk(params) {
   params = params || {};
   const idOrder = (params.id_order && params.id_order !== 'undefined' && params.id_order !== 'null') ? String(params.id_order).trim() : '';
   const status = (params.status && params.status !== 'undefined' && params.status !== 'null' && params.status !== 'all') ? String(params.status).trim() : '';
+  const nocache = params.nocache === 'true' || params.nocache === true || params.force === 'true';
 
-  const isDefaultQuery = !idOrder && !status;
+  const isDefaultQuery = !idOrder && !status && !nocache;
   if (isDefaultQuery) {
     const cached = getScriptCache('kas_masuk_all');
     if (cached) return { success: true, data: cached, _cached: true };
@@ -873,8 +917,16 @@ function checkAndUpdateOrderStatus(id_order) {
     .filter(k => k.id_order === id_order && k.status_verifikasi === 'VERIFIED')
     .reduce((s, k) => s + Number(k.nominal), 0);
 
-  if (totalMasuk >= Number(order.total_harga)) {
-    handleUpdateOrderStatus({ id_order, status: 'SELESAI' });
+  const totalHarga = Number(order.total_harga) || 0;
+
+  if (totalMasuk >= totalHarga) {
+    // Lunas terverifikasi → order selesai (hanya naikkan; jangan ganggu order BATAL)
+    if (order.status_order === 'PROSES') {
+      handleUpdateOrderStatus({ id_order, status: 'SELESAI' });
+    }
+  } else if (order.status_order === 'SELESAI') {
+    // Pembayaran dibatalkan/dikurangi → total turun di bawah tagihan, kembalikan ke PROSES
+    handleUpdateOrderStatus({ id_order, status: 'PROSES' });
   }
 }
 
@@ -1093,6 +1145,17 @@ function handleGetSummaryReport(params) {
 
   putScriptCache(cacheKey, reportData, 60); // 1 menit
 
+  // Daftarkan periode agar invalidasi cache berikutnya ikut menghapus laporan periode ini
+  try {
+    const periods = getScriptCache('__summary_periods') || [];
+    if (!periods.includes(periode)) {
+      periods.push(periode);
+      putScriptCache('__summary_periods', periods, CACHE_TTL_SECONDS);
+    }
+  } catch (e) {
+    Logger.log('Summary periods notice: ' + e);
+  }
+
   return {
     success: true,
     data: reportData,
@@ -1137,9 +1200,13 @@ function handleUploadFile(body) {
 }
 
 // ---- CLIENTS ----
-function handleGetClients() {
-  const cached = getScriptCache('clients_all');
-  if (cached) return { success: true, data: cached, _cached: true };
+function handleGetClients(params) {
+  params = params || {};
+  const nocache = params.nocache === 'true' || params.nocache === true || params.force === 'true';
+  if (!nocache) {
+    const cached = getScriptCache('clients_all');
+    if (cached) return { success: true, data: cached, _cached: true };
+  }
 
   const sheet = getSheet(SHEET_CLIENTS);
   const data = sheetToObjects(sheet);

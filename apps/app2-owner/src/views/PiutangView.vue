@@ -134,7 +134,8 @@
                 {{ formatRupiah(row.sisa_tagihan) }}
               </td>
               <td class="text-center whitespace-nowrap">
-                <StatusBadge :status="row.status_bayar" />
+                <StatusBadge :status="row.status_bayar"
+                  :verification="getVerificationStatus(rawKasMasukList.filter(k => k.id_order === row.order.id_order))" />
               </td>
             </tr>
           </tbody>
@@ -338,6 +339,7 @@ import {
   formatKertasOrder,
   formatTanggal,
   formatMetode,
+  getVerificationStatus,
 } from '@shared/utils/formatters'
 import type { Order, KasMasuk, PiutangRow } from '@shared/types'
 
@@ -352,7 +354,6 @@ const statusFilter = ref('ALL')
 const statusFilters = [
   { value: 'ALL', label: 'Semua' },
   { value: 'BELUM_BAYAR', label: 'Belum Bayar' },
-  { value: 'KURANG_BAYAR', label: 'Kurang Bayar' },
   { value: 'DP', label: 'DP' },
   { value: 'LUNAS', label: 'Lunas' },
 ]
@@ -420,7 +421,7 @@ const depositLedger = computed<PublisherDepositSummary[]>(() => {
 
   // 1. Process top-ups (jenis_pembayaran === 'DEPOSIT')
   rawKasMasukList.value.forEach((k) => {
-    if (k.jenis_pembayaran === 'DEPOSIT' && (k as any).status_verifikasi !== 'BATAL') {
+    if (k.jenis_pembayaran === 'DEPOSIT' && (k as any).status_verifikasi === 'VERIFIED') {
       const pubName = (k.nama_penerbit || 'Penerbit Lain').trim()
       const item = getOrCreate(pubName)
       item.total_masuk += k.nominal
@@ -438,7 +439,7 @@ const depositLedger = computed<PublisherDepositSummary[]>(() => {
 
   // 2. Process order deductions (metode === 'SALDO_DEPOSIT')
   rawKasMasukList.value.forEach((k) => {
-    if (k.metode === 'SALDO_DEPOSIT' && (k as any).status_verifikasi !== 'BATAL') {
+    if (k.metode === 'SALDO_DEPOSIT' && (k as any).status_verifikasi === 'VERIFIED') {
       const order = rawOrdersList.value.find((o) => o.id_order === k.id_order)
       const pubName = (k.nama_penerbit || order?.nama_penerbit || 'Penerbit Lain').trim()
       const item = getOrCreate(pubName)
@@ -592,8 +593,9 @@ async function loadData() {
           .filter((k) => k.status_verifikasi === 'VERIFIED')
           .reduce((s, k) => s + k.nominal, 0)
         const has_pending = payments.some((k) => k.status_verifikasi === 'PENDING')
-        const sisa_tagihan = Math.max(0, order.total_harga - total_masuk)
-        const status_bayar = hitungStatusBayar(total_masuk, order.total_harga)
+        // Sudut pandang owner: sisa tagihan & status bayar dihitung dari pembayaran TERVERIFIKASI saja
+        const sisa_tagihan = Math.max(0, order.total_harga - total_masuk_verified)
+        const status_bayar = hitungStatusBayar(total_masuk_verified, order.total_harga)
         return {
           order,
           total_masuk,

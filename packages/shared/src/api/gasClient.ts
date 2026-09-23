@@ -163,7 +163,7 @@ export const api = {
 
 
   // Orders
-  getOrders: (params?: { status?: string; search?: string }) =>
+  getOrders: (params?: { status?: string; search?: string; nocache?: boolean | string }) =>
     gasGet<import('../types').Order[]>('getOrders', params ?? {}),
   createOrder: async (order: Omit<import('../types').Order, 'id_order' | 'tanggal' | 'status_order'>) => {
     const res = await gasPost<{ id_order: string; nomor_invoice: string }>('createOrder', { order })
@@ -223,7 +223,7 @@ export const api = {
   },
 
   // Kas Masuk
-  getKasMasuk: (params?: { status?: string; id_order?: string }) =>
+  getKasMasuk: (params?: { status?: string; id_order?: string; nocache?: boolean | string }) =>
     gasGet<import('../types').KasMasuk[]>('getKasMasuk', params ?? {}),
   createKasMasuk: async (data: {
     id_order: string | null
@@ -277,7 +277,7 @@ export const api = {
     gasPost<{ success: boolean; message?: string }>('deleteKasMasuk', { id_kas_masuk }),
 
   // Kas Keluar
-  getKasKeluar: (params?: { periode?: string }) =>
+  getKasKeluar: (params?: { periode?: string; nocache?: boolean | string }) =>
     gasGet<import('../types').KasKeluar[]>('getKasKeluar', params ?? {}),
   createKasKeluar: async (data: {
     tanggal?: string
@@ -327,8 +327,8 @@ export const api = {
     }),
 
   // Clients
-  getClients: () =>
-    gasGet<import('../types').Client[]>('getClients'),
+  getClients: (params?: { nocache?: boolean | string }) =>
+    gasGet<import('../types').Client[]>('getClients', params ?? {}),
 
   // Reset & Maintenance
   resetData: (payload: {

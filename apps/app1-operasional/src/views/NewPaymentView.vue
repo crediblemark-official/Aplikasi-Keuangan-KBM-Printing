@@ -344,7 +344,7 @@ import { useOrderStore } from '../stores/orders'
 import { useAuthStore } from '../stores/auth'
 import { api } from '@shared/api/gasClient'
 import ImageUploader from '@shared/components/ImageUploader.vue'
-import { formatRupiah } from '@shared/utils/formatters'
+import { formatRupiah, getTodayISO } from '@shared/utils/formatters'
 import type { JenisPembayaran, MetodeBayar, KasMasuk } from '@shared/types'
 
 const route = useRoute()
@@ -610,7 +610,7 @@ async function submitPayment() {
       if (res.data?.id_kas_masuk) {
         const newKm: KasMasuk = {
           id_kas_masuk: res.data.id_kas_masuk,
-          tanggal: new Date().toISOString().split('T')[0],
+          tanggal: getTodayISO(),
           id_order: targetOrderId.value,
           jenis_pembayaran: form.value.jenis_pembayaran,
           nominal: form.value.nominal,
@@ -639,7 +639,7 @@ async function submitPayment() {
 
         const offlineKm: KasMasuk = {
           id_kas_masuk: tempId,
-          tanggal: new Date().toISOString().split('T')[0],
+          tanggal: getTodayISO(),
           id_order: targetOrderId.value,
           jenis_pembayaran: form.value.jenis_pembayaran,
           nominal: form.value.nominal,

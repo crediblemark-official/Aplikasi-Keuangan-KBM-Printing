@@ -420,7 +420,7 @@ const depositBalances = computed(() => {
   const map = new Map<string, { masuk: number; keluar: number }>()
 
   orderStore.kasMasukList.forEach((k) => {
-    if ((k as any).status_verifikasi === 'BATAL') return
+    if ((k as any).status_verifikasi !== 'VERIFIED') return
     const key = toSafeString(k.nama_penerbit).toLowerCase()
     if (!key) return
 
@@ -508,10 +508,13 @@ const allClientsWithStats = computed<ClientWithStats[]>(() => {
       if (!client.alamat && alamat) client.alamat = alamat
     }
 
-    client.orderCount++
-    client.totalOmset += Number(o.total_harga) || 0
-    if (!client.lastOrderDate || (o.tanggal && String(o.tanggal) > client.lastOrderDate)) {
-      client.lastOrderDate = String(o.tanggal)
+    // Order yang dibatalkan tetap memunculkan klien, tapi tidak dihitung sebagai omzet/statistik
+    if (o.status_order !== 'BATAL') {
+      client.orderCount++
+      client.totalOmset += Number(o.total_harga) || 0
+      if (!client.lastOrderDate || (o.tanggal && String(o.tanggal) > client.lastOrderDate)) {
+        client.lastOrderDate = String(o.tanggal)
+      }
     }
   }
 
