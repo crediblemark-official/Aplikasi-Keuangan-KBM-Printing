@@ -135,7 +135,7 @@ Proteksi menggunakan **Kunci Layar Bawaan Android (Sidik Jari / Pola / PIN HP)**
 - **Dashboard Eksekutif:**
   - 4 Kartu Metrik Utama: Kas Masuk Bulan Ini, Kas Keluar Bulan Ini, Estimasi Laba Bersih, dan Total Piutang Aktif.
   - Grafik Arus Kas Bulanan (Chart.js Bar Chart).
-  - Komposisi Saldo per Sumber Kas (Bank BCA, Mandiri, Tunai, QRIS).
+  - Komposisi Saldo per Sumber Kas (Bank, Tunai, QRIS).
 - **Kas Keluar:**
   - Input pengeluaran operasional (Bahan Baku Kertas/Tinta, Gaji/Upah Operator, Listrik/Maintenance, Ekspedisi, dsb).
   - Upload foto nota/kuitansi fisik ke Google Drive.

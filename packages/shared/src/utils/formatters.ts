@@ -126,13 +126,12 @@ export function formatMetode(metode: string): string {
   const map: Record<string, string> = {
     KASIR_TUNAI: '💵 Tunai',
     TUNAI: '💵 Tunai',
-    BANK_BCA: '🏦 Bank',
     BANK: '🏦 Bank',
     TRANSFER: '🏦 Bank',
     QRIS: '📱 QRIS',
     SALDO_DEPOSIT: '💳 Saldo Deposit',
   }
-  return map[metode] ?? (metode === 'BANK_BCA' ? '🏦 Bank' : metode)
+  return map[metode] ?? (metode.toUpperCase().includes('BANK') ? '🏦 Bank' : metode)
 }
 
 /**

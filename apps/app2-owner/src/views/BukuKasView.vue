@@ -30,6 +30,20 @@
           <span class="hidden sm:inline md:hidden">Export</span>
         </BaseButton>
 
+        <!-- Refresh Button -->
+        <button
+          type="button"
+          @click="loadData(true)"
+          :disabled="isLoading"
+          class="h-8 px-2 sm:px-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 text-xs font-semibold inline-flex items-center gap-1.5 transition-all shadow-2xs shrink-0 cursor-pointer disabled:opacity-50"
+          title="Segarkan Data Buku Kas"
+        >
+          <svg class="w-3.5 h-3.5" :class="{ 'animate-spin': isLoading }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span class="hidden sm:inline">Refresh</span>
+        </button>
+
         <!-- Input Kas Masuk Button -->
         <button
           @click="showKasMasukModal = true"
@@ -273,7 +287,7 @@
           <div>
             <label class="form-label">Metode / Akun Bank *</label>
             <select v-model="kmForm.metode" class="form-input bg-white" required>
-              <option value="BANK_BCA">🏦 Bank BCA</option>
+              <option value="BANK">🏦 Bank</option>
               <option value="KASIR_TUNAI">💵 Kasir Tunai</option>
               <option value="QRIS">📱 QRIS</option>
             </select>
@@ -346,7 +360,7 @@
             <label class="form-label">Sumber Kas / Akun *</label>
             <select v-model="kkForm.sumber_kas" class="form-input bg-white" required>
               <option value="KASIR_TUNAI">💵 Kasir Tunai</option>
-              <option value="BANK_BCA">🏦 Bank BCA</option>
+              <option value="BANK">🏦 Bank</option>
               <option value="QRIS">📱 QRIS</option>
             </select>
           </div>
@@ -405,7 +419,7 @@
           <div>
             <label class="form-label">Sumber Kas / Rekening *</label>
             <select v-model="editForm.sumber_kas" class="form-input bg-white font-medium" required>
-              <option value="BANK_BCA">Bank BCA</option>
+              <option value="BANK">Bank</option>
               <option value="KASIR_TUNAI">Kasir Tunai</option>
               <option value="QRIS">QRIS</option>
             </select>
@@ -620,7 +634,7 @@ const kmForm = ref({
   jenis_pembayaran: 'DEPOSIT' as 'DEPOSIT' | 'NON_ORDER',
   nama_penerbit: '',
   nominal: 0,
-  metode: 'BANK_BCA' as SumberKas,
+  metode: 'BANK' as SumberKas,
   keterangan: '',
 })
 
@@ -646,7 +660,7 @@ const editForm = ref({
   tipe: 'MASUK' as 'MASUK' | 'KELUAR',
   tanggal: '',
   nominal: 0,
-  sumber_kas: 'BANK_BCA' as SumberKas,
+  sumber_kas: 'BANK' as SumberKas,
   kategori: '',
   keterangan: '',
   id_order: '',
@@ -804,21 +818,22 @@ const summaryMetrics = computed(() => [
 ])
 
 // Rekap Saldo Kas per Akun
-const sumberList = ['KASIR_TUNAI', 'BANK_BCA', 'QRIS']
+const sumberList = ['KASIR_TUNAI', 'BANK', 'QRIS']
 const sumberConfig: Record<string, { label: string; dotColor: string }> = {
   KASIR_TUNAI: { label: 'Kasir Tunai', dotColor: 'bg-emerald-500' },
-  BANK_BCA: { label: 'Bank BCA', dotColor: 'bg-blue-500' },
+  BANK: { label: 'Bank', dotColor: 'bg-blue-500' },
   QRIS: { label: 'QRIS', dotColor: 'bg-purple-500' },
 }
 
 const sumberRekapData = computed(() =>
   sumberList.map((s) => {
     const cfg = sumberConfig[s] || { label: s, dotColor: 'bg-slate-400' }
+    const matchSumber = (val: string) => s === 'BANK' ? (val || '').toUpperCase().includes('BANK') : val === s
     const masuk = filteredKasMasukByPeriode.value
-      .filter((k) => k.metode === s && k.status_verifikasi === 'VERIFIED')
+      .filter((k) => matchSumber(k.metode) && k.status_verifikasi === 'VERIFIED')
       .reduce((sum, k) => sum + k.nominal, 0)
     const keluar = filteredKasKeluarByPeriode.value
-      .filter((k) => k.sumber_kas === s)
+      .filter((k) => matchSumber(k.sumber_kas))
       .reduce((sum, k) => sum + k.nominal, 0)
     return { label: cfg.label, dotColor: cfg.dotColor, masuk, keluar, saldo: masuk - keluar }
   })
@@ -976,7 +991,7 @@ async function submitKasMasuk() {
         jenis_pembayaran: 'DEPOSIT',
         nama_penerbit: '',
         nominal: 0,
-        metode: 'BANK_BCA',
+        metode: 'BANK',
         keterangan: '',
       }
       kmPhotoBase64.value = ''
@@ -1058,7 +1073,7 @@ function openEditModal(row: MutasiRow) {
     tipe: row.tipe,
     tanggal: row.tanggal ? row.tanggal.split('T')[0] : getTodayISO(),
     nominal: row.nominal,
-    sumber_kas: (row.sumber_kas as SumberKas) || 'BANK_BCA',
+    sumber_kas: (row.sumber_kas as SumberKas) || 'BANK',
     kategori: raw?.kategori || '',
     keterangan: raw?.rincian || raw?.keterangan || '',
     id_order: raw?.id_order || '',
@@ -1172,14 +1187,15 @@ async function exportExcel() {
   }
 }
 
-async function loadData() {
+async function loadData(force = false) {
   isLoading.value = true
   try {
+    const params = force ? { nocache: 'true' } : undefined
     const [kmRes, kkRes, clRes, ordRes] = await Promise.all([
-      api.getKasMasuk(),
-      api.getKasKeluar(),
-      api.getClients().catch(() => ({ success: false, data: [] })),
-      api.getOrders().catch(() => ({ success: false, data: [] })),
+      api.getKasMasuk(params),
+      api.getKasKeluar(params),
+      api.getClients(params).catch(() => ({ success: false, data: [] })),
+      api.getOrders(params).catch(() => ({ success: false, data: [] })),
     ])
 
     if (kmRes.success && kmRes.data) kasMasukList.value = kmRes.data
@@ -1192,7 +1208,7 @@ async function loadData() {
 }
 
 onMounted(() => {
-  loadData()
+  loadData(true)
   if (route.query.action === 'input-kas-masuk') {
     showKasMasukModal.value = true
   } else if (route.query.action === 'input-kas-keluar') {

@@ -144,7 +144,7 @@ const summary = ref<SummaryReport>({
   kas_keluar_bulan_ini: 0,
   estimasi_laba: 0,
   total_piutang: 0,
-  kas_per_sumber: { kasir_tunai: 0, bank_bca: 0, qris: 0 },
+  kas_per_sumber: { kasir_tunai: 0, bank: 0, qris: 0 },
   chart_data: [],
 })
 
@@ -187,7 +187,7 @@ const summaryMetrics = computed<MetricItem[]>(() => [
 
 const kasPerSumber = computed(() => [
   { label: 'Tunai', dotColor: 'bg-emerald-500', nilai: summary.value.kas_per_sumber.kasir_tunai },
-  { label: 'Bank', dotColor: 'bg-blue-500', nilai: summary.value.kas_per_sumber.bank_bca },
+  { label: 'Bank', dotColor: 'bg-blue-500', nilai: summary.value.kas_per_sumber.bank },
   { label: 'QRIS', dotColor: 'bg-purple-500', nilai: summary.value.kas_per_sumber.qris },
 ])
 
@@ -288,7 +288,7 @@ function renderCharts() {
         datasets: [{
           data: [
             summary.value.kas_per_sumber.kasir_tunai,
-            summary.value.kas_per_sumber.bank_bca,
+            summary.value.kas_per_sumber.bank,
             summary.value.kas_per_sumber.qris,
           ],
           backgroundColor: ['#10b981', '#2563eb', '#f59e0b'],

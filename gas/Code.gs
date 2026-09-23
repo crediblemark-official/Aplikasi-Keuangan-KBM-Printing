@@ -1115,7 +1115,7 @@ function handleGetSummaryReport(params) {
   // Kas per sumber (bulan ini, verified)
   const kas_per_sumber = {
     kasir_tunai: kmBulanIni.filter(k => k.metode === 'KASIR_TUNAI').reduce((s, k) => s + k.nominal, 0),
-    bank_bca: kmBulanIni.filter(k => k.metode === 'BANK_BCA').reduce((s, k) => s + k.nominal, 0),
+    bank: kmBulanIni.filter(k => String(k.metode).toUpperCase().indexOf('BANK') !== -1).reduce((s, k) => s + k.nominal, 0),
     qris: kmBulanIni.filter(k => k.metode === 'QRIS').reduce((s, k) => s + k.nominal, 0),
   };
 

@@ -271,7 +271,7 @@ const summaryReport = ref<SummaryReport>({
   kas_keluar_bulan_ini: 0,
   estimasi_laba: 0,
   total_piutang: 0,
-  kas_per_sumber: { kasir_tunai: 0, bank_bca: 0, qris: 0 },
+  kas_per_sumber: { kasir_tunai: 0, bank: 0, qris: 0 },
   chart_data: [],
 })
 
@@ -411,21 +411,22 @@ const topCategory = computed(() => {
 // Sumber Kas Pemasukan Data
 const sumberColorMap: Record<string, string> = {
   KASIR_TUNAI: '#10b981', // Emerald
-  BANK_BCA: '#3b82f6', // Blue
+  BANK: '#3b82f6', // Blue
   QRIS: '#a855f7', // Purple
 }
 
 const sumberBreakdown = computed(() => {
   const totals: Record<string, number> = {
     KASIR_TUNAI: 0,
-    BANK_BCA: 0,
+    BANK: 0,
     QRIS: 0,
   }
   filteredKasMasukByPeriode.value
     .filter((k) => k.status_verifikasi === 'VERIFIED')
     .forEach((k) => {
-      if (totals[k.metode] !== undefined) {
-        totals[k.metode] += k.nominal
+      const key = (k.metode || '').toUpperCase().includes('BANK') ? 'BANK' : k.metode
+      if (totals[key] !== undefined) {
+        totals[key] += k.nominal
       }
     })
 

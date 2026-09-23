@@ -430,7 +430,7 @@
           <div>
             <label class="form-label">Metode Pembayaran *</label>
             <select v-model="paymentForm.metode" class="form-input bg-white" required>
-              <option value="BANK_BCA">🏦 Bank BCA</option>
+              <option value="BANK">🏦 Bank</option>
               <option value="KASIR_TUNAI">💵 Kasir Tunai</option>
               <option value="QRIS">📱 QRIS</option>
             </select>
@@ -494,7 +494,7 @@
           <div>
             <label class="form-label">Metode Pembayaran *</label>
             <select v-model="editPaymentForm.metode" class="form-input bg-white font-medium" required>
-              <option value="BANK_BCA">🏦 Bank BCA</option>
+              <option value="BANK">🏦 Bank</option>
               <option value="KASIR_TUNAI">💵 Kasir Tunai</option>
               <option value="QRIS">📱 QRIS</option>
               <option value="SALDO_DEPOSIT">💳 Saldo Deposit</option>
@@ -663,7 +663,7 @@ const editPaymentForm = ref({
   jenis_pembayaran: 'DP',
   tanggal: '',
   nominal: 0,
-  metode: 'BANK_BCA',
+  metode: 'BANK',
   keterangan: '',
 })
 
@@ -854,7 +854,7 @@ const paymentForm = ref({
   id_order: '',
   nama_penerbit: '',
   nominal: 0,
-  metode: 'BANK_BCA' as SumberKas,
+  metode: 'BANK' as SumberKas,
   keterangan: '',
 })
 
@@ -865,7 +865,7 @@ function openNewPaymentModal() {
     id_order: '',
     nama_penerbit: '',
     nominal: 0,
-    metode: 'BANK_BCA',
+    metode: 'BANK',
     keterangan: '',
   }
   photoBase64.value = ''
@@ -881,7 +881,7 @@ function openPaymentModalForOrder(row: PiutangRow) {
     id_order: row.order.id_order,
     nama_penerbit: row.order.nama_penerbit,
     nominal: row.sisa_tagihan > 0 ? row.sisa_tagihan : Math.round(row.order.total_harga * 0.5),
-    metode: 'BANK_BCA',
+    metode: 'BANK',
     keterangan: `Pembayaran ${isPelunasan ? 'Pelunasan' : 'DP'} Order ${row.order.id_order}`,
   }
   photoBase64.value = ''
@@ -1012,7 +1012,7 @@ async function submitPayment() {
         id_order: '',
         nama_penerbit: '',
         nominal: 0,
-        metode: 'BANK_BCA',
+        metode: 'BANK',
         keterangan: '',
       }
       photoBase64.value = ''

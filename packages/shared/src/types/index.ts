@@ -4,15 +4,15 @@
 
 export type StatusOrder = 'PROSES' | 'SELESAI' | 'BATAL'
 export type JenisPembayaran = 'DP' | 'PELUNASAN' | 'NON_ORDER' | 'DEPOSIT'
-export type MetodeBayar = 'KASIR_TUNAI' | 'BANK_BCA' | 'QRIS' | 'SALDO_DEPOSIT'
-export type StatusVerifikasi = 'PENDING' | 'VERIFIED'
+export type MetodeBayar = 'KASIR_TUNAI' | 'BANK' | 'QRIS' | 'SALDO_DEPOSIT'
+export type StatusVerifikasi = 'PENDING' | 'VERIFIED' | 'BATAL'
 export type KategoriKasKeluar =
   | 'BAHAN_BAKU'
   | 'OPERASIONAL'
   | 'GAJI'
   | 'KONSUMSI'
   | 'LAIN_LAIN'
-export type SumberKas = 'KASIR_TUNAI' | 'BANK_BCA' | 'QRIS'
+export type SumberKas = 'KASIR_TUNAI' | 'BANK' | 'QRIS'
 export type UkuranBuku = 'A6' | 'A5' | 'B5' | 'A4' | 'CUSTOM'
 export type JenisKertas =
   | 'BP_57'
@@ -124,7 +124,7 @@ export interface SummaryReport {
   total_piutang: number
   kas_per_sumber: {
     kasir_tunai: number
-    bank_bca: number
+    bank: number
     qris: number
   }
   chart_data: ChartDataPoint[]

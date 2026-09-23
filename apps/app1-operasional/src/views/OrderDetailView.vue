@@ -139,7 +139,10 @@
               <button
                 @click="router.push(`/payment/new/${orderId}`)"
                 type="button"
-                class="text-xs text-red-600 hover:text-red-700 font-bold cursor-pointer"
+                :disabled="isLunas"
+                class="text-xs font-bold transition-colors"
+                :class="isLunas ? 'text-slate-300 cursor-not-allowed pointer-events-none' : 'text-red-600 hover:text-red-700 cursor-pointer'"
+                :title="isLunas ? 'Pesanan sudah lunas' : '+ Catat Bayar'"
               >
                 + Catat Bayar
               </button>
@@ -220,7 +223,10 @@
             <div class="hidden lg:flex px-4 sm:px-6 h-[60px] items-center gap-2.5 bg-slate-50/30">
               <button
                 @click="router.push(`/payment/new/${orderId}`)"
-                class="btn-primary flex-1 h-9 text-xs font-bold justify-center cursor-pointer"
+                :disabled="isLunas"
+                class="btn-primary flex-1 h-9 text-xs font-bold justify-center"
+                :class="isLunas ? '!bg-slate-100 !text-slate-400 !border-slate-200 !cursor-not-allowed !shadow-none pointer-events-none' : 'cursor-pointer'"
+                :title="isLunas ? 'Pesanan sudah lunas' : '+ Catat Bayar'"
               >
                 + Catat Bayar
               </button>
@@ -253,7 +259,10 @@
          class="lg:hidden fixed bottom-0 left-0 right-0 z-50 px-4 py-3 bg-white/95 backdrop-blur-md border-t border-slate-200 flex gap-3">
       <button
         @click="router.push(`/payment/new/${orderId}`)"
-        class="btn-secondary flex-1 h-10.5 justify-center text-xs font-bold rounded-lg cursor-pointer"
+        :disabled="isLunas"
+        class="btn-secondary flex-1 h-10.5 justify-center text-xs font-bold rounded-lg"
+        :class="isLunas ? '!bg-slate-100 !text-slate-400 !border-slate-200 !cursor-not-allowed pointer-events-none' : 'cursor-pointer'"
+        :title="isLunas ? 'Pesanan sudah lunas' : 'Catat Bayar'"
       >
         Catat Bayar
       </button>
@@ -326,6 +335,7 @@ const totalPending = computed(() =>
 const sisaTagihan = computed(() =>
   Math.max(0, (order.value?.total_harga ?? 0) - totalMasuk.value),
 )
+const isLunas = computed(() => Boolean(order.value && sisaTagihan.value === 0))
 
 const specList = computed(() => {
   if (!order.value) return []

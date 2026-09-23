@@ -137,7 +137,7 @@
             <label class="form-label">Sumber Kas *</label>
             <select v-model="form.sumber_kas" class="form-input bg-white" required>
               <option value="KASIR_TUNAI">Tunai</option>
-              <option value="BANK_BCA">Bank</option>
+              <option value="BANK">Bank</option>
               <option value="QRIS">QRIS</option>
             </select>
           </div>
@@ -207,7 +207,7 @@ const kategoriOptions = [
 
 const sumberOptions = [
   { value: 'KASIR_TUNAI', label: 'Tunai' },
-  { value: 'BANK_BCA', label: 'Bank' },
+  { value: 'BANK', label: 'Bank' },
   { value: 'QRIS', label: 'QRIS' },
 ]
 

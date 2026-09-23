@@ -276,7 +276,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { IonPage, IonHeader, IonContent, useIonRouter } from '@ionic/vue'
+import { IonPage, IonHeader, IonContent, useIonRouter, onIonViewWillEnter } from '@ionic/vue'
 import PageHeader from '@shared/components/PageHeader.vue'
 import MetricStrip from '@shared/components/MetricStrip.vue'
 import type { MetricItem } from '@shared/components/MetricStrip.vue'
@@ -674,14 +674,10 @@ async function refreshData() {
   }
 }
 
-onMounted(async () => {
+async function syncFromBackend(force = false) {
   loadLocalClients()
-  if (orderStore.orders.length === 0) {
-    orderStore.fetchOrders().catch(() => {})
-  }
-  if (orderStore.kasMasukList.length === 0) {
-    orderStore.fetchKasMasuk().catch(() => {})
-  }
+  orderStore.fetchOrders(undefined, force).catch(() => {})
+  orderStore.fetchKasMasuk(force).catch(() => {})
   try {
     const res = await api.getClients()
     if (res.success && res.data) {
@@ -690,5 +686,13 @@ onMounted(async () => {
   } catch (err) {
     console.warn('Failed to load client list from GAS:', err)
   }
+}
+
+onMounted(() => {
+  syncFromBackend(false)
+})
+
+onIonViewWillEnter(() => {
+  syncFromBackend(true)
 })
 </script>
