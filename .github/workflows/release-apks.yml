@@ -57,6 +57,7 @@ jobs:
             echo "::error::Secret KBM_KEYSTORE_B64 belum di-set — build release signed tidak dapat dilakukan."
             exit 1
           fi
+          mkdir -p keystore
           echo "$KBM_KEYSTORE_B64" | base64 -d > keystore/kbm-release.jks
           chmod 600 keystore/kbm-release.jks
           cp keystore/kbm-release.jks apps/app1-operasional/android/app/kbm-release.jks
