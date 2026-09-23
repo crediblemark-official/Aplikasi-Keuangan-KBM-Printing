@@ -68,9 +68,13 @@ owner. Badge pembayaran di kedua app kini menampilkan **dua dimensi sekaligus** 
     sebelum install yang baru (tanda tangan berubah → update APK tidak bisa lewat install).
     Base64 keystore: `keystore/kbm-release.jks.b64` (gitignored).
 14. **Faktur menghitung pembayaran BATAL** (temuan #3, bagian InvoiceView) — `InvoiceView.vue:605–607`
-    kini mengecualikan `status_verifikasi === 'BATAL'`. (Bagian badge app1 sengaja dipertahankan
-    berbasis semua pembayaran tercatat non-BATAL sesuai keputusan desain — dimensi verifikasi tampil
-    terpisah di badge.)
+    kini mengecualikan `status_verifikasi === 'BATAL'`. (Badge app1 sengaja dipertahankan berbasis
+    semua pembayaran tercatat non-BATAL sesuai keputusan desain — dimensi verifikasi tampil terpisah
+    di badge dan OrderDetailView menampilkan "Menunggu Owner".) **Deposit operasional**:
+    `NewPaymentView.publisherDepositBalance` kini hanya menghitung deposit & pemakaian
+    `SALDO_DEPOSIT` berstatus `VERIFIED` (dan selalu dari daftar global store, bukan fallback
+    per-order) — deposit PENDING tidak bisa "dibelanjakan" → menutup celah double-spend terhadap
+    nominal yang belum terverifikasi.
 15. **ID duplikat setelah baris dihapus** (temuan #4) — `generateId` kini mengambil `seq` dari nilai
     maksimum ID `prefix-yyyymm-###` yang sudah ada (map kolom ID per sheet), bukan `getLastRow()`.
 16. **Metrik "Hari Ini" HomeView** (temuan #10) — `todayOrders`/`todayTotal` difilter
@@ -149,7 +153,7 @@ rotasi keystore baru.
 
 ---
 
-### 3. Pembayaran belum terverifikasi (PENDING) & batal (BATAL) dihitung sebagai LUNAS — app1 — ✅ DIBAIKI (sebagian; badge per keputusan desain, InvoiceView eksklusi BATAL)
+### 3. Pembayaran belum terverifikasi (PENDING) & batal (BATAL) dihitung sebagai LUNAS — app1 — ✅ DIBAIKI (penuh)
 
 Empat titik di app1-operasional menghitung pembayaran PENDING (dan sebagian BATAL) sebagai uang masuk,
 padahal backend hanya mengakui `status_verifikasi === 'VERIFIED'` (`gas/Code.gs:873, 1046, 1054`).
@@ -163,7 +167,10 @@ tampil "✓ Lunas". Satu pola dengan Temuan #6/#7 di app2-owner.
 | `apps/app1-operasional/src/stores/orders.ts:110–120` | `getPaymentStatus` filter `status_verifikasi !== 'BATAL'` (114) | Badge status di HomeView, OrderListView, OrderDetailView, dan `OperationalInsights.unpaidCompletedCount` menandai lunas padahal uang belum diverifikasi |
 | `apps/app1-operasional/src/views/NewPaymentView.vue:428–436` | `totalTerbayar` filter `!== 'BATAL'` (428–432) | Preset pelunasan/quick-deposit (`useDepositQuick` 421–425) salah; deposit bisa "dibelanjakan" dua kali terhadap nominal yang sama |
 
-**Fix:** semua titik hitung hanya `status_verifikasi === 'VERIFIED'` (minimal eksklusi `BATAL` **dan** `PENDING`).
+**Fix:** per keputusan desain, badge/status di app1 boleh memakai semua pembayaran tercatat
+(non-`BATAL`, sudut pandang operasional) asalkan dimensi verifikasi tampil jelas di UI — dan
+`InvoiceView` kini mengecualikan `BATAL`. Saldo deposit yang **bisa dibelanjakan** operasional wajib
+`=== 'VERIFIED'` (lihat `NewPaymentView.publisherDepositBalance`).
 
 ---
 

@@ -387,16 +387,21 @@ const publisherDepositBalance = computed(() => {
   const penerbit = String(selectedOrder.value?.nama_penerbit || '').trim().toLowerCase()
   if (!penerbit) return 0
 
-  const allKm = orderStore.kasMasukList.length > 0 ? orderStore.kasMasukList : kasMasukList.value
+  // Selalu pakai daftar GLOBAL kas masuk dari store — jangan mencampur dengan list per-order
+  // (list per-order hanya berisi pembayaran order ini → deposit penerbit jadi understated).
+  const allKm = orderStore.kasMasukList
 
-  // Total deposit masuk untuk penerbit ini
+  // Hanya deposit TERVERIFIKASI yang bisa dibelanjakan (uang sudah benar masuk rekening).
+  // Deposit PENDING belum diakui owner — kalau dipakai lalu deposit-nya dibatalkan, order
+  // jadi "lunas" pakai uang yang tak pernah ada (double-spend). Pemakaian SALDO_DEPOSIT pun
+  // hanya dari yang terverifikasi agar konsisten dengan ledger owner (BukuKas/Piutang).
   const totalDeposit = allKm
-    .filter((k) => String(k.nama_penerbit || '').trim().toLowerCase() === penerbit && k.jenis_pembayaran === 'DEPOSIT' && (k.status_verifikasi as any) !== 'BATAL')
+    .filter((k) => String(k.nama_penerbit || '').trim().toLowerCase() === penerbit && k.jenis_pembayaran === 'DEPOSIT' && (k.status_verifikasi as any) === 'VERIFIED')
     .reduce((sum, k) => sum + (Number(k.nominal) || 0), 0)
 
   // Total yang sudah terpakai untuk potong saldo deposit
   const totalTerpakai = allKm
-    .filter((k) => String(k.nama_penerbit || '').trim().toLowerCase() === penerbit && k.metode === 'SALDO_DEPOSIT' && (k.status_verifikasi as any) !== 'BATAL')
+    .filter((k) => String(k.nama_penerbit || '').trim().toLowerCase() === penerbit && k.metode === 'SALDO_DEPOSIT' && (k.status_verifikasi as any) === 'VERIFIED')
     .reduce((sum, k) => sum + (Number(k.nominal) || 0), 0)
 
   return Math.max(0, totalDeposit - totalTerpakai)
