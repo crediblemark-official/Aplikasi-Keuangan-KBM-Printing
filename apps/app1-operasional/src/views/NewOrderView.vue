@@ -36,18 +36,36 @@
             <div class="border-b border-slate-200 bg-white">
               <SectionHeader title="1. Identitas Penerbit & Buku" />
               <div class="p-[8px] sm:p-[15px] lg:p-[20px] bg-white space-y-4">
-                <!-- 1. Nama Penerbit -->
-                <ComboboxInput
-                  v-model="form.nama_penerbit"
-                  label="Nama Penerbit *"
-                  sublabel="Pelanggan / Klien"
-                  placeholder="Ketik atau pilih nama penerbit / klien..."
-                  :options="clientOptions"
-                  add-label-prefix="Tambah Penerbit"
-                  required
-                  @select="onClientSelect"
-                  @add="onClientAdd"
-                />
+                <!-- 1. Nama Penerbit & Tanggal Order -->
+                <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start">
+                  <div class="sm:col-span-8">
+                    <ComboboxInput
+                      v-model="form.nama_penerbit"
+                      label="Nama Penerbit *"
+                      sublabel="Pelanggan / Klien"
+                      placeholder="Ketik atau pilih nama penerbit / klien..."
+                      :options="clientOptions"
+                      add-label-prefix="Tambah Penerbit"
+                      required
+                      @select="onClientSelect"
+                      @add="onClientAdd"
+                    />
+                  </div>
+                  <div class="sm:col-span-4">
+                    <div class="space-y-1">
+                      <div class="flex items-center justify-between">
+                        <label class="form-label mb-0 text-xs font-bold text-slate-700">Tanggal Order *</label>
+                        <span class="text-[10px] text-slate-400 font-medium">WIB</span>
+                      </div>
+                      <input
+                        v-model="form.tanggal"
+                        type="date"
+                        required
+                        class="w-full h-9.5 px-3 rounded-lg border border-slate-300 text-xs font-semibold text-slate-800 focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none bg-white transition-colors"
+                      />
+                    </div>
+                  </div>
+                </div>
 
                 <!-- 2. Judul Buku & 3. Nama Penulis -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -592,7 +610,7 @@ import PageHeader from '@shared/components/PageHeader.vue'
 import SectionHeader from '@shared/components/SectionHeader.vue'
 import ComboboxInput, { type ComboboxOption } from '@shared/components/ComboboxInput.vue'
 import { useOrderStore } from '../stores/orders'
-import { formatRupiah } from '@shared/utils/formatters'
+import { formatRupiah, getTodayISO } from '@shared/utils/formatters'
 import {
   calculateOrderPriceDetailed,
   getTarifBWPerHalaman,
@@ -860,6 +878,7 @@ const finishingOptions = [
 
 // EXACT FIELDS WITH SEPARATE JUDUL BUKU & NAMA PENULIS
 const form = ref({
+  tanggal: getTodayISO(),
   nama_penerbit: '',
   judul_buku: '',
   nama_penulis: '',
@@ -1034,6 +1053,7 @@ function recalculatePriceAuto() {
 
 function resetForm() {
   form.value = {
+    tanggal: getTodayISO(),
     nama_penerbit: '',
     judul_buku: '',
     nama_penulis: '',
@@ -1090,6 +1110,7 @@ async function loadExistingOrder() {
     }
 
     form.value = {
+      tanggal: existing.tanggal ? String(existing.tanggal).split('T')[0] : getTodayISO(),
       nama_penerbit: existing.nama_penerbit || '',
       judul_buku: derivedJudul,
       nama_penulis: derivedPenulis,
@@ -1122,6 +1143,7 @@ async function submitOrder() {
   const combinedJudulPenulis = namaPenulis ? `${judulBuku} / ${namaPenulis}` : judulBuku
 
   const orderPayload = {
+    tanggal: form.value.tanggal || getTodayISO(),
     nama_penerbit: String(form.value.nama_penerbit || '').trim(),
     judul_penulis: combinedJudulPenulis,
     judul_buku: judulBuku,

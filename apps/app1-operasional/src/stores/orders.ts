@@ -180,19 +180,26 @@ export const useOrderStore = defineStore('orders', () => {
   }
 
   async function createOrder(
-    orderData: Omit<Order, 'id_order' | 'tanggal' | 'status_order'>,
+    orderData: Omit<Order, 'id_order' | 'status_order'> & { tanggal?: string },
   ): Promise<{ id_order: string; nomor_invoice: string } | null> {
     isLoading.value = true
     error.value = null
 
+    const orderTanggal = (orderData.tanggal && orderData.tanggal.trim())
+      ? orderData.tanggal.trim().substring(0, 10)
+      : getTodayISO()
+
     try {
-      const res = await api.createOrder(orderData)
+      const res = await api.createOrder({
+        ...orderData,
+        tanggal: orderTanggal,
+      })
 
       if (res.success && res.data) {
         // Berhasil terkirim online ke server GAS
         const localOrder: Order = {
           id_order: res.data.id_order,
-          tanggal: getTodayISO(),
+          tanggal: orderTanggal,
           status_order: 'PROSES',
           nama_penerbit: orderData.nama_penerbit,
           judul_penulis: orderData.judul_penulis,
@@ -231,7 +238,7 @@ export const useOrderStore = defineStore('orders', () => {
 
           const offlineOrder: Order = {
             id_order: tempId,
-            tanggal: getTodayISO(),
+            tanggal: orderTanggal,
             status_order: 'PROSES',
             nama_penerbit: orderData.nama_penerbit,
             judul_penulis: orderData.judul_penulis,

@@ -165,7 +165,7 @@ export const api = {
   // Orders
   getOrders: (params?: { status?: string; search?: string; nocache?: boolean | string }) =>
     gasGet<import('../types').Order[]>('getOrders', params ?? {}),
-  createOrder: async (order: Omit<import('../types').Order, 'id_order' | 'tanggal' | 'status_order'>) => {
+  createOrder: async (order: Omit<import('../types').Order, 'id_order' | 'status_order'> & { id_order?: string; tanggal?: string }) => {
     const res = await gasPost<{ id_order: string; nomor_invoice: string }>('createOrder', { order })
     tryLogSync({
       entity_type: 'ORDER',

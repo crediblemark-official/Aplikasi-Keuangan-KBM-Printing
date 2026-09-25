@@ -392,10 +392,12 @@ function handleCreateOrder(body) {
     const sheet = getSheet(SHEET_ORDERS);
     ensureOrderHeaders(sheet);
 
+    const order = body.order || {};
     const id_order = generateId('ORD', sheet);
-    const tanggal = Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyy-MM-dd');
+    const tanggal = (order.tanggal && String(order.tanggal).trim())
+      ? String(order.tanggal).trim().substring(0, 10)
+      : Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyy-MM-dd');
 
-    const order = body.order;
     const combinedJudulPenulis = order.judul_penulis || (order.nama_penulis ? `${order.judul_buku} / ${order.nama_penulis}` : order.judul_buku || '');
 
     // Map according to actual sheet headers dynamically
@@ -508,8 +510,14 @@ function handleUpdateOrder(body) {
       let shouldUpdate = true;
       switch (h) {
         case 'id_order':
+          shouldUpdate = false; // pertahankan id order asli
+          break;
         case 'tanggal':
-          shouldUpdate = false; // pertahankan id & tanggal order asli
+          if (order.tanggal !== undefined && String(order.tanggal).trim()) {
+            val = String(order.tanggal).trim().substring(0, 10);
+          } else {
+            shouldUpdate = false;
+          }
           break;
         case 'nama_penerbit':
           if (order.nama_penerbit !== undefined) val = order.nama_penerbit;
