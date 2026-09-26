@@ -12,15 +12,15 @@
           />
         </div>
 
-        <!-- Sync All Action Button -->
+        <!-- Sync All / Stop Action Button -->
         <BaseButton
+          v-if="!syncStore.isSyncingAll"
           @click="syncStore.syncAllPending()"
-          :disabled="syncStore.isSyncingAll"
           size="sm"
         >
           <template #icon>
             <svg
-              :class="['w-3.5 h-3.5', { 'animate-spin': syncStore.isSyncingAll }]"
+              class="w-3.5 h-3.5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -28,9 +28,22 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </template>
-          <span class="hidden sm:inline">{{ syncStore.isSyncingAll ? 'Menyinkronkan...' : 'Sinkronkan' }}</span>
+          <span class="hidden sm:inline">Sinkronkan</span>
           <span class="sm:hidden">Sinkron</span>
         </BaseButton>
+
+        <!-- Stop Sync Button (jika sedang sinkron / stuck) -->
+        <button
+          v-else
+          @click="syncStore.stopSync()"
+          class="h-8 text-xs font-semibold inline-flex items-center gap-1.5 px-3 rounded-md cursor-pointer bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition-colors"
+          title="Hentikan proses sinkronisasi yang sedang berjalan"
+        >
+          <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span>Hentikan</span>
+        </button>
 
         <!-- Refresh / Check Health Button -->
         <button
@@ -49,6 +62,20 @@
           <span class="hidden md:inline">Cek Server</span>
         </button>
 
+        <!-- Clear Failed Logs Button -->
+        <button
+          v-if="syncStore.failedCount > 0"
+          @click="syncStore.clearFailedLogs()"
+          class="btn-secondary h-8 text-xs font-semibold inline-flex items-center gap-1 px-2.5 rounded-md cursor-pointer text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200"
+          title="Bersihkan semua log gagal"
+        >
+          <svg class="w-3.5 h-3.5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          <span class="hidden md:inline">Hapus Gagal ({{ syncStore.failedCount }})</span>
+          <span class="md:hidden">Hapus Gagal</span>
+        </button>
+
         <!-- Clear Synced Logs Button -->
         <button
           v-if="syncStore.syncedCount > 0"
@@ -56,7 +83,8 @@
           class="btn-secondary h-8 text-xs font-semibold inline-flex items-center gap-1.5 px-2.5 rounded-md cursor-pointer text-slate-500 hover:text-slate-800"
           title="Bersihkan riwayat yang sudah berhasil tersinkron"
         >
-          <span class="hidden md:inline">Bersihkan</span>
+          <span class="hidden md:inline">Bersihkan Sukses</span>
+          <span class="md:hidden">Bersihkan</span>
         </button>
       </template>
     </PageHeader>

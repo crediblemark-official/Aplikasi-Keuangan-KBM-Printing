@@ -1,6 +1,12 @@
 import type { ApiResponse } from '../types'
 import { useSyncStore } from '../stores/syncStore'
 
+let suppressSyncLog = false
+
+export function setSuppressSyncLog(val: boolean) {
+  suppressSyncLog = val
+}
+
 function tryLogSync(item: {
   entity_type: import('../types/sync').SyncEntityType
   title: string
@@ -11,6 +17,7 @@ function tryLogSync(item: {
   payload: Record<string, unknown>
   error_message?: string
 }) {
+  if (suppressSyncLog) return
   try {
     const syncStore = useSyncStore()
     syncStore.addLog(item)

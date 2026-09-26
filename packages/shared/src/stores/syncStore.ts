@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { SyncLogItem, SyncStatus, SyncEntityType } from '../types/sync'
-import { api, CONFIG } from '../api/gasClient'
+import { api, CONFIG, setSuppressSyncLog } from '../api/gasClient'
 
 const STORAGE_KEY = 'kbm_sync_queue_v1'
 
@@ -80,11 +80,37 @@ export const useSyncStore = defineStore('sync', () => {
     }
   }
 
+  function deduplicateLogs(items: SyncLogItem[]): SyncLogItem[] {
+    const seen = new Set<string>()
+    const result: SyncLogItem[] = []
+
+    for (const item of items) {
+      if (item.status === 'FAILED' || item.status === 'PENDING') {
+        const payloadKey = `${item.action}_${JSON.stringify(item.payload)}`
+        if (seen.has(payloadKey)) {
+          continue
+        }
+        seen.add(payloadKey)
+      }
+      result.push(item)
+    }
+    return result
+  }
+
   function loadLogsFromStorage(): SyncLogItem[] {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
-        return JSON.parse(saved)
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed)) {
+          const deduped = deduplicateLogs(parsed)
+          if (deduped.length !== parsed.length) {
+            try {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(deduped))
+            } catch {}
+          }
+          return deduped
+        }
       }
     } catch (e) {
       console.warn('Failed to load sync logs from localStorage:', e)
@@ -192,6 +218,37 @@ export const useSyncStore = defineStore('sync', () => {
     saveToStorage()
   }
 
+  function clearFailedLogs() {
+    // PROTEKSI DATA: Data input baru (createOrder, createKasMasuk, createKasKeluar)
+    // TIDAK BOLEH DIHAPUS karena merupakan data transaksi nyata yang harus tersinkron ke Sheet!
+    logs.value = logs.value.filter((l) => {
+      if (l.status !== 'FAILED') return true
+      const isCriticalCreation =
+        l.action === 'createOrder' ||
+        l.action === 'createKasMasuk' ||
+        l.action === 'createKasKeluar'
+      return isCriticalCreation
+    })
+    saveToStorage()
+  }
+
+  function clearAllLogs() {
+    logs.value = []
+    saveToStorage()
+  }
+
+  function cleanDuplicates() {
+    logs.value = deduplicateLogs(logs.value)
+    saveToStorage()
+  }
+
+  let shouldAbortSync = false
+
+  function stopSync() {
+    shouldAbortSync = true
+    isSyncingAll.value = false
+  }
+
   async function checkServerHealth(): Promise<number | null> {
     if (isCheckingHealth.value) return gasLatencyMs.value
     isCheckingHealth.value = true
@@ -232,10 +289,12 @@ export const useSyncStore = defineStore('sync', () => {
     const item = logs.value.find((l) => l.id === id)
     if (!item) return false
 
-    updateLog(id, { status: 'SYNCING', attempts: item.attempts + 1 })
+    updateLog(id, { status: 'SYNCING', attempts: (item.attempts || 0) + 1 })
 
+    // Suppress automatic logging to avoid creating duplicate log entries during retry
+    setSuppressSyncLog(true)
     try {
-      let res: { success: boolean; error?: string } = { success: false }
+      let res: { success: boolean; error?: string; isOffline?: boolean; data?: any } = { success: false }
 
       switch (item.action) {
         case 'createOrder': {
@@ -283,6 +342,16 @@ export const useSyncStore = defineStore('sync', () => {
           res = await api.updateOrderStatus(id_order, status)
           break
         }
+        case 'updateOrder': {
+          const orderData = (item.payload.order || item.payload) as any
+          res = await api.updateOrder(orderData)
+          break
+        }
+        case 'deleteOrder': {
+          const { id_order } = item.payload as any
+          res = await api.deleteOrder(id_order)
+          break
+        }
         case 'verifyKasMasuk': {
           const { id_kas_masuk, verified_by } = item.payload as any
           res = await api.verifyKasMasuk(id_kas_masuk, verified_by)
@@ -312,24 +381,48 @@ export const useSyncStore = defineStore('sync', () => {
         error_message: err?.message || 'Gagal tersambung ke jaringan',
       })
       return false
+    } finally {
+      setSuppressSyncLog(false)
     }
   }
 
   async function syncAllPending() {
     if (isSyncingAll.value) return
     isSyncingAll.value = true
+    shouldAbortSync = false
 
     try {
-      const pendingItems = logs.value.filter(
-        (l) => l.status === 'PENDING' || l.status === 'FAILED',
+      // 1. Data input baru (createOrder, createKasMasuk, createKasKeluar) WAJIB SELALU di-sync
+      const newCreationItems = logs.value.filter(
+        (l) =>
+          (l.status === 'PENDING' || l.status === 'FAILED') &&
+          (l.action === 'createOrder' || l.action === 'createKasMasuk' || l.action === 'createKasKeluar')
       )
 
-      for (const item of pendingItems) {
+      // 2. Data antrean PENDING lainnya
+      const otherPending = logs.value.filter(
+        (l) => l.status === 'PENDING' && !newCreationItems.some((n) => n.id === l.id)
+      )
+
+      // 3. Status update gagal yang masih wajar di-retry
+      const retryableFailed = logs.value.filter(
+        (l) =>
+          l.status === 'FAILED' &&
+          !newCreationItems.some((n) => n.id === l.id) &&
+          (l.attempts || 0) < 5 &&
+          !l.error_message?.toLowerCase().includes('tidak ditemukan'),
+      )
+
+      const itemsToSync = [...newCreationItems, ...otherPending, ...retryableFailed]
+
+      for (const item of itemsToSync) {
+        if (shouldAbortSync) break
         await retrySync(item.id)
       }
       await checkServerHealth()
     } finally {
       isSyncingAll.value = false
+      shouldAbortSync = false
     }
   }
 
@@ -350,6 +443,10 @@ export const useSyncStore = defineStore('sync', () => {
     updateLog,
     removeLog,
     clearSuccessfulLogs,
+    clearFailedLogs,
+    clearAllLogs,
+    cleanDuplicates,
+    stopSync,
     checkServerHealth,
     setOnlineStatus,
     retrySync,

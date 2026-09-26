@@ -454,23 +454,32 @@ function handleCreateOrder(body) {
 }
 
 function handleUpdateOrderStatus(body) {
-  const sheet = getSheet(SHEET_ORDERS);
-  const data = sheet.getDataRange().getValues();
-  const headers = data[0];
-  const idCol = headers.indexOf('id_order');
-  const statusCol = headers.indexOf('status_order');
-  if (idCol === -1) return { success: false, error: 'Kolom id_order tidak ditemukan' };
-  if (statusCol === -1) return { success: false, error: 'Kolom status_order tidak ditemukan' };
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const sheet = getSheet(SHEET_ORDERS);
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const idCol = headers.indexOf('id_order');
+    const statusCol = headers.indexOf('status_order');
+    if (idCol === -1) return { success: false, error: 'Kolom id_order tidak ditemukan' };
+    if (statusCol === -1) return { success: false, error: 'Kolom status_order tidak ditemukan' };
 
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][idCol] === body.id_order) {
-      sheet.getRange(i + 1, statusCol + 1).setValue(body.status);
-      SpreadsheetApp.flush();
-      invalidateCache(['orders_all']);
-      return { success: true };
+    const targetId = String(body.id_order || '').trim();
+    const targetStatus = String(body.status || '').trim();
+
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][idCol]).trim() === targetId) {
+        sheet.getRange(i + 1, statusCol + 1).setValue(targetStatus);
+        SpreadsheetApp.flush();
+        invalidateCache(['orders_all']);
+        return { success: true, data: { id_order: targetId, status: targetStatus } };
+      }
     }
+    return { success: false, error: 'Order tidak ditemukan' };
+  } finally {
+    lock.releaseLock();
   }
-  return { success: false, error: 'Order tidak ditemukan' };
 }
 
 function handleUpdateOrder(body) {

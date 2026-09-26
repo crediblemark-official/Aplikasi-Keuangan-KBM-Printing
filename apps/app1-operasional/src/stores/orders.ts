@@ -309,6 +309,21 @@ export const useOrderStore = defineStore('orders', () => {
     if (target) {
       target.status_order = newStatus
     }
+
+    // Jika order masih dalam ID sementara offline, simpan perubahan status di antrean lokal tanpa kirim ke GAS
+    if (trimmedId.startsWith('ORD-OFFLINE')) {
+      try {
+        const syncStore = useSyncStore()
+        const pendingCreate = syncStore.logs.find(
+          (l) => l.action === 'createOrder' && (l.payload?.temp_id_order === trimmedId || (l.payload?.order as any)?.id_order === trimmedId)
+        )
+        if (pendingCreate && pendingCreate.payload?.order) {
+          ;(pendingCreate.payload.order as any).status_order = newStatus
+        }
+      } catch {}
+      return { success: true }
+    }
+
     try {
       const res = await api.updateOrderStatus(trimmedId, newStatus)
       if (!res.success && target && oldStatus && !res.isOffline) {
