@@ -302,12 +302,23 @@ export const useSyncStore = defineStore('sync', () => {
           const createRes = await api.createOrder(orderData)
           res = createRes
           if (createRes.success && createRes.data && item.payload.temp_id_order) {
+            const tempId = item.payload.temp_id_order
+            const realId = createRes.data.id_order
+
+            // Rekonsiliasi antrean lain yang masih menggunakan temp_id_order
+            logs.value.forEach((l) => {
+              if (l.payload && (l.payload as any).id_order === tempId) {
+                ;(l.payload as any).id_order = realId
+              }
+            })
+            saveToStorage()
+
             if (typeof window !== 'undefined') {
               window.dispatchEvent(
                 new CustomEvent('kbm_order_synced', {
                   detail: {
-                    temp_id: item.payload.temp_id_order,
-                    real_id: createRes.data.id_order,
+                    temp_id: tempId,
+                    real_id: realId,
                     nomor_invoice: createRes.data.nomor_invoice,
                   },
                 }),

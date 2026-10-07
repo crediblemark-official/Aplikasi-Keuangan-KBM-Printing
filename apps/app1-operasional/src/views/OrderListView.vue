@@ -359,6 +359,7 @@ onMounted(() => {
     search.value = String(route.query.q)
   }
   orderStore.fetchOrders()
+  orderStore.fetchKasMasuk()
 })
 
 onIonViewWillEnter(() => {
@@ -366,6 +367,7 @@ onIonViewWillEnter(() => {
     search.value = String(route.query.q)
   }
   orderStore.fetchOrders()
+  orderStore.fetchKasMasuk()
 })
 
 watch(

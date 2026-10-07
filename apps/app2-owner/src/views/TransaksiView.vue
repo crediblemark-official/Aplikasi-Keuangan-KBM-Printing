@@ -44,14 +44,36 @@
     <!-- Summary Metrics Strip -->
     <MetricStrip :items="summaryMetrics" />
 
+    <!-- Alert Rekonsiliasi Kas Tanpa Order -->
+    <div
+      v-if="totalUnlinkedNominal > 0"
+      class="px-[8px] sm:px-[15px] lg:px-[20px] py-2 bg-amber-50 border-b border-amber-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
+    >
+      <div class="flex items-center gap-2 text-amber-900 font-medium">
+        <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+        <span>
+          <strong>Rekonsiliasi Kas:</strong> Ditemukan <strong>{{ dateFilteredUnlinkedPayments.length }} transaksi kas masuk</strong> senilai <strong class="font-mono text-amber-800">{{ formatRupiah(totalUnlinkedNominal) }}</strong> yang tercatat di Buku Kas tetapi nomor ordernya tidak ada di daftar pesanan aktif.
+        </span>
+      </div>
+      <button
+        type="button"
+        @click="statusFilter = statusFilter === 'UNLINKED' ? 'ALL' : 'UNLINKED'"
+        class="text-amber-800 font-bold hover:underline shrink-0 text-left sm:text-right cursor-pointer"
+      >
+        {{ statusFilter === 'UNLINKED' ? 'Kembali ke Semua Order' : 'Lihat Data Kas Tanpa Order →' }}
+      </button>
+    </div>
+
     <!-- Control Bar: Date Filter, Status Filter & Ringkasan (Sticky) -->
-    <div class="sticky top-0 z-30 px-[8px] sm:px-[15px] lg:px-[20px] py-2.5 border-b border-slate-200 bg-white flex flex-col md:flex-row md:items-center justify-between gap-2.5 shadow-xs">
+    <div class="sticky top-0 z-30 px-[8px] sm:px-[15px] lg:px-[20px] py-2 border-b border-slate-200 bg-white flex flex-col xl:flex-row xl:items-center justify-between gap-2.5 shadow-xs">
       <!-- Date Filter Bar (Tanggal, Bulan, Tahun, Rentang) -->
-      <DateFilterBar v-model="dateFilter" />
+      <div class="shrink-0 overflow-x-auto scrollbar-none">
+        <DateFilterBar v-model="dateFilter" />
+      </div>
 
       <!-- Status Filter Buttons & Count -->
-      <div class="flex items-center gap-2.5 w-full md:w-auto overflow-x-auto scrollbar-none py-0.5 justify-between md:justify-end">
-        <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto scrollbar-none flex-nowrap shrink-0 max-w-full">
+      <div class="flex items-center gap-2.5 w-full xl:w-auto overflow-x-auto scrollbar-none py-0.5 justify-between xl:justify-end shrink-0">
+        <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl overflow-x-auto scrollbar-none flex-nowrap shrink-0">
           <button
             v-for="tab in filterOptions"
             :key="tab.value"
@@ -71,8 +93,11 @@
         </div>
 
         <!-- Info Count -->
-        <div class="text-xs text-slate-500 font-medium shrink-0 whitespace-nowrap">
-          <span v-if="hasMoreRows">
+        <div class="text-xs text-slate-500 font-medium shrink-0 whitespace-nowrap pl-1">
+          <span v-if="statusFilter === 'UNLINKED'">
+            <strong class="text-slate-800">{{ filteredUnlinkedPayments.length }}</strong> transaksi tanpa order
+          </span>
+          <span v-else-if="hasMoreRows">
             Menampilkan <strong class="text-slate-800">{{ displayedPiutangRows.length }}</strong> dari <strong class="text-slate-800">{{ filteredPiutangRows.length }}</strong> order
           </span>
           <span v-else>
@@ -83,9 +108,107 @@
     </div>
 
     <!-- ================================================================= -->
+    <!-- TABEL REKONSILIASI: KAS MASUK TANPA ORDER                         -->
+    <!-- ================================================================= -->
+    <TableScrollWrapper v-if="statusFilter === 'UNLINKED'">
+      <div class="p-3.5 sm:p-4 bg-amber-50/60 border-b border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <h4 class="text-xs sm:text-sm font-bold text-amber-950 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+            Daftar Kas Masuk Tanpa Order (Tercatat di Buku Kas)
+          </h4>
+          <p class="text-[11px] sm:text-xs text-amber-800 mt-0.5">
+            Transaksi uang masuk di bawah ini berstatus terverifikasi dan masuk ke saldo Buku Kas, namun nomor order referensinya tidak ada di sheet Orders.
+          </p>
+        </div>
+        <div class="sm:text-right shrink-0">
+          <span class="text-[11px] font-semibold text-slate-500 block">Total Nominal:</span>
+          <span class="text-base font-black font-mono text-amber-800">{{ formatRupiah(totalUnlinkedNominal) }}</span>
+        </div>
+      </div>
+      <table class="data-table w-full min-w-[1000px]">
+        <thead>
+          <tr class="whitespace-nowrap bg-slate-50 text-slate-600 text-xs">
+            <th class="py-2.5 px-3 text-left">ID Kas Masuk</th>
+            <th class="py-2.5 px-3 text-left">Tanggal</th>
+            <th class="py-2.5 px-3 text-left">Nomor Order Terkait</th>
+            <th class="py-2.5 px-3 text-left">Nama Penerbit</th>
+            <th class="py-2.5 px-3 text-left">Jenis Bayar</th>
+            <th class="py-2.5 px-3 text-left">Metode Kas</th>
+            <th class="py-2.5 px-3 text-right">Nominal Masuk</th>
+            <th class="py-2.5 px-3 text-center">Status Verifikasi</th>
+            <th class="py-2.5 px-3 text-left">Keterangan</th>
+            <th class="py-2.5 px-3 text-center">Bukti Resi</th>
+            <th class="py-2.5 px-3 text-center">Tindakan</th>
+          </tr>
+        </thead>
+        <tbody>
+          <TableStateRow
+            :colspan="11"
+            :loading="isLoading"
+            :is-empty="filteredUnlinkedPayments.length === 0"
+            empty-text="Tidak ada data kas masuk tanpa order pada periode ini"
+          />
+          <tr
+            v-for="item in filteredUnlinkedPayments"
+            :key="item.id"
+            class="hover:bg-amber-50/30 transition-colors"
+          >
+            <td class="font-mono font-bold text-xs text-slate-800 px-3 py-3 whitespace-nowrap">{{ item.id }}</td>
+            <td class="whitespace-nowrap text-xs text-slate-700 px-3 py-3">{{ formatTanggal(item.tanggal) }}</td>
+            <td class="px-3 py-3 whitespace-nowrap">
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                <span>{{ item.id_order || 'Tanpa ID Order' }}</span>
+                <span class="text-[10px] text-rose-500 font-sans font-medium">(Tidak Ada di Order)</span>
+              </span>
+            </td>
+            <td class="font-medium text-xs text-slate-900 px-3 py-3 whitespace-nowrap">{{ item.nama_penerbit }}</td>
+            <td class="text-xs text-slate-700 px-3 py-3 whitespace-nowrap">{{ item.jenis_pembayaran }}</td>
+            <td class="text-xs text-slate-700 px-3 py-3 whitespace-nowrap">{{ formatMetode(item.metode) }}</td>
+            <td class="text-right font-mono font-bold text-xs text-emerald-600 px-3 py-3 whitespace-nowrap">
+              {{ formatRupiah(item.nominal) }}
+            </td>
+            <td class="text-center px-3 py-3 whitespace-nowrap">
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                {{ item.status_verifikasi }}
+              </span>
+            </td>
+            <td class="text-xs text-slate-600 max-w-[260px] truncate px-3 py-3" :title="item.keterangan">
+              {{ item.keterangan || '-' }}
+            </td>
+            <td class="text-center px-3 py-3 whitespace-nowrap">
+              <a
+                v-if="item.fileId"
+                :href="`https://drive.google.com/file/d/${item.fileId}/view`"
+                target="_blank"
+                rel="noopener"
+                class="text-blue-600 hover:text-blue-800 font-bold underline text-xs"
+              >
+                Lihat
+              </a>
+              <span v-else class="text-slate-300 text-xs italic">-</span>
+            </td>
+            <td class="text-center px-3 py-3 whitespace-nowrap">
+              <button
+                @click="router.push('/dashboard/buku-kas')"
+                type="button"
+                class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 shadow-2xs transition-all cursor-pointer inline-flex items-center gap-1"
+              >
+                <span>Buku Kas</span>
+                <svg class="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </TableScrollWrapper>
+
+    <!-- ================================================================= -->
     <!-- TABEL GABUNGAN: ORDER, RINCIAN PEMBAYARAN MASUK, & PIUTANG       -->
     <!-- ================================================================= -->
-    <TableScrollWrapper>
+    <TableScrollWrapper v-else>
       <table class="data-table w-full min-w-[1900px]">
         <thead>
           <!-- Baris 1: Group Headers -->
@@ -321,6 +444,13 @@
                   Wait
                 </span>
               </div>
+              <div
+                v-if="row.total_masuk_verified > row.order.total_harga"
+                class="text-[10px] font-bold text-emerald-600 mt-0.5"
+                title="Pembayaran melebihi total tagihan faktur"
+              >
+                +{{ formatRupiah(row.total_masuk_verified - row.order.total_harga) }} (Lebih)
+              </div>
             </td>
 
             <!-- 7. Sisa Piutang -->
@@ -358,7 +488,7 @@
 
     <!-- Load More Section -->
     <div
-      v-if="hasMoreRows"
+      v-if="statusFilter !== 'UNLINKED' && hasMoreRows"
       class="px-4 py-3.5 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs"
     >
       <div class="flex items-center gap-2 text-xs text-slate-600 font-medium">
@@ -398,7 +528,7 @@
       :orders-list="ordersList"
       :kas-masuk-list="kasMasukList"
       :initial-data="selectedPaymentInitialData"
-      @success="loadData"
+      @success="() => loadData(true)"
       @toast="showToast"
     />
 
@@ -410,7 +540,7 @@
       :tx="selectedEditTx"
       :order="selectedEditOrder"
       :kas-masuk-list="kasMasukList"
-      @success="loadData"
+      @success="() => loadData(true)"
       @toast="showToast"
     />
 
@@ -425,7 +555,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '@shared/components/PageHeader.vue'
 import BaseButton from '@shared/components/BaseButton.vue'
 import MetricStrip from '@shared/components/MetricStrip.vue'
@@ -455,13 +585,14 @@ import { useFinanceStore } from '../stores/finance'
 import { storeToRefs } from 'pinia'
 
 const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
 const financeStore = useFinanceStore()
 
 const { kasMasukList, ordersList, isLoading, isRefreshing } = storeToRefs(financeStore)
 const verifyingId = ref<string | null>(null)
 const searchQuery = ref('')
-const statusFilter = ref<'ALL' | 'PIUTANG' | 'LUNAS' | 'PENDING_VERIF'>('ALL')
+const statusFilter = ref<'ALL' | 'PIUTANG' | 'LUNAS' | 'PENDING_VERIF' | 'UNLINKED'>('ALL')
 const dateFilter = ref<DateFilterValue>({ mode: 'ALL' })
 
 const { toastMessage, toastType, showToast, clearToast } = useToast()
@@ -561,42 +692,110 @@ const piutangRows = computed<EnrichedPiutangRow[]>(() => {
   })
 })
 
+// Data baris yang disaring berdasarkan tanggal pembuatan order aktif
+// sehingga setiap order hanya tercatat di bulannya (tidak terhitung ganda antar bulan)
+// dan penjumlahan seluruh bulan (Agustus + September + ...) 100% klop dengan Grand Total
+const dateFilteredPiutangRows = computed(() => {
+  return piutangRows.value.filter((r) => {
+    if (dateFilter.value.mode !== 'ALL') {
+      return isDateInFilterRange(r.order.tanggal, dateFilter.value)
+    }
+    return true
+  })
+})
+
+// Transaksi kas masuk yang tercatat di Buku Kas namun nomor ordernya tidak ada di master Orders
+const unlinkedPayments = computed(() => {
+  const orderIdSet = new Set(ordersList.value.map((o) => o.id_order))
+  return kasMasukList.value
+    .filter((k) => {
+      if (k.status_verifikasi === 'BATAL') return false
+      return !k.id_order || !orderIdSet.has(k.id_order)
+    })
+    .map((k) => ({
+      id: k.id_kas_masuk,
+      tanggal: k.tanggal,
+      id_order: k.id_order,
+      nama_penerbit: k.nama_penerbit || '-',
+      nominal: k.nominal,
+      metode: k.metode,
+      jenis_pembayaran: k.jenis_pembayaran,
+      status_verifikasi: k.status_verifikasi,
+      keterangan: k.keterangan,
+      fileId: k.file_id_bukti,
+    }))
+    .sort((a, b) => b.tanggal.localeCompare(a.tanggal))
+})
+
+const dateFilteredUnlinkedPayments = computed(() => {
+  return unlinkedPayments.value.filter((k) => {
+    if (dateFilter.value.mode !== 'ALL') {
+      return isDateInFilterRange(k.tanggal, dateFilter.value)
+    }
+    return true
+  })
+})
+
+const filteredUnlinkedPayments = computed(() => {
+  return dateFilteredUnlinkedPayments.value.filter((k) => {
+    if (searchQuery.value.trim()) {
+      const q = searchQuery.value.toLowerCase()
+      return (
+        k.id.toLowerCase().includes(q) ||
+        (k.id_order && k.id_order.toLowerCase().includes(q)) ||
+        k.nama_penerbit.toLowerCase().includes(q) ||
+        (k.keterangan && k.keterangan.toLowerCase().includes(q))
+      )
+    }
+    return true
+  })
+})
+
+const totalUnlinkedNominal = computed(() =>
+  dateFilteredUnlinkedPayments.value
+    .filter((k) => k.status_verifikasi === 'VERIFIED')
+    .reduce((s, k) => s + k.nominal, 0)
+)
+
 const filterOptions = computed(() => [
-  { value: 'ALL' as const, label: 'Semua Order', count: piutangRows.value.length },
+  { value: 'ALL' as const, label: 'Semua Order', count: dateFilteredPiutangRows.value.length },
   {
     value: 'PIUTANG' as const,
     label: 'Ada Piutang',
-    count: piutangRows.value.filter((r) => r.sisa_tagihan > 0).length,
+    count: dateFilteredPiutangRows.value.filter((r) => r.sisa_tagihan > 0).length,
     badgeClass: 'bg-rose-50 text-rose-600 font-bold',
   },
   {
     value: 'LUNAS' as const,
     label: 'Lunas',
-    count: piutangRows.value.filter((r) => r.sisa_tagihan <= 0).length,
+    count: dateFilteredPiutangRows.value.filter((r) => r.sisa_tagihan <= 0).length,
     badgeClass: 'bg-emerald-50 text-emerald-700 font-bold',
   },
   {
     value: 'PENDING_VERIF' as const,
     label: 'Perlu Verifikasi',
-    count: piutangRows.value.filter((r) => r.has_pending).length,
-    badgeClass: piutangRows.value.some((r) => r.has_pending)
+    count: dateFilteredPiutangRows.value.filter((r) => r.has_pending).length,
+    badgeClass: dateFilteredPiutangRows.value.some((r) => r.has_pending)
       ? 'bg-amber-500 text-white font-extrabold animate-pulse'
       : 'bg-slate-300 text-slate-600',
   },
+  ...(dateFilteredUnlinkedPayments.value.length > 0
+    ? [
+        {
+          value: 'UNLINKED' as const,
+          label: 'Tanpa Order',
+          count: dateFilteredUnlinkedPayments.value.length,
+          badgeClass: 'bg-amber-100 text-amber-800 font-bold',
+        },
+      ]
+    : []),
 ])
 
 const filteredPiutangRows = computed(() => {
-  return piutangRows.value.filter((r) => {
+  return dateFilteredPiutangRows.value.filter((r) => {
     if (statusFilter.value === 'PIUTANG' && r.sisa_tagihan <= 0) return false
     if (statusFilter.value === 'LUNAS' && r.sisa_tagihan > 0) return false
     if (statusFilter.value === 'PENDING_VERIF' && !r.has_pending) return false
-
-    // Date filter: mencakup tanggal order dibuat ataupun transaksi pembayaran masuk
-    if (dateFilter.value.mode !== 'ALL') {
-      const orderMatch = isDateInFilterRange(r.order.tanggal, dateFilter.value)
-      const payMatch = r.payments.some((p) => isDateInFilterRange(p.tanggal, dateFilter.value))
-      if (!orderMatch && !payMatch) return false
-    }
 
     if (searchQuery.value.trim()) {
       const q = searchQuery.value.toLowerCase()
@@ -642,6 +841,7 @@ function showAll() {
 const totalTagihanPiutang = computed(() => filteredPiutangRows.value.reduce((s, r) => s + r.order.total_harga, 0))
 const totalMasukPiutang = computed(() => filteredPiutangRows.value.reduce((s, r) => s + r.total_masuk_verified, 0))
 const totalSisaPiutang = computed(() => filteredPiutangRows.value.reduce((s, r) => s + r.sisa_tagihan, 0))
+const totalKelebihanBayar = computed(() => Math.max(0, totalMasukPiutang.value - totalTagihanPiutang.value))
 const orderLunasCount = computed(() => filteredPiutangRows.value.filter((r) => r.sisa_tagihan <= 0).length)
 const filteredPendingVerifikasiCount = computed(() => filteredPiutangRows.value.filter((r) => r.has_pending).length)
 
@@ -661,8 +861,23 @@ const summaryMetrics = computed(() => [
     label: 'Total Terbayar',
     value: formatRupiah(totalMasukPiutang.value),
     valueClass: 'text-emerald-600',
+    sub: totalKelebihanBayar.value > 0 ? `Lebih Bayar: +${formatRupiah(totalKelebihanBayar.value)}` : undefined,
+    subClass: 'text-emerald-700 font-semibold',
     minWidth: 'min-w-[140px]',
   },
+  ...(totalUnlinkedNominal.value > 0
+    ? [
+        {
+          label: 'Kas Tanpa Order',
+          value: formatRupiah(totalUnlinkedNominal.value),
+          valueClass: 'text-amber-600',
+          sub: `${dateFilteredUnlinkedPayments.value.length} mutasi (masuk Buku Kas)`,
+          subClass: 'text-amber-700 font-semibold',
+          subDot: 'bg-amber-500',
+          minWidth: 'min-w-[150px]',
+        },
+      ]
+    : []),
   {
     label: 'Sisa Piutang',
     value: formatRupiah(totalSisaPiutang.value),
@@ -720,9 +935,12 @@ async function verifyTx(tx: OrderTxRow) {
       const item = kasMasukList.value.find((k) => k.id_kas_masuk === tx.id)
       if (item) item.status_verifikasi = 'VERIFIED'
       showToast(`Pembayaran ${formatRupiah(tx.nominal)} berhasil diverifikasi!`, 'success')
+    } else {
+      showToast(`Gagal verifikasi: ${res.error || 'Terjadi kesalahan pada server'}`, 'error')
     }
-  } catch (e) {
+  } catch (e: any) {
     console.error('Gagal verifikasi:', e)
+    showToast(e?.message || 'Terjadi kesalahan jaringan saat verifikasi', 'error')
   } finally {
     verifyingId.value = null
   }

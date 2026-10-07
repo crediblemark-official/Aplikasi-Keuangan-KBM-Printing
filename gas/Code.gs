@@ -987,30 +987,9 @@ function handleDeleteKasMasuk(body) {
 }
 
 function checkAndUpdateOrderStatus(id_order) {
-  if (!id_order) return;
-
-  const orderSheet = getSheet(SHEET_ORDERS);
-  const kmSheet = getSheet(SHEET_KAS_MASUK);
-  const orders = sheetToObjects(orderSheet);
-  const order = orders.find(o => o.id_order === id_order);
-  if (!order) return;
-
-  const allKM = sheetToObjects(kmSheet);
-  const totalMasuk = allKM
-    .filter(k => k.id_order === id_order && k.status_verifikasi === 'VERIFIED')
-    .reduce((s, k) => s + Number(k.nominal), 0);
-
-  const totalHarga = Number(order.total_harga) || 0;
-
-  if (totalMasuk >= totalHarga) {
-    // Lunas terverifikasi → order selesai (hanya naikkan; jangan ganggu order BATAL)
-    if (order.status_order === 'PROSES') {
-      handleUpdateOrderStatus({ id_order, status: 'SELESAI' });
-    }
-  } else if (order.status_order === 'SELESAI') {
-    // Pembayaran dibatalkan/dikurangi → total turun di bawah tagihan, kembalikan ke PROSES
-    handleUpdateOrderStatus({ id_order, status: 'PROSES' });
-  }
+  // Status order dikontrol 100% manual oleh bagian operasional/produksi.
+  // Status kelunasan pembayaran adalah domain keuangan/kasir dan tidak mengubah status produksi order.
+  return;
 }
 
 // ---- KAS KELUAR ----

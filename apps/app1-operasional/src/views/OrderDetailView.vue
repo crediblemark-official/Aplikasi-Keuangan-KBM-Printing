@@ -629,7 +629,10 @@ async function loadData() {
       await orderStore.ensureOrderLoaded(orderId.value)
     }
     const res = await api.getKasMasuk({ id_order: orderId.value })
-    if (res.success && res.data) kasMasukList.value = res.data
+    if (res.success && res.data) {
+      kasMasukList.value = res.data
+      orderStore.mergeKasMasuk(res.data)
+    }
   } finally {
     isLoading.value = false
   }

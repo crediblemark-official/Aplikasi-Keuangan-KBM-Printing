@@ -47,6 +47,10 @@ export const useOrderStore = defineStore('orders', () => {
       }
     } catch (e) {
       console.warn('[useOrderStore] Gagal hidrasi dari IndexedDB:', e)
+    } finally {
+      if (kasMasukList.value.length === 0) {
+        fetchKasMasuk().catch(() => {})
+      }
     }
   }
 
@@ -81,6 +85,12 @@ export const useOrderStore = defineStore('orders', () => {
         if (currentOrderId.value === temp_id) {
           currentOrderId.value = real_id
         }
+        // Rekonsiliasi id_order pada pembayaran kas masuk lokal yang terkait order offline ini
+        kasMasukList.value.forEach((k) => {
+          if (k.id_order === temp_id) {
+            k.id_order = real_id
+          }
+        })
       }
     }) as EventListener)
 
@@ -140,6 +150,9 @@ export const useOrderStore = defineStore('orders', () => {
     const now = Date.now()
     // Jika data lokal sudah ada dan belum lewat 30s, jangan tembak GAS (hemat kuota)
     if (!force && !search && orders.value.length > 0 && (now - lastFetchOrdersTime < CACHE_TTL_MS)) {
+      if (kasMasukList.value.length === 0) {
+        fetchKasMasuk(false).catch(() => {})
+      }
       return
     }
 
@@ -151,9 +164,12 @@ export const useOrderStore = defineStore('orders', () => {
     error.value = null
     try {
       const cleanSearch = search && search.trim() !== '' ? search.trim() : undefined
-      const res = await api.getOrders(
-        cleanSearch ? { search: cleanSearch } : (force ? { nocache: 'true' } : undefined),
-      )
+      const [res] = await Promise.all([
+        api.getOrders(
+          cleanSearch ? { search: cleanSearch } : (force ? { nocache: 'true' } : undefined),
+        ),
+        (kasMasukList.value.length === 0 || force) ? fetchKasMasuk(force) : Promise.resolve(),
+      ])
 
       if (res.success && res.data) {
         lastFetchOrdersTime = Date.now()
@@ -168,11 +184,6 @@ export const useOrderStore = defineStore('orders', () => {
         orders.value = [...localPending, ...res.data]
       } else if (!res.isOffline) {
         error.value = res.error ?? 'Gagal memuat data'
-      }
-
-      // Ambil kas masuk hanya jika belum pernah diambil sama sekali
-      if (kasMasukList.value.length === 0) {
-        fetchKasMasuk().catch(() => {})
       }
     } finally {
       isLoading.value = false
@@ -404,8 +415,18 @@ export const useOrderStore = defineStore('orders', () => {
     currentOrderId.value = id
   }
 
+  function mergeKasMasuk(kmItems: KasMasuk[]) {
+    if (!kmItems || !kmItems.length) return
+    const incomingIds = new Set(kmItems.map((k) => k.id_kas_masuk))
+    const kept = kasMasukList.value.filter((k) => !incomingIds.has(k.id_kas_masuk))
+    kasMasukList.value = [...kept, ...kmItems]
+  }
+
   async function refreshOrders() {
-    return fetchOrders(undefined, true)
+    return Promise.all([
+      fetchOrders(undefined, true),
+      fetchKasMasuk(true),
+    ])
   }
 
   return {
@@ -420,6 +441,7 @@ export const useOrderStore = defineStore('orders', () => {
     fetchOrders,
     refreshOrders,
     fetchKasMasuk,
+    mergeKasMasuk,
     createOrder,
     updateOrder,
     updateOrderStatus,

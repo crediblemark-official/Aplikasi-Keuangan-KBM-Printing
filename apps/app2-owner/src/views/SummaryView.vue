@@ -19,10 +19,24 @@
           <input
             type="month"
             v-model="selectedPeriode"
-            @change="loadData"
             class="pl-8 pr-2.5 py-1 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:border-slate-300 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 cursor-pointer shadow-2xs transition-colors"
           />
         </div>
+
+        <button
+          type="button"
+          @click="refreshData"
+          :disabled="isRefreshing"
+          class="h-8 px-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 text-xs font-semibold inline-flex items-center gap-1.5 transition-all shadow-2xs shrink-0 cursor-pointer disabled:opacity-50"
+          title="Segarkan Data dari Server"
+        >
+          <svg class="w-3.5 h-3.5" :class="{ 'animate-spin': isRefreshing }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span class="hidden sm:inline">{{ isRefreshing ? 'Menyinkronkan...' : 'Refresh' }}</span>
+        </button>
+
         <BaseButton @click="router.push('/dashboard/buku-kas?action=input-kas-masuk')" size="sm">
           <template #icon>
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -104,54 +118,71 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import PageHeader from '@shared/components/PageHeader.vue'
 import BaseButton from '@shared/components/BaseButton.vue'
 import KbmLogo from '@shared/components/KbmLogo.vue'
 import MetricStrip from '@shared/components/MetricStrip.vue'
 import type { MetricItem } from '@shared/components/MetricStrip.vue'
-import { api } from '@shared/api/gasClient'
+import { useFinanceStore } from '../stores/finance'
+import { storeToRefs } from 'pinia'
 import { formatRupiah, getCurrentPeriode } from '@shared/utils/formatters'
-import type { SummaryReport } from '@shared/types'
 import { Chart, registerables } from 'chart.js'
 
 Chart.register(...registerables)
 
 const router = useRouter()
-const isLoading = ref(false)
+const financeStore = useFinanceStore()
+const { ordersList, kasMasukList, kasKeluarList, isLoading: storeLoading, isRefreshing } = storeToRefs(financeStore)
+
+const selectedPeriode = ref(getCurrentPeriode())
+const isLoading = computed(() => storeLoading.value && kasMasukList.value.length === 0 && ordersList.value.length === 0)
+
 const chartCanvas = ref<HTMLCanvasElement>()
 const donutCanvas = ref<HTMLCanvasElement>()
 let chartInstance: Chart | null = null
 let donutInstance: Chart | null = null
 
-const currentPeriode = computed(() => getCurrentPeriode())
-const selectedPeriode = ref(getCurrentPeriode())
-
-// Generate last 6 months for filter
-const periodeOptions = computed(() => {
-  const opts = []
-  const now = new Date()
-  for (let i = 0; i < 6; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    opts.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
-  }
-  return opts
+// Kas masuk terverifikasi bulan ini
+const kasMasukBulanIni = computed(() => {
+  return kasMasukList.value
+    .filter((k) => k.tanggal?.startsWith(selectedPeriode.value) && k.status_verifikasi === 'VERIFIED')
+    .reduce((s, k) => s + (Number(k.nominal) || 0), 0)
 })
 
-const summary = ref<SummaryReport>({
-  kas_masuk_bulan_ini: 0,
-  kas_keluar_bulan_ini: 0,
-  estimasi_laba: 0,
-  total_piutang: 0,
-  kas_per_sumber: { kasir_tunai: 0, bank: 0, qris: 0 },
-  chart_data: [],
+// Kas keluar bulan ini
+const kasKeluarBulanIni = computed(() => {
+  return kasKeluarList.value
+    .filter((k) => k.tanggal?.startsWith(selectedPeriode.value))
+    .reduce((s, k) => s + (Number(k.nominal) || 0), 0)
+})
+
+// Estimasi laba
+const estimasiLaba = computed(() => kasMasukBulanIni.value - kasKeluarBulanIni.value)
+
+// Total piutang (Order dengan status PROSES yang belum lunas)
+const totalPiutang = computed(() => {
+  const verifiedMap = new Map<string, number>()
+  kasMasukList.value
+    .filter((k) => k.status_verifikasi === 'VERIFIED')
+    .forEach((k) => {
+      if (!k.id_order) return
+      verifiedMap.set(k.id_order, (verifiedMap.get(k.id_order) || 0) + (Number(k.nominal) || 0))
+    })
+
+  return ordersList.value
+    .filter((o) => o.status_order === 'PROSES')
+    .reduce((s, o) => {
+      const paid = verifiedMap.get(o.id_order) || 0
+      return s + Math.max(0, (Number(o.total_harga) || 0) - paid)
+    }, 0)
 })
 
 const summaryMetrics = computed<MetricItem[]>(() => [
   {
     label: 'Kas Masuk (Verified)',
-    value: formatRupiah(summary.value.kas_masuk_bulan_ini),
+    value: formatRupiah(kasMasukBulanIni.value),
     sub: 'Bulan ini',
     subClass: 'text-emerald-600',
     subDot: 'bg-emerald-500',
@@ -159,7 +190,7 @@ const summaryMetrics = computed<MetricItem[]>(() => [
   },
   {
     label: 'Kas Keluar',
-    value: formatRupiah(summary.value.kas_keluar_bulan_ini),
+    value: formatRupiah(kasKeluarBulanIni.value),
     sub: 'Bulan ini',
     subClass: 'text-rose-600',
     subDot: 'bg-rose-500',
@@ -167,16 +198,16 @@ const summaryMetrics = computed<MetricItem[]>(() => [
   },
   {
     label: 'Est. Laba Bersih',
-    value: formatRupiah(Math.abs(summary.value.estimasi_laba)),
-    valueClass: summary.value.estimasi_laba >= 0 ? 'text-emerald-600' : 'text-rose-600',
-    sub: summary.value.estimasi_laba >= 0 ? '+ Surplus' : '- Defisit',
-    subClass: summary.value.estimasi_laba >= 0 ? 'text-emerald-600' : 'text-rose-600',
-    subDot: summary.value.estimasi_laba >= 0 ? 'bg-emerald-500' : 'bg-rose-500',
+    value: formatRupiah(Math.abs(estimasiLaba.value)),
+    valueClass: estimasiLaba.value >= 0 ? 'text-emerald-600' : 'text-rose-600',
+    sub: estimasiLaba.value >= 0 ? '+ Surplus' : '- Defisit',
+    subClass: estimasiLaba.value >= 0 ? 'text-emerald-600' : 'text-rose-600',
+    subDot: estimasiLaba.value >= 0 ? 'bg-emerald-500' : 'bg-rose-500',
     minWidth: 'min-w-[150px]',
   },
   {
     label: 'Total Piutang',
-    value: formatRupiah(summary.value.total_piutang),
+    value: formatRupiah(totalPiutang.value),
     valueClass: 'text-amber-600',
     sub: 'Belum tertagih',
     subClass: 'text-amber-700',
@@ -185,25 +216,63 @@ const summaryMetrics = computed<MetricItem[]>(() => [
   },
 ])
 
+const saldoPerSumber = computed(() => {
+  let tunai = 0
+  let bank = 0
+  let qris = 0
+
+  kasMasukList.value
+    .filter((k) => k.status_verifikasi === 'VERIFIED')
+    .forEach((k) => {
+      const m = (k.metode || '').toUpperCase()
+      const nom = Number(k.nominal) || 0
+      if (m.includes('TUNAI')) tunai += nom
+      else if (m.includes('QRIS')) qris += nom
+      else bank += nom
+    })
+
+  return { tunai, bank, qris }
+})
+
 const kasPerSumber = computed(() => [
-  { label: 'Tunai', dotColor: 'bg-emerald-500', nilai: summary.value.kas_per_sumber.kasir_tunai },
-  { label: 'Bank', dotColor: 'bg-blue-500', nilai: summary.value.kas_per_sumber.bank },
-  { label: 'QRIS', dotColor: 'bg-purple-500', nilai: summary.value.kas_per_sumber.qris },
+  { label: 'Tunai', dotColor: 'bg-emerald-500', nilai: saldoPerSumber.value.tunai },
+  { label: 'Bank', dotColor: 'bg-blue-500', nilai: saldoPerSumber.value.bank },
+  { label: 'QRIS', dotColor: 'bg-purple-500', nilai: saldoPerSumber.value.qris },
 ])
 
-async function loadData() {
-  isLoading.value = true
-  try {
-    const res = await api.getSummaryReport(selectedPeriode.value)
-    if (res.success && res.data) {
-      summary.value = res.data
-      await nextTick()
-      renderCharts()
-    }
-  } finally {
-    isLoading.value = false
+const chartData = computed(() => {
+  const parts = selectedPeriode.value.split('-')
+  const baseYear = parseInt(parts[0], 10) || new Date().getFullYear()
+  const baseMonth = (parseInt(parts[1], 10) || (new Date().getMonth() + 1)) - 1
+
+  const months: string[] = []
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(baseYear, baseMonth - i, 1)
+    const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    months.push(ym)
   }
-}
+
+  const kmMap = new Map<string, number>()
+  const kkMap = new Map<string, number>()
+
+  kasMasukList.value
+    .filter((k) => k.status_verifikasi === 'VERIFIED')
+    .forEach((k) => {
+      const ym = String(k.tanggal || '').substring(0, 7)
+      kmMap.set(ym, (kmMap.get(ym) || 0) + (Number(k.nominal) || 0))
+    })
+
+  kasKeluarList.value.forEach((k) => {
+    const ym = String(k.tanggal || '').substring(0, 7)
+    kkMap.set(ym, (kkMap.get(ym) || 0) + (Number(k.nominal) || 0))
+  })
+
+  return months.map((m) => ({
+    bulan: m,
+    kas_masuk: kmMap.get(m) || 0,
+    kas_keluar: kkMap.get(m) || 0,
+  }))
+})
 
 function formatMonthLabel(ym: string) {
   if (!ym) return ''
@@ -218,15 +287,15 @@ function renderCharts() {
   // Bar Chart
   if (chartCanvas.value) {
     if (chartInstance) chartInstance.destroy()
-    const masukData = summary.value.chart_data.map((d) => d.kas_masuk)
-    const keluarData = summary.value.chart_data.map((d) => d.kas_keluar)
+    const masukData = chartData.value.map((d) => d.kas_masuk)
+    const keluarData = chartData.value.map((d) => d.kas_keluar)
     const maxVal = Math.max(...masukData, ...keluarData, 0)
     const suggestedMax = maxVal === 0 ? 5_000_000 : maxVal * 1.15
 
     chartInstance = new Chart(chartCanvas.value, {
       type: 'bar',
       data: {
-        labels: summary.value.chart_data.map((d) => formatMonthLabel(d.bulan)),
+        labels: chartData.value.map((d) => formatMonthLabel(d.bulan)),
         datasets: [
           { label: 'Kas Masuk', data: masukData, backgroundColor: 'rgba(16,185,129,0.75)', borderRadius: 6 },
           { label: 'Kas Keluar', data: keluarData, backgroundColor: 'rgba(239,68,68,0.75)', borderRadius: 6 },
@@ -287,21 +356,65 @@ function renderCharts() {
         labels: ['Tunai', 'Bank', 'QRIS'],
         datasets: [{
           data: [
-            summary.value.kas_per_sumber.kasir_tunai,
-            summary.value.kas_per_sumber.bank,
-            summary.value.kas_per_sumber.qris,
+            saldoPerSumber.value.tunai,
+            saldoPerSumber.value.bank,
+            saldoPerSumber.value.qris,
           ],
           backgroundColor: ['#10b981', '#2563eb', '#f59e0b'],
           borderWidth: 0,
         }],
       },
       options: {
-        responsive: true, maintainAspectRatio: false, cutout: '70%',
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '70%',
         plugins: { legend: { display: false } },
       },
     })
   }
 }
 
+async function loadData() {
+  await nextTick()
+  renderCharts()
+
+  try {
+    await financeStore.loadFinanceData()
+  } catch (err) {
+    console.error('Failed to load finance data:', err)
+  } finally {
+    await nextTick()
+    renderCharts()
+  }
+}
+
+async function refreshData() {
+  try {
+    await financeStore.loadFinanceData({ force: true })
+  } finally {
+    await nextTick()
+    renderCharts()
+  }
+}
+
+watch(
+  [selectedPeriode, () => kasMasukList.value.length, () => kasKeluarList.value.length, () => ordersList.value.length],
+  async () => {
+    await nextTick()
+    renderCharts()
+  }
+)
+
 onMounted(loadData)
+
+onUnmounted(() => {
+  if (chartInstance) {
+    chartInstance.destroy()
+    chartInstance = null
+  }
+  if (donutInstance) {
+    donutInstance.destroy()
+    donutInstance = null
+  }
+})
 </script>

@@ -324,10 +324,12 @@ async function toggleOrderStatus(order: any) {
 
 onMounted(() => {
   orderStore.fetchOrders()
+  orderStore.fetchKasMasuk()
 })
 
 onIonViewWillEnter(() => {
   orderStore.fetchOrders()
+  orderStore.fetchKasMasuk()
 })
 
 function logout() {

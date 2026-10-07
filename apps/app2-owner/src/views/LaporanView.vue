@@ -4,6 +4,20 @@
     <!-- Header Section (Exact h-14) -->
     <PageHeader title="Laporan & Analitik Keuangan">
       <template #actions>
+        <BaseButton
+          @click="refreshData"
+          :loading="isRefreshing"
+          variant="secondary"
+          size="sm"
+          title="Segarkan data dari server"
+        >
+          <template #icon>
+            <svg class="w-3.5 h-3.5" :class="{ 'animate-spin': isRefreshing }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </template>
+          Segarkan
+        </BaseButton>
         <BaseButton @click="exportExcelSummary" :loading="isExporting" size="sm">
           <template #icon>
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -240,12 +254,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import PageHeader from '@shared/components/PageHeader.vue'
 import BaseButton from '@shared/components/BaseButton.vue'
 import MetricStrip from '@shared/components/MetricStrip.vue'
 import DateFilterBar from '@shared/components/DateFilterBar.vue'
-import { api } from '@shared/api/gasClient'
+import { useFinanceStore } from '../stores/finance'
+import { storeToRefs } from 'pinia'
 import {
   formatRupiah,
   getCurrentPeriode,
@@ -254,26 +269,19 @@ import {
   formatTanggal,
   isDateInFilterRange,
 } from '@shared/utils/formatters'
-import type { KasMasuk, KasKeluar, SummaryReport, DateFilterValue } from '@shared/types'
+import type { DateFilterValue } from '@shared/types'
 import { Chart, registerables } from 'chart.js'
 
 Chart.register(...registerables)
 
-const isLoading = ref(false)
+const financeStore = useFinanceStore()
+const { kasMasukList, kasKeluarList, isLoading: storeLoading, isRefreshing } = storeToRefs(financeStore)
+
+// Loading spinner hanya tampil jika data awal benar-benar belum tersedia sama sekali di cache
+const isLoading = computed(() => storeLoading.value && kasMasukList.value.length === 0 && kasKeluarList.value.length === 0)
 const isExporting = ref(false)
 const selectedPeriode = ref(getCurrentPeriode())
 const dateFilter = ref<DateFilterValue>({ mode: 'MONTH' })
-
-const kasMasukList = ref<KasMasuk[]>([])
-const kasKeluarList = ref<KasKeluar[]>([])
-const summaryReport = ref<SummaryReport>({
-  kas_masuk_bulan_ini: 0,
-  kas_keluar_bulan_ini: 0,
-  estimasi_laba: 0,
-  total_piutang: 0,
-  kas_per_sumber: { kasir_tunai: 0, bank: 0, qris: 0 },
-  chart_data: [],
-})
 
 // Canvas refs
 const trendChartCanvas = ref<HTMLCanvasElement>()
@@ -661,34 +669,44 @@ function renderAllCharts() {
 }
 
 async function loadAllData() {
-  isLoading.value = true
+  // 1. Render data awal langsung dari local/store cache (0ms respons instan)
+  await nextTick()
+  renderAllCharts()
+
+  // 2. Muat/sinkronkan data finance di background tanpa blocking
   try {
-    const [kmRes, kkRes, sumRes] = await Promise.all([
-      api.getKasMasuk(),
-      api.getKasKeluar(),
-      api.getSummaryReport(selectedPeriode.value),
-    ])
-
-    if (kmRes.success && kmRes.data) kasMasukList.value = kmRes.data
-    if (kkRes.success && kkRes.data) kasKeluarList.value = kkRes.data
-    if (sumRes.success && sumRes.data) summaryReport.value = sumRes.data
-
-    await nextTick()
-    renderAllCharts()
+    await financeStore.loadFinanceData()
   } catch (err) {
     console.error('Failed to load chart report data:', err)
   } finally {
-    isLoading.value = false
+    await nextTick()
+    renderAllCharts()
   }
 }
+
+async function refreshData() {
+  try {
+    await financeStore.loadFinanceData({ force: true })
+  } finally {
+    await nextTick()
+    renderAllCharts()
+  }
+}
+
+// Pantau perubahan dataset agar grafik selalu tersinkron
+watch(
+  [() => kasMasukList.value.length, () => kasKeluarList.value.length],
+  async () => {
+    await nextTick()
+    renderAllCharts()
+  }
+)
 
 watch(
   dateFilter,
   async () => {
     await nextTick()
-    renderTrendChart()
-    renderKategoriDonut()
-    renderSumberDonut()
+    renderAllCharts()
   },
   { deep: true }
 )
@@ -735,4 +753,19 @@ async function exportExcelSummary() {
 }
 
 onMounted(loadAllData)
+
+onUnmounted(() => {
+  if (trendChartInstance) {
+    trendChartInstance.destroy()
+    trendChartInstance = null
+  }
+  if (kategoriDonutInstance) {
+    kategoriDonutInstance.destroy()
+    kategoriDonutInstance = null
+  }
+  if (sumberDonutInstance) {
+    sumberDonutInstance.destroy()
+    sumberDonutInstance = null
+  }
+})
 </script>

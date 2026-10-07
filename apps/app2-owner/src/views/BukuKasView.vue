@@ -684,7 +684,7 @@ function openEditModal(row: MutasiRow) {
 
 async function onModalSuccess(msg: string) {
   showToast(msg, 'success')
-  await loadData()
+  await loadData(true)
 }
 
 function onModalError(msg: string) {

@@ -752,12 +752,22 @@ async function loadData() {
       await orderStore.ensureOrderLoaded(orderId.value)
     }
 
+    // Tampilkan seketika dari cache orderStore (0ms) jika sudah ada
+    const localPayments = orderStore.kasMasukList.filter((k) => k.id_order === orderId.value)
+    if (localPayments.length > 0) {
+      kasMasukList.value = localPayments
+      isLoading.value = false
+    }
+
     const res = await api.getKasMasuk({ id_order: orderId.value })
     if (res.success && res.data) {
       kasMasukList.value = res.data
+      orderStore.mergeKasMasuk(res.data)
     }
   } catch (err: any) {
-    loadError.value = err?.message || 'Gagal memuat detail invoice'
+    if (!kasMasukList.value.length) {
+      loadError.value = err?.message || 'Gagal memuat detail invoice'
+    }
   } finally {
     isLoading.value = false
   }

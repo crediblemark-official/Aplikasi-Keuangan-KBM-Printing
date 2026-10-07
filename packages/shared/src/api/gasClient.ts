@@ -104,7 +104,7 @@ export async function gasGet<T = unknown>(
     return {
       success: false,
       error: isOffline ? 'Koneksi internet terputus (Offline)' : (err instanceof Error ? err.message : 'Terjadi kesalahan jaringan'),
-      isOffline: true,
+      isOffline,
     }
   }
 }
@@ -148,7 +148,7 @@ export async function gasPost<T = unknown>(
     return {
       success: false,
       error: isOffline ? 'Koneksi internet terputus (Offline)' : (err instanceof Error ? err.message : 'Terjadi kesalahan jaringan'),
-      isOffline: true,
+      isOffline,
     }
   }
 }
