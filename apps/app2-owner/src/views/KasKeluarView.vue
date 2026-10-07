@@ -4,6 +4,17 @@
     <!-- Header Section (Exact h-14) -->
     <PageHeader title="Kas Keluar">
       <template #actions>
+        <button
+          @click="loadData(true)"
+          :disabled="isLoading || isRefreshing"
+          class="btn-secondary h-8 text-xs font-semibold inline-flex items-center gap-1.5 px-2.5 rounded-md cursor-pointer shrink-0 disabled:opacity-50"
+          title="Segarkan Data Kas Keluar"
+        >
+          <svg class="w-3.5 h-3.5" :class="{ 'animate-spin': isLoading || isRefreshing }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span class="hidden sm:inline">{{ isRefreshing ? 'Menyinkronkan...' : 'Refresh' }}</span>
+        </button>
         <BaseButton @click="showModal = true" size="sm">
           <template #icon>
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -18,8 +29,8 @@
     <!-- Summary Metrics Strip -->
     <MetricStrip :items="summaryMetrics" />
 
-    <!-- Filter Bar: Capsule Pill Buttons (Airbnb / Google Maps style) -->
-    <div class="px-[8px] sm:px-[15px] lg:px-[20px] py-2.5 border-b border-slate-200 bg-white flex items-center gap-2 overflow-x-auto scrollbar-none">
+    <!-- Filter Bar: Capsule Pill Buttons (Sticky) -->
+    <div class="sticky top-0 z-30 px-[8px] sm:px-[15px] lg:px-[20px] py-2.5 border-b border-slate-200 bg-white flex items-center gap-2 overflow-x-auto scrollbar-none shadow-xs">
       <!-- Kategori Pills -->
       <button
         @click="filterKategori = ''"
@@ -103,73 +114,20 @@
       </table>
     </TableScrollWrapper>
 
-    <!-- Bottom Sheet Input Kas Keluar -->
-    <BaseModal v-model="showModal" title="Input Kas Keluar Baru">
-      <form @submit.prevent="submitKasKeluar" class="space-y-4">
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="form-label">Tanggal *</label>
-            <input v-model="form.tanggal" type="date" class="form-input bg-white" required />
-          </div>
-          <div>
-            <label class="form-label">Nominal (Rp) *</label>
-            <input
-              :value="form.nominal ? form.nominal.toLocaleString('id-ID') : ''"
-              type="text"
-              inputmode="numeric"
-              placeholder="0"
-              class="form-input font-bold text-rose-600 bg-white"
-              required
-              @input="onNominalInput"
-            />
-          </div>
-        </div>
+    <!-- Bottom Sheet Input Kas Keluar (Modular Component) -->
+    <KasKeluarModal
+      v-model="showModal"
+      :kategori-options="kategoriOptions"
+      @success="onKasKeluarSuccess"
+      @error="onKasKeluarError"
+    />
 
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="form-label">Kategori *</label>
-            <select v-model="form.kategori" class="form-input bg-white" required>
-              <option value="">-- Pilih --</option>
-              <option v-for="k in kategoriOptions" :key="k.value" :value="k.value">{{ k.label }}</option>
-            </select>
-          </div>
-          <div>
-            <label class="form-label">Sumber Kas *</label>
-            <select v-model="form.sumber_kas" class="form-input bg-white" required>
-              <option value="KASIR_TUNAI">Tunai</option>
-              <option value="BANK">Bank</option>
-              <option value="QRIS">QRIS</option>
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label class="form-label">Rincian / Catatan *</label>
-          <textarea v-model="form.rincian" rows="2"
-                    placeholder="Contoh: Pembelian Kertas Bookpaper 57.5g 50 rim"
-                    class="form-input resize-none bg-white" required></textarea>
-        </div>
-
-        <!-- Upload Nota -->
-        <div>
-          <label class="form-label">Upload Foto Nota/Struk</label>
-          <ImageUploader
-            label="Pilih / Ambil Foto Nota"
-            sublabel="Otomatis dikompres sebelum upload"
-            @change="handlePhotoChange"
-          />
-        </div>
-
-        <div class="flex gap-3 pt-2">
-          <BaseButton variant="secondary" @click="showModal = false" class="flex-1">
-            Batal
-          </BaseButton>
-          <BaseButton type="submit" :loading="isSubmitting" class="flex-1">
-            Simpan
-          </BaseButton>
-        </div>
-      </form>
-    </BaseModal>
+    <!-- Toast Notification (Shared Component) -->
+    <ToastNotification
+      :message="toastMessage"
+      :type="toastType"
+      @close="clearToast"
+    />
   </div>
 </template>
 
@@ -180,44 +138,34 @@ import BaseButton from '@shared/components/BaseButton.vue'
 import MetricStrip from '@shared/components/MetricStrip.vue'
 import TableStateRow from '@shared/components/TableStateRow.vue'
 import TableScrollWrapper from '@shared/components/TableScrollWrapper.vue'
-import BaseModal from '@shared/components/BaseModal.vue'
-import ImageUploader from '@shared/components/ImageUploader.vue'
-import { api } from '@shared/api/gasClient'
-import { useAuthStore } from '../stores/auth'
+import ToastNotification from '@shared/components/ToastNotification.vue'
+import KasKeluarModal from '../components/KasKeluarModal.vue'
+import { useFinanceStore } from '../stores/finance'
+import { storeToRefs } from 'pinia'
+import { useToast } from '@shared/utils/useToast'
+import { KATEGORI_KAS_KELUAR_OPTIONS, SUMBER_KAS_OPTIONS } from '@shared/constants'
 import { formatRupiah, formatTanggal, formatMetode, formatKategori, getTodayISO, getCurrentPeriode } from '@shared/utils/formatters'
-import type { KasKeluar, KategoriKasKeluar, SumberKas } from '@shared/types'
+import type { KasKeluar } from '@shared/types'
 
-const authStore = useAuthStore()
-const data = ref<KasKeluar[]>([])
-const isLoading = ref(false)
-const isSubmitting = ref(false)
+const financeStore = useFinanceStore()
+const { kasKeluarList: data, isLoading, isRefreshing } = storeToRefs(financeStore)
 const showModal = ref(false)
 const filterKategori = ref('')
 const filterSumber = ref('')
-const photoBase64 = ref('')
-const photoFilename = ref('')
 
-const kategoriOptions = [
-  { value: 'BAHAN_BAKU', label: 'Bahan Baku Kertas', shortLabel: 'Bahan Baku' },
-  { value: 'OPERASIONAL', label: 'Operasional / Listrik', shortLabel: 'Operasional' },
-  { value: 'GAJI', label: 'Gaji & Lembur', shortLabel: 'Gaji' },
-  { value: 'KONSUMSI', label: 'Konsumsi', shortLabel: 'Konsumsi' },
-  { value: 'LAIN_LAIN', label: 'Lain-lain', shortLabel: 'Lain-lain' },
-]
+const { toastMessage, toastType, showToast, clearToast } = useToast()
 
-const sumberOptions = [
-  { value: 'KASIR_TUNAI', label: 'Tunai' },
-  { value: 'BANK', label: 'Bank' },
-  { value: 'QRIS', label: 'QRIS' },
-]
+function onKasKeluarSuccess(msg: string) {
+  loadData(true)
+  showToast(msg, 'success')
+}
 
-const form = ref({
-  tanggal: getTodayISO(),
-  kategori: '' as KategoriKasKeluar,
-  rincian: '',
-  nominal: 0,
-  sumber_kas: 'KASIR_TUNAI' as SumberKas,
-})
+function onKasKeluarError(msg: string) {
+  showToast(msg, 'error')
+}
+
+const kategoriOptions = KATEGORI_KAS_KELUAR_OPTIONS
+const sumberOptions = SUMBER_KAS_OPTIONS
 
 const filteredData = computed(() => {
   return data.value.filter((d) => {
@@ -257,58 +205,11 @@ const summaryMetrics = computed(() => [
   { label: 'Kasir Tunai', value: formatRupiah(totalKasirTunai.value), valueClass: 'text-amber-600' },
 ])
 
-function onNominalInput(e: Event) {
-  const target = e.target as HTMLInputElement
-  const raw = target.value.replace(/\D/g, '')
-  const num = raw ? parseInt(raw, 10) : 0
-  form.value.nominal = num
-  target.value = num ? num.toLocaleString('id-ID') : ''
+async function loadData(force = false) {
+  await financeStore.loadFinanceData({ force })
 }
 
-function handlePhotoChange(uploadData: { base64: string; filename: string } | null) {
-  if (uploadData) {
-    photoBase64.value = uploadData.base64
-    photoFilename.value = uploadData.filename
-  } else {
-    photoBase64.value = ''
-    photoFilename.value = ''
-  }
-}
-
-async function submitKasKeluar() {
-  isSubmitting.value = true
-  try {
-    const res = await api.createKasKeluar({
-      tanggal: form.value.tanggal,
-      kategori: form.value.kategori,
-      rincian: form.value.rincian,
-      nominal: form.value.nominal,
-      sumber_kas: form.value.sumber_kas,
-      diinput_oleh: authStore.nama ?? 'OWNER',
-      foto_base64: photoBase64.value || undefined,
-      foto_filename: photoFilename.value || undefined,
-    })
-    if (res.success) {
-      showModal.value = false
-      photoBase64.value = ''
-      photoFilename.value = ''
-      form.value = { tanggal: getTodayISO(), kategori: '' as any, rincian: '', nominal: 0, sumber_kas: 'KASIR_TUNAI' }
-      await loadData()
-    }
-  } finally {
-    isSubmitting.value = false
-  }
-}
-
-async function loadData() {
-  isLoading.value = true
-  try {
-    const res = await api.getKasKeluar()
-    if (res.success && res.data) data.value = res.data
-  } finally {
-    isLoading.value = false
-  }
-}
-
-onMounted(loadData)
+onMounted(() => {
+  loadData(false)
+})
 </script>

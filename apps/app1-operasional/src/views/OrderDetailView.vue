@@ -24,6 +24,34 @@
             </template>
             Faktur & Cetak
           </BaseButton>
+          <template v-if="order && order.status_order === 'BATAL'">
+            <BaseButton
+              variant="secondary"
+              @click="restoreOrder"
+              :disabled="isUpdatingStatus"
+              size="sm"
+            >
+              <template #icon>
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </template>
+              Pulihkan
+            </BaseButton>
+            <BaseButton
+              @click="showDeleteModal = true"
+              :disabled="isDeleting"
+              size="sm"
+              class="!bg-rose-600 hover:!bg-rose-700 !text-white !border-rose-600 shadow-xs"
+            >
+              <template #icon>
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </template>
+              Hapus Order
+            </BaseButton>
+          </template>
         </template>
       </PageHeader>
     </ion-header>
@@ -108,6 +136,49 @@
           </div>
         </div>
 
+        <!-- Banner Khusus Order Batal -->
+        <div v-if="order.status_order === 'BATAL'" class="m-4 sm:m-6 p-4 rounded-2xl bg-rose-50/80 border border-rose-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 mt-0.5">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+              </svg>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h4 class="text-sm font-bold text-rose-950">Status Pesanan: BATAL</h4>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-200/70 text-rose-800">Tidak Diproduksi</span>
+              </div>
+              <p class="text-xs text-rose-700/90 mt-1 leading-relaxed max-w-xl">
+                Pesanan ini telah dibatalkan. Anda dapat memulihkannya kembali ke proses produksi atau menghapus data order secara permanen dari sistem.
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+            <button
+              type="button"
+              @click="restoreOrder"
+              :disabled="isUpdatingStatus"
+              class="px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl transition-all cursor-pointer shadow-2xs hover:shadow-xs"
+              title="Kembalikan status order ke PROSES"
+            >
+              Pulihkan ke Proses
+            </button>
+            <button
+              type="button"
+              @click="showDeleteModal = true"
+              :disabled="isDeleting"
+              class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-xl transition-all cursor-pointer shadow-sm shadow-rose-600/30 flex items-center gap-1.5"
+              title="Hapus data order secara permanen"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Hapus Permanen
+            </button>
+          </div>
+        </div>
+
         <!-- 2. TWO-COLUMN / FULL-EDGE SPLIT (Left: Specs & History, Right: Payment) -->
         <div class="grid grid-cols-1 lg:grid-cols-12 border-b border-slate-200">
 
@@ -139,10 +210,10 @@
               <button
                 @click="router.push(`/payment/new/${orderId}`)"
                 type="button"
-                :disabled="isLunas"
+                :disabled="isLunas || order.status_order === 'BATAL'"
                 class="text-xs font-bold transition-colors"
-                :class="isLunas ? 'text-slate-300 cursor-not-allowed pointer-events-none' : 'text-red-600 hover:text-red-700 cursor-pointer'"
-                :title="isLunas ? 'Pesanan sudah lunas' : '+ Catat Bayar'"
+                :class="(isLunas || order.status_order === 'BATAL') ? 'text-slate-300 cursor-not-allowed pointer-events-none' : 'text-red-600 hover:text-red-700 cursor-pointer'"
+                :title="order.status_order === 'BATAL' ? 'Order dibatalkan' : isLunas ? 'Pesanan sudah lunas' : '+ Catat Bayar'"
               >
                 + Catat Bayar
               </button>
@@ -223,10 +294,10 @@
             <div class="hidden lg:flex px-4 sm:px-6 h-[60px] items-center gap-2.5 bg-slate-50/30">
               <button
                 @click="router.push(`/payment/new/${orderId}`)"
-                :disabled="isLunas"
+                :disabled="isLunas || order.status_order === 'BATAL'"
                 class="btn-primary flex-1 h-9 text-xs font-bold justify-center"
-                :class="isLunas ? '!bg-slate-100 !text-slate-400 !border-slate-200 !cursor-not-allowed !shadow-none pointer-events-none' : 'cursor-pointer'"
-                :title="isLunas ? 'Pesanan sudah lunas' : '+ Catat Bayar'"
+                :class="(isLunas || order.status_order === 'BATAL') ? '!bg-slate-100 !text-slate-400 !border-slate-200 !cursor-not-allowed !shadow-none pointer-events-none' : 'cursor-pointer'"
+                :title="order.status_order === 'BATAL' ? 'Order dibatalkan' : isLunas ? 'Pesanan sudah lunas' : '+ Catat Bayar'"
               >
                 + Catat Bayar
               </button>
@@ -247,6 +318,18 @@
                 Faktur
               </button>
             </div>
+
+            <!-- Subtle, discreet Cancel button at bottom (tidak mencolok) -->
+            <div v-if="order.status_order !== 'BATAL'" class="px-4 sm:px-6 py-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
+              <span class="text-xs text-slate-400">Pesanan keliru atau ingin dibatalkan?</span>
+              <button
+                type="button"
+                @click="showCancelModal = true"
+                class="px-2.5 py-1 text-xs font-medium text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg border border-slate-200 hover:border-rose-200 transition-all cursor-pointer"
+              >
+                Batalkan Pesanan
+              </button>
+            </div>
           </div>
 
         </div>
@@ -256,27 +339,128 @@
 
     <!-- Mobile Fixed Bottom Actions (Full Edge) -->
     <div v-if="order"
-         class="lg:hidden fixed bottom-0 left-0 right-0 z-50 px-4 py-3 bg-white/95 backdrop-blur-md border-t border-slate-200 flex gap-3">
-      <button
-        @click="router.push(`/payment/new/${orderId}`)"
-        :disabled="isLunas"
-        class="btn-secondary flex-1 h-10.5 justify-center text-xs font-bold rounded-lg"
-        :class="isLunas ? '!bg-slate-100 !text-slate-400 !border-slate-200 !cursor-not-allowed pointer-events-none' : 'cursor-pointer'"
-        :title="isLunas ? 'Pesanan sudah lunas' : 'Catat Bayar'"
-      >
-        Catat Bayar
-      </button>
-      <button
-        @click="kirimWA"
-        type="button"
-        class="btn-primary flex-1 h-10.5 justify-center !bg-[#25D366] hover:!bg-[#20bd5a] text-white text-xs font-bold rounded-lg cursor-pointer flex items-center gap-2"
-      >
-        <svg class="w-4 h-4 fill-current shrink-0" viewBox="0 0 16 16">
-          <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.655.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.596-6.592 6.596m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.016-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.707 1.916.81 2.049c.098.133 1.39 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/>
-        </svg>
-        <span>Kirim Invoice WA</span>
-      </button>
+         class="lg:hidden fixed bottom-0 left-0 right-0 z-50 px-4 py-3 bg-white/95 backdrop-blur-md border-t border-slate-200 flex gap-2.5">
+      <template v-if="order.status_order === 'BATAL'">
+        <button
+          type="button"
+          @click="restoreOrder"
+          :disabled="isUpdatingStatus"
+          class="btn-secondary flex-1 h-10.5 justify-center text-xs font-bold rounded-lg cursor-pointer"
+        >
+          Pulihkan
+        </button>
+        <button
+          type="button"
+          @click="showDeleteModal = true"
+          :disabled="isDeleting"
+          class="flex-1 h-10.5 justify-center text-xs font-bold rounded-lg text-white bg-rose-600 hover:bg-rose-700 cursor-pointer flex items-center justify-center gap-2 shadow-xs"
+        >
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          Hapus Permanen
+        </button>
+      </template>
+      <template v-else>
+        <button
+          @click="router.push(`/payment/new/${orderId}`)"
+          :disabled="isLunas"
+          class="btn-secondary flex-1 h-10.5 justify-center text-xs font-bold rounded-lg"
+          :class="isLunas ? '!bg-slate-100 !text-slate-400 !border-slate-200 !cursor-not-allowed pointer-events-none' : 'cursor-pointer'"
+          :title="isLunas ? 'Pesanan sudah lunas' : 'Catat Bayar'"
+        >
+          Catat Bayar
+        </button>
+        <button
+          @click="kirimWA"
+          type="button"
+          class="btn-primary flex-1 h-10.5 justify-center !bg-[#25D366] hover:!bg-[#20bd5a] text-white text-xs font-bold rounded-lg cursor-pointer flex items-center justify-center gap-2"
+        >
+          <svg class="w-4 h-4 fill-current shrink-0" viewBox="0 0 16 16">
+            <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.655.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.596-6.592 6.596m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.016-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.707 1.916.81 2.049c.098.133 1.39 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/>
+          </svg>
+          <span>Kirim WA</span>
+        </button>
+      </template>
     </div>
+
+    <!-- Confirm Modal: Batalkan Order -->
+    <ConfirmModal
+      v-model="showCancelModal"
+      title="Batalkan Pesanan Ini?"
+      type="warning"
+      confirm-text="Ya, Batalkan"
+      cancel-text="Kembali"
+      :loading="isCanceling"
+      @confirm="handleConfirmCancel"
+    >
+      <div class="space-y-3 text-left">
+        <!-- Order Summary Card -->
+        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
+          <div>
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">ID Pesanan</span>
+            <span class="font-mono text-xs font-bold text-slate-800">{{ order?.id_order }}</span>
+          </div>
+          <div class="text-right">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Penerbit</span>
+            <span class="text-xs font-semibold text-slate-700 truncate max-w-[160px] inline-block">{{ order?.nama_penerbit }}</span>
+          </div>
+        </div>
+
+        <p class="text-xs text-slate-500 text-center leading-relaxed px-1">
+          Pesanan ini akan ditandai <strong class="text-amber-700 font-bold">BATAL</strong> dan dihentikan dari seluruh proses produksi.
+        </p>
+
+        <!-- Warning info if payments exist -->
+        <div v-if="kasMasukList.length > 0" class="p-3 rounded-xl bg-amber-50/80 border border-amber-200/80 flex items-start gap-2.5">
+          <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <div class="text-xs text-amber-900 leading-relaxed">
+            <span class="font-bold">Perhatian:</span> Order ini telah mencatat kas masuk sebesar <span class="font-mono font-bold text-amber-950">{{ formatRupiah(totalMasuk) }}</span>.
+          </div>
+        </div>
+      </div>
+    </ConfirmModal>
+
+    <!-- Confirm Modal: Hapus Permanen Order (Setelah Batal) -->
+    <ConfirmModal
+      v-model="showDeleteModal"
+      title="Hapus Order Permanen?"
+      type="danger"
+      confirm-text="Ya, Hapus Permanen"
+      cancel-text="Batal"
+      :loading="isDeleting"
+      @confirm="handleConfirmDelete"
+    >
+      <div class="space-y-3 text-left">
+        <!-- Order Summary Card -->
+        <div class="p-3 rounded-xl bg-rose-50/60 border border-rose-200/80 flex items-center justify-between">
+          <div>
+            <span class="text-[10px] font-bold text-rose-500 uppercase tracking-wider block">ID Pesanan</span>
+            <span class="font-mono text-xs font-bold text-rose-950">{{ order?.id_order }}</span>
+          </div>
+          <div class="text-right">
+            <span class="text-[10px] font-bold text-rose-500 uppercase tracking-wider block">Total Tagihan</span>
+            <span class="font-mono text-xs font-bold text-rose-700">{{ formatRupiah(order?.total_harga || 0) }}</span>
+          </div>
+        </div>
+
+        <p class="text-xs text-slate-500 text-center leading-relaxed px-1">
+          Data pesanan <strong class="text-slate-800 font-semibold">{{ order?.nama_penerbit }}</strong> akan dihapus permanen dari sistem dan Google Sheets. Tindakan ini <strong class="text-rose-600 font-semibold">tidak dapat dibatalkan</strong>.
+        </p>
+      </div>
+    </ConfirmModal>
+
+    <!-- Toast Notification -->
+    <ion-toast
+      :is-open="toastOpen"
+      :message="toastMsg"
+      :duration="3000"
+      position="top"
+      :color="toastColor"
+      @didDismiss="toastOpen = false"
+    />
   </ion-page>
 </template>
 
@@ -284,10 +468,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import {
-  IonPage, IonHeader, IonContent, IonSpinner, useIonRouter, onIonViewWillEnter,
+  IonPage, IonHeader, IonContent, IonSpinner, IonToast, useIonRouter, onIonViewWillEnter,
 } from '@ionic/vue'
 import PageHeader from '@shared/components/PageHeader.vue'
 import SectionHeader from '@shared/components/SectionHeader.vue'
+import ConfirmModal from '@shared/components/ConfirmModal.vue'
 import { useOrderStore } from '../stores/orders'
 import StatusBadge from '@shared/components/StatusBadge.vue'
 import BaseButton from '@shared/components/BaseButton.vue'
@@ -304,6 +489,78 @@ const order = computed(() => orderStore.orders.find((o) => (o.id_order || '').tr
 const kasMasukList = ref<KasMasuk[]>([])
 const isLoading = ref(true)
 const isUpdatingStatus = ref(false)
+
+const showCancelModal = ref(false)
+const showDeleteModal = ref(false)
+const isCanceling = ref(false)
+const isDeleting = ref(false)
+
+const toastOpen = ref(false)
+const toastMsg = ref('')
+const toastColor = ref('success')
+
+function showToast(msg: string, color: 'success' | 'warning' | 'danger' = 'success') {
+  toastMsg.value = msg
+  toastColor.value = color
+  toastOpen.value = true
+}
+
+async function handleConfirmCancel() {
+  if (!order.value || isCanceling.value) return
+  isCanceling.value = true
+  try {
+    const res = await orderStore.updateOrderStatus(order.value.id_order, 'BATAL')
+    if (res?.success) {
+      showCancelModal.value = false
+      showToast(`Order ${order.value.id_order} berhasil dibatalkan.`, 'warning')
+    } else {
+      showToast(res?.error || 'Gagal membatalkan order', 'danger')
+    }
+  } catch (err: any) {
+    showToast(err?.message || 'Terjadi kesalahan saat membatalkan order', 'danger')
+  } finally {
+    isCanceling.value = false
+  }
+}
+
+async function restoreOrder() {
+  if (!order.value || isUpdatingStatus.value) return
+  isUpdatingStatus.value = true
+  try {
+    const res = await orderStore.updateOrderStatus(order.value.id_order, 'PROSES')
+    if (res?.success) {
+      showToast(`Order ${order.value.id_order} berhasil dipulihkan ke status PROSES.`, 'success')
+    } else {
+      showToast(res?.error || 'Gagal memulihkan status order', 'danger')
+    }
+  } catch (err: any) {
+    showToast(err?.message || 'Terjadi kesalahan saat memulihkan order', 'danger')
+  } finally {
+    isUpdatingStatus.value = false
+  }
+}
+
+async function handleConfirmDelete() {
+  if (!order.value || isDeleting.value) return
+  isDeleting.value = true
+  const idToDelete = order.value.id_order
+  try {
+    const res = await orderStore.deleteOrder(idToDelete, true)
+    if (res?.success) {
+      showDeleteModal.value = false
+      showToast(`Order ${idToDelete} berhasil dihapus permanen.`, 'success')
+      setTimeout(() => {
+        router.push('/order/list')
+      }, 500)
+    } else {
+      showToast(res?.error || 'Gagal menghapus order', 'danger')
+    }
+  } catch (err: any) {
+    showToast(err?.message || 'Terjadi kesalahan saat menghapus order', 'danger')
+  } finally {
+    isDeleting.value = false
+  }
+}
 
 async function toggleOrderStatus() {
   if (!order.value || isUpdatingStatus.value) return

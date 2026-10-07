@@ -1,5 +1,5 @@
 <template>
-  <div id="owner-app" class="min-h-screen bg-white text-slate-900">
+  <div id="owner-app" class="h-full w-full overflow-hidden bg-white text-slate-900 flex flex-col">
     <router-view />
 
     <!-- Proteksi Kunci Layar Bawaan Android -->

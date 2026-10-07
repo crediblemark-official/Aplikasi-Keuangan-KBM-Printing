@@ -74,18 +74,19 @@ Sistem manajemen operasional dan keuangan percetakan buku terintegrasi (*2-Apps 
 
 ---
 
-### Langkah 2: Konfigurasi Frontend
+### Langkah 2: Konfigurasi Frontend (.env & GitHub Secrets)
 
-Buka file konfigurasi di [`packages/shared/src/api/gasClient.ts`](file:///media/rasyiqi/7653717A1C07B131/KBM-Pinting/packages/shared/src/api/gasClient.ts):
+Salin `.env.example` menjadi `.env` di root direktori atau atur variabel `VITE_GAS_URL`:
 
-```typescript
-export const CONFIG = {
-  // Ganti dengan Web App URL dari deploy Langkah 1 di atas:
-  GAS_URL: 'https://script.google.com/macros/s/AKfycbx.../exec',
-  DEFAULT_PRINTER_TYPE: 'standard' as const, // Cetak printer biasa A4
-  CURRENCY: 'IDR',
-}
+```env
+# .env di root direktori
+VITE_GAS_URL=https://script.google.com/macros/s/AKfycbx.../exec
+VITE_APP_NAME=KBM Percetakan
 ```
+
+> **Untuk Build di GitHub Actions (APK / EXE):**
+> Tambahkan Secret repository di GitHub: **Settings > Secrets and variables > Actions > New repository secret** dengan nama `VITE_GAS_URL` dan isi URL deployment Web App GAS.
+
 
 ---
 

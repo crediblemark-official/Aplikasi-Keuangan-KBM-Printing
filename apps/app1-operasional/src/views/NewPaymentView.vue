@@ -70,8 +70,16 @@
                     class="px-2 py-0.5 rounded text-xs font-bold font-mono bg-slate-100 border border-slate-200 text-slate-700">
                     {{ selectedOrder.id_order }}
                   </span>
-                  <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
-                    :class="sisaTagihan === 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-300' : totalTerbayar > 0 ? 'bg-amber-50 text-amber-700 border border-amber-300' : 'bg-rose-50 text-rose-700 border border-rose-300'">
+                  <span
+                    class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
+                    :class="[
+                      sisaTagihan === 0
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-300'
+                        : totalTerbayar > 0
+                          ? 'bg-amber-50 text-amber-700 border border-amber-300'
+                          : 'bg-rose-50 text-rose-700 border border-rose-300'
+                    ]"
+                  >
                     {{ sisaTagihan === 0 ? 'Lunas' : totalTerbayar > 0 ? 'DP Masuk' : 'Belum Bayar' }}
                   </span>
                 </div>
@@ -80,8 +88,7 @@
                     {{ selectedOrder.nama_penerbit }}
                   </h2>
                   <p class="text-xs text-slate-500 font-medium mt-0.5">
-                    Buku: <strong class="text-slate-800">{{ selectedOrder.judul_buku || selectedOrder.judul_penulis
-                      }}</strong>
+                    Buku: <strong class="text-slate-800">{{ selectedOrder.judul_buku || selectedOrder.judul_penulis }}</strong>
                   </p>
                 </div>
               </div>
@@ -90,18 +97,22 @@
               <div class="grid grid-cols-3 bg-slate-200 gap-px border-t border-b border-slate-200 text-center">
                 <div class="bg-white p-2.5">
                   <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Total Nilai</p>
-                  <p class="text-xs sm:text-sm font-bold font-mono text-slate-900 mt-0.5">{{
-                    formatRupiah(selectedOrder.total_harga) }}</p>
+                  <p class="text-xs sm:text-sm font-bold font-mono text-slate-900 mt-0.5">
+                    {{ formatRupiah(selectedOrder.total_harga) }}
+                  </p>
                 </div>
                 <div class="bg-white p-2.5">
                   <p class="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">Sudah Masuk</p>
-                  <p class="text-xs sm:text-sm font-bold font-mono text-emerald-600 mt-0.5">{{
-                    formatRupiah(totalTerbayar) }}</p>
+                  <p class="text-xs sm:text-sm font-bold font-mono text-emerald-600 mt-0.5">
+                    {{ formatRupiah(totalTerbayar) }}
+                  </p>
                 </div>
                 <div class="bg-white p-2.5">
                   <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Sisa Tagihan</p>
-                  <p class="text-xs sm:text-sm font-bold font-mono mt-0.5"
-                    :class="sisaTagihan === 0 ? 'text-emerald-600' : 'text-red-600'">
+                  <p
+                    class="text-xs sm:text-sm font-bold font-mono mt-0.5"
+                    :class="sisaTagihan === 0 ? 'text-emerald-600' : 'text-red-600'"
+                  >
                     {{ formatRupiah(sisaTagihan) }}
                   </p>
                 </div>
@@ -111,12 +122,16 @@
               <div class="hidden lg:block p-4 text-xs text-slate-500 leading-relaxed space-y-2">
                 <p class="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Petunjuk Pembayaran</p>
                 <ul class="list-disc list-inside space-y-1 text-slate-500 text-xs">
-                  <li>Pilih jenis pembayaran: <strong class="text-slate-700">Uang Muka (DP)</strong> atau <strong
-                      class="text-slate-700">Pelunasan</strong>.</li>
+                  <li>
+                    Pilih jenis pembayaran: <strong class="text-slate-700">Uang Muka (DP)</strong> atau
+                    <strong class="text-slate-700">Pelunasan</strong>.
+                  </li>
                   <li>Gunakan pilihan cepat nominal (50%, 100%, sisa tagihan) untuk mengisi cepat.</li>
                   <li>Pilih metode pembayaran (Saldo Deposit, Tunai, Bank, atau QRIS).</li>
-                  <li><strong class="text-slate-700">Potong Deposit:</strong> Otomatis aktif jika penerbit memiliki
-                    saldo deposit dari Buku Kas.</li>
+                  <li>
+                    <strong class="text-slate-700">Potong Deposit:</strong> Otomatis aktif jika penerbit memiliki
+                    saldo deposit dari Buku Kas.
+                  </li>
                   <li>Unggah foto struk atau bukti transfer jika ada untuk verifikasi.</li>
                 </ul>
               </div>
@@ -164,13 +179,58 @@
                   </div>
 
                   <!-- Lunas Notice if sisaTagihan is 0 -->
-                  <div v-if="sisaTagihan === 0"
-                    class="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
-                    <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24"
-                      stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  <div
+                    v-if="sisaTagihan === 0"
+                    class="p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs flex items-start gap-2.5 shadow-2xs"
+                  >
+                    <svg
+                      class="w-5 h-5 text-emerald-600 shrink-0 mt-0.5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span>Pesanan ini sudah lunas terverifikasi.</span>
+                    <div>
+                      <p class="font-bold text-emerald-900">Pesanan ini sudah Lunas!</p>
+                      <p class="text-[11px] text-emerald-700 mt-0.5">
+                        Seluruh tagihan pesanan telah selesai dibayar. Tidak diperlukan pencatatan pembayaran lagi.
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Warning if existingPelunasanPayments > 0 and PELUNASAN chosen -->
+                  <div
+                    v-if="form.jenis_pembayaran === 'PELUNASAN' && existingPelunasanPayments.length > 0"
+                    class="p-3 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs space-y-1 shadow-2xs"
+                  >
+                    <div class="flex items-center gap-1.5 font-bold text-amber-800">
+                      <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      <span>Perhatian: Order Ini Sudah Memiliki Riwayat Pelunasan!</span>
+                    </div>
+                    <p class="text-[11px] text-amber-700 leading-relaxed">
+                      Order ini sudah pernah dicatat pelunasan:
+                      <strong>{{ existingPelunasanSummary }}</strong>.
+                      Harap pastikan kembali agar tidak terjadi pencatatan pelunasan ganda.
+                    </p>
+                  </div>
+
+                  <!-- Info if DP already exists and DP chosen -->
+                  <div
+                    v-else-if="form.jenis_pembayaran === 'DP' && existingDpPayments.length > 0"
+                    class="p-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs space-y-0.5"
+                  >
+                    <div class="flex items-center gap-1.5 font-bold text-blue-800">
+                      <svg class="w-4 h-4 text-blue-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>Info: Order ini sudah pernah membayar DP</span>
+                    </div>
+                    <p class="text-[11px] text-blue-700">
+                      Sudah ada DP tercatat sebesar <strong>{{ existingDpSummary }}</strong>. Disarankan memilih <strong>Pelunasan</strong> untuk menyelesaikan sisa tagihan.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -204,13 +264,19 @@
                   <div class="space-y-1">
                     <div class="flex items-center justify-between">
                       <label class="text-xs font-bold text-slate-700">Nominal Pembayaran *</label>
-                      <span
-                        class="text-[11px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                        {{ formatRupiah(form.nominal || 0) }}
-                      </span>
+                      <div class="flex items-center gap-2">
+                        <span v-if="sisaTagihan > 0" class="text-[11px] text-slate-500 font-mono">
+                          Maks: <strong class="text-slate-700">{{ formatRupiah(sisaTagihan) }}</strong>
+                        </span>
+                        <span
+                          class="text-[11px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                          {{ formatRupiah(form.nominal || 0) }}
+                        </span>
+                      </div>
                     </div>
                     <div
-                      class="flex rounded-lg border border-slate-300 overflow-hidden focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500 bg-white shadow-2xs">
+                      class="flex rounded-lg border overflow-hidden focus-within:ring-2 bg-white shadow-2xs transition-all"
+                      :class="isNominalExceedsSisa ? 'border-rose-400 focus-within:border-rose-500 focus-within:ring-rose-100' : 'border-slate-300 focus-within:border-red-500 focus-within:ring-red-100'">
                       <span
                         class="inline-flex items-center px-3 bg-slate-100 border-r border-slate-200 text-xs font-mono font-bold text-slate-500 select-none">
                         Rp
@@ -220,6 +286,14 @@
                         class="w-full px-3 py-2 text-sm sm:text-base font-bold font-mono text-slate-800 outline-none border-0 bg-transparent"
                         required @input="onNominalInput" />
                     </div>
+                    <p v-if="isNominalExceedsSisa"
+                      class="text-xs text-rose-600 font-semibold flex items-center gap-1 mt-1">
+                      <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      <span>Nominal melebihi sisa tagihan! Maksimal: {{ formatRupiah(sisaTagihan) }}</span>
+                    </p>
                   </div>
 
                   <!-- Metode Bayar -->
@@ -229,8 +303,12 @@
                       <label v-for="m in metodeOptions" :key="m.value"
                         class="py-2 px-2 text-center rounded-lg border transition-all select-none flex flex-col justify-center"
                         :class="[
-                          m.disabled ? 'opacity-50 cursor-not-allowed bg-slate-50 border-slate-200 text-slate-400' : 'cursor-pointer',
-                          !m.disabled && form.metode === m.value ? 'border-red-600 bg-red-50/40 ring-1 ring-red-600/30 text-red-900 font-bold' : (!m.disabled ? 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700' : '')
+                          m.disabled
+                            ? 'opacity-50 cursor-not-allowed bg-slate-50 border-slate-200 text-slate-400'
+                            : 'cursor-pointer',
+                          !m.disabled && form.metode === m.value
+                            ? 'border-red-600 bg-red-50/40 ring-1 ring-red-600/30 text-red-900 font-bold'
+                            : (!m.disabled ? 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700' : '')
                         ]">
                         <input type="radio" v-model="form.metode" :value="m.value" :disabled="m.disabled"
                           class="hidden" />
@@ -242,9 +320,10 @@
                   </div>
 
                   <!-- Keterangan -->
-                  <div class="space-y-1 pt-1.5 border-t border-slate-100">
-                    <label class="text-xs font-semibold text-slate-600">Keterangan / Catatan Pembayaran
-                      (opsional)</label>
+                  <div class="space-y-1.5 pt-1.5 border-t border-slate-100">
+                    <label class="text-xs font-semibold text-slate-600">
+                      Keterangan / Catatan Pembayaran (opsional)
+                    </label>
                     <input v-model="form.keterangan" placeholder="Contoh: Transfer Bank a.n. Penerbit..."
                       class="form-input text-xs py-2 rounded-lg border-slate-200 focus:border-red-500 focus:ring-red-100" />
                   </div>
@@ -264,11 +343,20 @@
 
             <!-- Desktop Submit Button -->
             <div class="hidden lg:block p-3.5 sm:p-4 bg-slate-50/60 border-t border-slate-200">
-              <button type="button" @click="submitPayment" :disabled="isSubmitting || !isFormValid"
-                class="btn-primary w-full h-9.5 justify-center text-xs font-bold rounded-lg shadow-xs cursor-pointer">
+              <button
+                type="button"
+                @click="submitPayment"
+                :disabled="isSubmitting || !isFormValid || sisaTagihan <= 0 || isNominalExceedsSisa"
+                class="btn-primary w-full h-9.5 justify-center text-xs font-bold rounded-lg shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                 <span v-if="isSubmitting" class="flex items-center justify-center gap-2">
                   <ion-spinner name="crescent" class="w-4 h-4"></ion-spinner>
                   <span>Menyimpan Pembayaran...</span>
+                </span>
+                <span v-else-if="sisaTagihan <= 0" class="flex items-center justify-center gap-2">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Pesanan Sudah Lunas</span>
                 </span>
                 <span v-else class="flex items-center justify-center gap-2">
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -288,11 +376,20 @@
     <!-- Mobile Sticky Submit Button (Full edge bar) -->
     <div v-if="selectedOrder"
       class="lg:hidden fixed bottom-0 left-0 right-0 z-50 px-4 py-3 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-lg">
-      <button type="button" @click="submitPayment" :disabled="isSubmitting || !isFormValid"
-        class="btn-primary w-full h-11 justify-center text-xs font-bold rounded-xl cursor-pointer">
+      <button
+        type="button"
+        @click="submitPayment"
+        :disabled="isSubmitting || !isFormValid || sisaTagihan <= 0 || isNominalExceedsSisa"
+        class="btn-primary w-full h-11 justify-center text-xs font-bold rounded-xl cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
         <span v-if="isSubmitting" class="flex items-center justify-center gap-2">
           <ion-spinner name="crescent" class="w-4 h-4"></ion-spinner>
           <span>Menyimpan...</span>
+        </span>
+        <span v-else-if="sisaTagihan <= 0" class="flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          <span>Pesanan Sudah Lunas</span>
         </span>
         <span v-else class="flex items-center justify-center gap-2">
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -412,8 +509,41 @@ const sisaTagihan = computed(() =>
   Math.max(0, (selectedOrder.value?.total_harga ?? 0) - totalTerbayar.value),
 )
 
+const existingPelunasanPayments = computed(() =>
+  kasMasukList.value.filter(
+    (k) => k.jenis_pembayaran === 'PELUNASAN' && (k.status_verifikasi as any) !== 'BATAL'
+  )
+)
+
+const existingDpPayments = computed(() =>
+  kasMasukList.value.filter(
+    (k) => k.jenis_pembayaran === 'DP' && (k.status_verifikasi as any) !== 'BATAL'
+  )
+)
+
+const isNominalExceedsSisa = computed(() => {
+  return form.value.nominal > sisaTagihan.value
+})
+
+const existingPelunasanSummary = computed(() => {
+  return existingPelunasanPayments.value
+    .map((p) => `${formatRupiah(p.nominal)} (${p.tanggal ? p.tanggal.split('T')[0] : ''})`)
+    .join(', ')
+})
+
+const existingDpSummary = computed(() => {
+  return existingDpPayments.value
+    .map((p) => formatRupiah(p.nominal))
+    .join(', ')
+})
+
 const isFormValid = computed(() => {
-  return Boolean(targetOrderId.value && form.value.nominal > 0 && sisaTagihan.value > 0)
+  return Boolean(
+    targetOrderId.value &&
+    form.value.nominal > 0 &&
+    sisaTagihan.value > 0 &&
+    form.value.nominal <= sisaTagihan.value
+  )
 })
 
 interface JenisOption {
@@ -559,6 +689,20 @@ import { useSyncStore } from '@shared/stores/syncStore'
 
 async function submitPayment() {
   if (!isFormValid.value || isSubmitting.value) return
+
+  if (sisaTagihan.value <= 0) {
+    toastMsg.value = '⚠️ Pesanan ini sudah lunas terverifikasi.'
+    toastColor.value = 'warning'
+    toastOpen.value = true
+    return
+  }
+
+  if (form.value.nominal > sisaTagihan.value) {
+    toastMsg.value = `⚠️ Nominal melebihi sisa tagihan (${formatRupiah(sisaTagihan.value)})`
+    toastColor.value = 'warning'
+    toastOpen.value = true
+    return
+  }
 
   // Validasi pemotongan deposit
   if (form.value.metode === 'SALDO_DEPOSIT' && form.value.nominal > publisherDepositBalance.value) {

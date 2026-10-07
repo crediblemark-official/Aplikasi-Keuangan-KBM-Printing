@@ -15,8 +15,8 @@
       </template>
     </PageHeader>
 
-    <!-- Control Bar: Date Filter (Tanggal, Bulan, Tahun, Rentang) -->
-    <div class="px-[8px] sm:px-[15px] lg:px-[20px] py-2.5 border-b border-slate-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+    <!-- Control Bar: Date Filter (Tanggal, Bulan, Tahun, Rentang) - Sticky -->
+    <div class="sticky top-0 z-30 px-[8px] sm:px-[15px] lg:px-[20px] py-2.5 border-b border-slate-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-xs">
       <DateFilterBar v-model="dateFilter" initial-mode="MONTH" />
       <span class="text-xs text-slate-500 font-semibold font-mono shrink-0 text-center w-full sm:w-auto">
         Periode Analisis: <strong class="text-slate-800">{{ dateFilter.label || selectedPeriode }}</strong>

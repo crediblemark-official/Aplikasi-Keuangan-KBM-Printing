@@ -34,14 +34,15 @@
         <button
           type="button"
           @click="loadData(true)"
-          :disabled="isLoading"
+          :disabled="isLoading || isRefreshing"
           class="h-8 px-2 sm:px-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 text-xs font-semibold inline-flex items-center gap-1.5 transition-all shadow-2xs shrink-0 cursor-pointer disabled:opacity-50"
           title="Segarkan Data Buku Kas"
         >
-          <svg class="w-3.5 h-3.5" :class="{ 'animate-spin': isLoading }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          <svg class="w-3.5 h-3.5" :class="{ 'animate-spin': isLoading || isRefreshing }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          <span class="hidden sm:inline">Refresh</span>
+          <span class="hidden sm:inline">{{ isRefreshing ? 'Menyinkronkan...' : 'Refresh' }}</span>
         </button>
 
         <!-- Input Kas Masuk Button -->
@@ -72,8 +73,10 @@
       </template>
     </PageHeader>
 
-    <!-- Control Bar: Date Filter (Tanggal, Bulan, Tahun, Rentang) -->
-    <div class="px-[8px] sm:px-[15px] lg:px-[20px] py-2.5 border-b border-slate-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+    <!-- Control Bar: Date Filter (Tanggal, Bulan, Tahun, Rentang) - Sticky -->
+    <div
+      class="sticky top-0 z-30 px-[8px] sm:px-[15px] lg:px-[20px] py-2.5 border-b border-slate-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-xs"
+    >
       <DateFilterBar v-model="dateFilter" initial-mode="MONTH" />
       <span class="text-xs text-slate-500 font-semibold font-mono shrink-0 text-center w-full sm:w-auto">
         Periode: <strong class="text-slate-800">{{ dateFilter.label || selectedPeriode }}</strong>
@@ -85,9 +88,13 @@
 
     <!-- Rekapitulasi per Sumber Kas (Full-bleed) -->
     <div class="border-b border-slate-200 bg-white">
-      <div class="px-[8px] sm:px-[15px] lg:px-[20px] py-2.5 border-b border-slate-100 bg-slate-50/40 flex items-center justify-between">
+      <div
+        class="px-[8px] sm:px-[15px] lg:px-[20px] py-2.5 border-b border-slate-100 bg-slate-50/40 flex items-center justify-between"
+      >
         <h3 class="text-slate-900 font-bold text-xs sm:text-sm">Rekapitulasi Saldo Kas per Akun</h3>
-        <span class="text-[11px] font-semibold text-slate-500 font-mono">Periode: {{ dateFilter.label || selectedPeriode }}</span>
+        <span class="text-[11px] font-semibold text-slate-500 font-mono">
+          Periode: {{ dateFilter.label || selectedPeriode }}
+        </span>
       </div>
       <TableScrollWrapper>
         <table class="data-table w-full min-w-[500px]">
@@ -121,7 +128,9 @@
 
     <!-- Mutasi Kas Detail (Full-bleed) -->
     <div class="bg-white">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-[8px] sm:px-[15px] lg:px-[20px] py-2.5 border-b border-slate-100 bg-slate-50/40">
+      <div
+        class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-[8px] sm:px-[15px] lg:px-[20px] py-2.5 border-b border-slate-100 bg-slate-50/40"
+      >
         <div class="flex items-center gap-2">
           <h3 class="text-slate-900 font-bold text-xs sm:text-sm">Jurnal Mutasi Buku Kas</h3>
           <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200/80 text-slate-700">
@@ -129,15 +138,21 @@
           </span>
         </div>
 
-        <div class="flex items-center gap-2 w-full sm:w-auto overflow-x-auto scrollbar-none py-0.5 justify-between sm:justify-end">
+        <div
+          class="flex items-center gap-2 w-full sm:w-auto overflow-x-auto scrollbar-none py-0.5 justify-between sm:justify-end"
+        >
           <!-- Filter Tabs Tipe -->
-          <div class="flex items-center gap-1 bg-slate-200/60 p-0.5 rounded-lg overflow-x-auto scrollbar-none flex-nowrap shrink-0 max-w-full">
+          <div
+            class="flex items-center gap-1 bg-slate-200/60 p-0.5 rounded-lg overflow-x-auto scrollbar-none flex-nowrap shrink-0 max-w-full"
+          >
             <button
               v-for="tab in mutasiTabs"
               :key="tab.id"
               @click="activeTab = tab.id"
               class="px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap"
-              :class="activeTab === tab.id ? 'bg-white text-slate-900 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'"
+              :class="activeTab === tab.id
+                ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                : 'text-slate-600 hover:text-slate-900'"
             >
               <span>{{ tab.label }}</span>
             </button>
@@ -172,7 +187,7 @@
               :is-empty="filteredMutasi.length === 0"
               empty-text="Belum ada mutasi kas tercatat pada periode ini"
             />
-            <tr v-for="row in filteredMutasi" :key="row.id" class="hover:bg-slate-50/70">
+            <tr v-for="row in displayedMutasi" :key="row.id" class="hover:bg-slate-50/70">
               <td class="font-mono text-xs font-semibold text-slate-600 whitespace-nowrap">
                 {{ formatTanggal(row.tanggal) }}
               </td>
@@ -210,7 +225,7 @@
               <td class="text-center whitespace-nowrap">
                 <a
                   v-if="row.fileId"
-                  :href="row.fileId.startsWith('http') ? row.fileId : `https://drive.google.com/file/d/${row.fileId}/view`"
+                  :href="getDriveFileUrl(row.fileId)"
                   target="_blank"
                   rel="noopener"
                   class="text-blue-600 hover:text-blue-800 text-xs font-semibold underline inline-flex items-center gap-1 cursor-pointer"
@@ -227,7 +242,8 @@
                   title="Edit Transaksi Mutasi"
                 >
                   <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
                   <span>Edit</span>
                 </button>
@@ -236,374 +252,125 @@
           </tbody>
         </table>
       </TableScrollWrapper>
-    </div>
 
-    <!-- MODAL 1: INPUT KAS MASUK (DEPOSIT / NON-ORDER) -->
-    <BaseModal v-model="showKasMasukModal" title="Catat Kas Masuk (Buku Kas)">
-      <form @submit.prevent="submitKasMasuk" class="space-y-4">
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="form-label">Tanggal Masuk *</label>
-            <input v-model="kmForm.tanggal" type="date" class="form-input bg-white" required />
-          </div>
-          <div>
-            <label class="form-label">Jenis Kas Masuk *</label>
-            <select v-model="kmForm.jenis_pembayaran" class="form-input bg-white font-medium" required>
-              <option value="DEPOSIT">💳 Deposit Saldo Penerbit</option>
-              <option value="NON_ORDER">📦 Pendapatan Lain / Non-Order</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Nama Penerbit / Penyetor (Standar ComboboxInput KBM Printing) -->
-        <div>
-          <ComboboxInput
-            v-model="kmForm.nama_penerbit"
-            :label="kmForm.jenis_pembayaran === 'DEPOSIT' ? 'Nama Penerbit *' : 'Nama Sumber / Penyetor (Opsional)'"
-            sublabel="Pelanggan / Klien"
-            :placeholder="kmForm.jenis_pembayaran === 'DEPOSIT' ? 'Ketik atau pilih nama penerbit / klien...' : 'Contoh: Pengepul Kertas, Bpk. Hendra, dll.'"
-            :options="penerbitOptions"
-            add-label-prefix="Tambah Penerbit"
-            :required="kmForm.jenis_pembayaran === 'DEPOSIT'"
-          />
-          <p v-if="kmForm.jenis_pembayaran === 'DEPOSIT'" class="text-[11px] text-slate-500 mt-1">
-            Dana deposit akan masuk ke buku saldo penerbit untuk pemotongan biaya order berikutnya.
-          </p>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="form-label">Nominal (Rp) *</label>
-            <input
-              :value="kmForm.nominal ? kmForm.nominal.toLocaleString('id-ID') : ''"
-              @input="onKmNominalInput"
-              type="text"
-              inputmode="numeric"
-              placeholder="0"
-              class="form-input font-mono font-bold text-slate-900 bg-white"
-              required
-            />
-          </div>
-          <div>
-            <label class="form-label">Metode / Akun Bank *</label>
-            <select v-model="kmForm.metode" class="form-input bg-white" required>
-              <option value="BANK">🏦 Bank</option>
-              <option value="KASIR_TUNAI">💵 Kasir Tunai</option>
-              <option value="QRIS">📱 QRIS</option>
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label class="form-label">Keterangan / Rincian</label>
-          <textarea
-            v-model="kmForm.keterangan"
-            rows="2"
-            placeholder="Contoh: Deposit untuk cetak 2 judul baru / Penjualan sisa afval kertas"
-            class="form-input resize-none bg-white"
-          ></textarea>
-        </div>
-
-        <div>
-          <label class="form-label">Upload Bukti Transfer / Resi (Opsional)</label>
-          <ImageUploader
-            label="Pilih / Foto Bukti Transfer"
-            sublabel="Otomatis dikompres sebelum upload"
-            @change="handleKmPhotoChange"
-          />
-        </div>
-
-        <div class="flex gap-3 pt-2">
-          <BaseButton variant="secondary" type="button" @click="showKasMasukModal = false" class="flex-1">
-            Batal
-          </BaseButton>
-          <BaseButton type="submit" :loading="isSubmittingKm" class="flex-1">
-            Simpan Kas Masuk
-          </BaseButton>
-        </div>
-      </form>
-    </BaseModal>
-
-    <!-- MODAL 2: INPUT KAS KELUAR -->
-    <BaseModal v-model="showKasKeluarModal" title="Catat Kas Keluar Baru">
-      <form @submit.prevent="submitKasKeluar" class="space-y-4">
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="form-label">Tanggal Keluar *</label>
-            <input v-model="kkForm.tanggal" type="date" class="form-input bg-white" required />
-          </div>
-          <div>
-            <label class="form-label">Kategori Pengeluaran *</label>
-            <select v-model="kkForm.kategori" class="form-input bg-white font-medium" required>
-              <option value="" disabled>Pilih Kategori</option>
-              <option v-for="k in kategoriOptions" :key="k.value" :value="k.value">
-                {{ k.label }}
-              </option>
-            </select>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="form-label">Nominal (Rp) *</label>
-            <input
-              :value="kkForm.nominal ? kkForm.nominal.toLocaleString('id-ID') : ''"
-              @input="onKkNominalInput"
-              type="text"
-              inputmode="numeric"
-              placeholder="0"
-              class="form-input font-mono font-bold text-slate-900 bg-white"
-              required
-            />
-          </div>
-          <div>
-            <label class="form-label">Sumber Kas / Akun *</label>
-            <select v-model="kkForm.sumber_kas" class="form-input bg-white" required>
-              <option value="KASIR_TUNAI">💵 Kasir Tunai</option>
-              <option value="BANK">🏦 Bank</option>
-              <option value="QRIS">📱 QRIS</option>
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label class="form-label">Rincian Pengeluaran *</label>
-          <textarea
-            v-model="kkForm.rincian"
-            rows="2"
-            placeholder="Contoh: Beli kertas Bookpaper 72gr 2 rim / Token listrik workshop"
-            class="form-input resize-none bg-white"
-            required
-          ></textarea>
-        </div>
-
-        <div>
-          <label class="form-label">Upload Foto Nota / Kwitansi (Opsional)</label>
-          <ImageUploader
-            label="Pilih / Foto Nota"
-            sublabel="Otomatis dikompres sebelum upload"
-            @change="handleKkPhotoChange"
-          />
-        </div>
-
-        <div class="flex gap-3 pt-2">
-          <BaseButton variant="secondary" type="button" @click="showKasKeluarModal = false" class="flex-1">
-            Batal
-          </BaseButton>
-          <BaseButton type="submit" :loading="isSubmittingKk" class="flex-1">
-            Simpan Kas Keluar
-          </BaseButton>
-        </div>
-      </form>
-    </BaseModal>
-
-    <!-- MODAL 3: EDIT MUTASI KAS (MASUK / KELUAR) -->
-    <BaseModal v-model="showEditModal" :title="editForm.tipe === 'MASUK' ? 'Edit Kas Masuk' : 'Edit Kas Keluar'">
-      <form @submit.prevent="submitEditMutasi" class="space-y-4">
-        <!-- Info ID & Tipe -->
-        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-xs">
-          <span class="text-slate-500 font-mono">ID: <strong class="text-slate-800">{{ editForm.id }}</strong></span>
-          <span
-            class="px-2 py-0.5 rounded text-[11px] font-bold"
-            :class="editForm.tipe === 'MASUK' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'"
-          >
-            {{ editForm.tipe === 'MASUK' ? '⬇ Kas Masuk' : '⬆ Kas Keluar' }}
+      <!-- Load More Mutasi Kas Section -->
+      <div
+        v-if="hasMoreMutasi"
+        class="px-4 py-3.5 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs"
+      >
+        <div class="flex items-center gap-2 text-xs text-slate-600 font-medium">
+          <span>
+            Menampilkan <strong>{{ displayedMutasi.length }}</strong> dari total
+            <strong>{{ filteredMutasi.length }}</strong> transaksi kas
+          </span>
+          <span class="text-slate-300">|</span>
+          <span class="text-slate-500 font-mono">
+            Tersisa {{ filteredMutasi.length - displayedMutasi.length }} lagi
           </span>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="form-label">Tanggal Transaksi *</label>
-            <input v-model="editForm.tanggal" type="date" class="form-input bg-white" required />
-          </div>
-          <div>
-            <label class="form-label">Sumber Kas / Rekening *</label>
-            <select v-model="editForm.sumber_kas" class="form-input bg-white font-medium" required>
-              <option value="BANK">Bank</option>
-              <option value="KASIR_TUNAI">Kasir Tunai</option>
-              <option value="QRIS">QRIS</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Khusus Kas Masuk -->
-        <template v-if="editForm.tipe === 'MASUK'">
-          <div v-if="editForm.id_order" class="p-2.5 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-900">
-            <p class="font-bold">Pembayaran Order Cetak: {{ editForm.id_order }}</p>
-            <p class="text-blue-700 text-[11px] mt-0.5">{{ editForm.nama_penerbit || '-' }}</p>
-          </div>
-          <div v-else-if="editForm.jenis_pembayaran === 'DEPOSIT'">
-            <label class="form-label">Nama Penerbit (Deposit) *</label>
-            <ComboboxInput
-              v-model="editForm.nama_penerbit"
-              :options="penerbitOptions"
-              placeholder="Pilih nama penerbit..."
-              required
-            />
-          </div>
-        </template>
-
-        <!-- Khusus Kas Keluar -->
-        <template v-if="editForm.tipe === 'KELUAR'">
-          <div>
-            <label class="form-label">Kategori Pengeluaran *</label>
-            <select v-model="editForm.kategori" class="form-input bg-white font-medium" required>
-              <option v-for="k in kategoriOptions" :key="k.value" :value="k.value">{{ k.label }}</option>
-            </select>
-          </div>
-        </template>
-
-        <!-- Nominal -->
-        <div>
-          <label class="form-label">Nominal *</label>
-          <div class="flex rounded-lg border border-slate-300 overflow-hidden focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white transition-all shadow-2xs">
-            <span class="inline-flex items-center px-3 bg-slate-100 border-r border-slate-200 text-xs font-mono font-bold text-slate-500 select-none">
-              Rp
-            </span>
-            <input
-              :value="editForm.nominal ? editForm.nominal.toLocaleString('id-ID') : ''"
-              @input="onEditNominalInput"
-              type="text"
-              inputmode="numeric"
-              class="w-full px-3 py-2 text-sm font-bold font-mono text-slate-900 outline-none border-0 bg-transparent"
-              placeholder="0"
-              required
-            />
-          </div>
-        </div>
-
-        <!-- Keterangan -->
-        <div>
-          <label class="form-label">Keterangan / Rincian Transaksi</label>
-          <input
-            v-model="editForm.keterangan"
-            type="text"
-            class="form-input bg-white"
-            placeholder="Catatan rincian transaksi..."
-          />
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="pt-3 flex items-center justify-between gap-2 border-t border-slate-100">
+        <div class="flex items-center gap-2 shrink-0">
           <button
-            @click="showDeleteMutasiConfirmModal = true"
             type="button"
-            class="px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-rose-200 cursor-pointer"
-            :disabled="isSubmittingEdit"
+            @click="loadMoreMutasi"
+            class="h-8 px-4 rounded-lg text-xs font-bold bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 shadow-2xs hover:border-slate-400 active:scale-97 transition-all inline-flex items-center gap-1.5 cursor-pointer"
           >
-            Hapus Transaksi
+            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+            </svg>
+            <span>Muat Lebih Banyak (+{{ nextMutasiBatchCount }})</span>
           </button>
-          <div class="flex items-center gap-2">
-            <button
-              @click="showEditModal = false"
-              type="button"
-              class="btn-secondary text-xs px-3 py-1.5"
-              :disabled="isSubmittingEdit"
-            >
-              Batal
-            </button>
-            <button
-              type="submit"
-              class="btn-primary text-xs px-4 py-1.5"
-              :disabled="isSubmittingEdit || !editForm.nominal"
-            >
-              {{ isSubmittingEdit ? 'Menyimpan...' : 'Simpan Perubahan' }}
-            </button>
-          </div>
-        </div>
-      </form>
-    </BaseModal>
 
-    <!-- Modern Styled Confirm Modal for Mutasi Deletion -->
-    <ConfirmModal
-      v-model="showDeleteMutasiConfirmModal"
-      :title="editForm.tipe === 'MASUK' ? 'Batalkan Kas Masuk?' : 'Hapus Kas Keluar?'"
-      :message="editForm.tipe === 'MASUK' ? `Yakin ingin membatalkan dan menghapus catatan Kas Masuk ID ${editForm.id}?` : `Yakin ingin menghapus catatan pengeluaran Kas Keluar ID ${editForm.id}?`"
-      :detail="editForm.tipe === 'MASUK' ? 'Catatan mutasi kas ini akan dihapus dan sisa saldo buku kas akan otomatis disesuaikan.' : 'Catatan pengeluaran kas ini akan dihapus dan sisa saldo buku kas akan otomatis disesuaikan.'"
-      :confirm-text="editForm.tipe === 'MASUK' ? 'Ya, Batalkan Kas Masuk' : 'Ya, Hapus Pengeluaran'"
-      cancel-text="Kembali"
-      type="danger"
-      :loading="isSubmittingEdit"
-      @confirm="executeDeleteMutasi"
+          <button
+            v-if="filteredMutasi.length - displayedMutasi.length > MUTASI_PAGE_SIZE"
+            type="button"
+            @click="showAllMutasi"
+            class="h-8 px-3 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 transition-all cursor-pointer"
+          >
+            Tampilkan Semua ({{ filteredMutasi.length }})
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 1: INPUT KAS MASUK (DEPOSIT / NON-ORDER) -->
+    <KasMasukModal
+      v-model="showKasMasukModal"
+      :penerbit-options="penerbitOptions"
+      @success="onModalSuccess"
+      @error="onModalError"
+    />
+
+    <!-- MODAL 2: INPUT KAS KELUAR -->
+    <KasKeluarModal
+      v-model="showKasKeluarModal"
+      :kategori-options="kategoriOptions"
+      @success="onModalSuccess"
+      @error="onModalError"
+    />
+
+    <!-- MODAL 3: EDIT MUTASI KAS (MASUK / KELUAR) -->
+    <EditKasModal
+      v-model="showEditModal"
+      :mutasi="selectedMutasiRow"
+      :penerbit-options="penerbitOptions"
+      :kategori-options="kategoriOptions"
+      @success="onModalSuccess"
+      @error="onModalError"
     />
 
     <!-- Snackbar Toast (Success & Error support) -->
-    <transition
-      enter-active-class="transition-all duration-300 ease-out"
-      enter-from-class="opacity-0 translate-y-2.5"
-      enter-to-class="opacity-100 translate-y-0"
-      leave-active-class="transition-all duration-300 ease-in"
-      leave-from-class="opacity-100 translate-y-0"
-      leave-to-class="opacity-0 translate-y-2.5"
-    >
-      <div
-        v-if="snackbar"
-        class="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-[10000] px-5 py-3 rounded-xl text-sm font-semibold shadow-xl flex items-center gap-2.5"
-        :class="snackbarType === 'error' ? 'bg-rose-600 text-white shadow-rose-200' : 'bg-emerald-600 text-white shadow-emerald-200'"
-      >
-        <svg v-if="snackbarType === 'error'" class="w-4 h-4 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <svg v-else class="w-4 h-4 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-        </svg>
-        <span>{{ snackbar }}</span>
-      </div>
-    </transition>
+    <!-- Toast Notification (Shared Component) -->
+    <ToastNotification
+      :message="toastMessage"
+      :type="toastType"
+      @close="clearToast"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import PageHeader from '@shared/components/PageHeader.vue'
 import BaseButton from '@shared/components/BaseButton.vue'
 import MetricStrip from '@shared/components/MetricStrip.vue'
 import TableStateRow from '@shared/components/TableStateRow.vue'
 import TableScrollWrapper from '@shared/components/TableScrollWrapper.vue'
-import BaseModal from '@shared/components/BaseModal.vue'
-import ConfirmModal from '@shared/components/ConfirmModal.vue'
-import ImageUploader from '@shared/components/ImageUploader.vue'
 import SearchInput from '@shared/components/SearchInput.vue'
-import ComboboxInput, { type ComboboxOption } from '@shared/components/ComboboxInput.vue'
+import type { ComboboxOption } from '@shared/components/ComboboxInput.vue'
 import DateFilterBar from '@shared/components/DateFilterBar.vue'
+import ToastNotification from '@shared/components/ToastNotification.vue'
+import KasMasukModal from '../components/KasMasukModal.vue'
+import KasKeluarModal from '../components/KasKeluarModal.vue'
+import EditKasModal from '../components/EditKasModal.vue'
 import { api } from '@shared/api/gasClient'
 import { useAuthStore } from '../stores/auth'
+import { useToast } from '@shared/utils/useToast'
+import { KATEGORI_KAS_KELUAR_OPTIONS } from '@shared/constants'
 import {
   formatRupiah,
   formatTanggal,
   formatMetode,
   formatKategori,
-  getTodayISO,
   getCurrentPeriode,
   formatJenisPembayaran,
   isDateInFilterRange,
 } from '@shared/utils/formatters'
 import type { KasMasuk, KasKeluar, SumberKas, KategoriKasKeluar, Client, Order, DateFilterValue } from '@shared/types'
+import { useFinanceStore } from '../stores/finance'
+import { storeToRefs } from 'pinia'
 
 const route = useRoute()
 const authStore = useAuthStore()
+const financeStore = useFinanceStore()
 
-const isLoading = ref(false)
+const { kasMasukList, kasKeluarList, clientsList, ordersList, isLoading, isRefreshing } = storeToRefs(financeStore)
 const isExporting = ref(false)
-const snackbar = ref('')
-const snackbarType = ref<'success' | 'error'>('success')
 const selectedPeriode = ref(getCurrentPeriode())
 const dateFilter = ref<DateFilterValue>({ mode: 'MONTH' })
 
-function showToast(msg: string, type: 'success' | 'error' = 'success') {
-  snackbar.value = msg
-  snackbarType.value = type
-  setTimeout(() => {
-    if (snackbar.value === msg) snackbar.value = ''
-  }, 4000)
-}
-
-// Data state
-const kasMasukList = ref<KasMasuk[]>([])
-const kasKeluarList = ref<KasKeluar[]>([])
-const clientsList = ref<Client[]>([])
-const ordersList = ref<Order[]>([])
+const { toastMessage, toastType, showToast, clearToast } = useToast()
 
 // Filter state
 const activeTab = ref<'SEMUA' | 'MASUK' | 'KELUAR' | 'DEPOSIT'>('SEMUA')
@@ -616,57 +383,13 @@ const mutasiTabs: Array<{ id: 'SEMUA' | 'MASUK' | 'KELUAR' | 'DEPOSIT'; label: s
   { id: 'DEPOSIT', label: 'Deposit Saldo' },
 ]
 
-const kategoriOptions = [
-  { value: 'BAHAN_BAKU', label: 'Bahan Baku Kertas' },
-  { value: 'OPERASIONAL', label: 'Operasional / Listrik' },
-  { value: 'GAJI', label: 'Gaji & Lembur' },
-  { value: 'KONSUMSI', label: 'Konsumsi' },
-  { value: 'LAIN_LAIN', label: 'Lain-lain' },
-]
+const kategoriOptions = KATEGORI_KAS_KELUAR_OPTIONS
 
-// Modal 1: Kas Masuk Form State
+// Modal Visibility & Selected Mutasi Row
 const showKasMasukModal = ref(false)
-const isSubmittingKm = ref(false)
-const kmPhotoBase64 = ref('')
-const kmPhotoFilename = ref('')
-const kmForm = ref({
-  tanggal: getTodayISO(),
-  jenis_pembayaran: 'DEPOSIT' as 'DEPOSIT' | 'NON_ORDER',
-  nama_penerbit: '',
-  nominal: 0,
-  metode: 'BANK' as SumberKas,
-  keterangan: '',
-})
-
-// Modal 2: Kas Keluar Form State
 const showKasKeluarModal = ref(false)
-const isSubmittingKk = ref(false)
-const kkPhotoBase64 = ref('')
-const kkPhotoFilename = ref('')
-const kkForm = ref({
-  tanggal: getTodayISO(),
-  kategori: '' as KategoriKasKeluar,
-  rincian: '',
-  nominal: 0,
-  sumber_kas: 'KASIR_TUNAI' as SumberKas,
-})
-
-// Modal 3: Edit Mutasi Form State
 const showEditModal = ref(false)
-const showDeleteMutasiConfirmModal = ref(false)
-const isSubmittingEdit = ref(false)
-const editForm = ref({
-  id: '',
-  tipe: 'MASUK' as 'MASUK' | 'KELUAR',
-  tanggal: '',
-  nominal: 0,
-  sumber_kas: 'BANK' as SumberKas,
-  kategori: '',
-  keterangan: '',
-  id_order: '',
-  nama_penerbit: '',
-  jenis_pembayaran: '',
-})
+const selectedMutasiRow = ref<MutasiRow | null>(null)
 
 // Publisher combobox options (matches App 1 ComboboxInput standard)
 const penerbitOptions = computed<ComboboxOption[]>(() => {
@@ -864,6 +587,11 @@ function formatKmKeterangan(k: KasMasuk): string {
   return `${formatJenisPembayaran(k.jenis_pembayaran)} — ${penerbitStr}`
 }
 
+function getDriveFileUrl(fileId: string): string {
+  if (fileId.startsWith('http')) return fileId
+  return `https://drive.google.com/file/d/${fileId}/view`
+}
+
 const allMutasi = computed<MutasiRow[]>(() => {
   const list: MutasiRow[] = []
 
@@ -919,238 +647,48 @@ const filteredMutasi = computed(() => {
   })
 })
 
-// Input number formatters
-function onKmNominalInput(e: Event) {
-  const input = e.target as HTMLInputElement
-  const clean = input.value.replace(/\D/g, '')
-  const num = parseInt(clean, 10) || 0
-  kmForm.value.nominal = num
-  input.value = num ? num.toLocaleString('id-ID') : ''
+// Load More / Pagination State untuk Mutasi Kas
+const MUTASI_PAGE_SIZE = 25
+const mutasiDisplayLimit = ref(MUTASI_PAGE_SIZE)
+
+// Reset batas mutasi kas jika filter atau pencarian berubah
+watch([activeTab, dateFilter, searchQuery], () => {
+  mutasiDisplayLimit.value = MUTASI_PAGE_SIZE
+})
+
+const displayedMutasi = computed(() => {
+  return filteredMutasi.value.slice(0, mutasiDisplayLimit.value)
+})
+
+const hasMoreMutasi = computed(() => {
+  return displayedMutasi.value.length < filteredMutasi.value.length
+})
+
+const nextMutasiBatchCount = computed(() => {
+  return Math.min(MUTASI_PAGE_SIZE, filteredMutasi.value.length - displayedMutasi.value.length)
+})
+
+function loadMoreMutasi() {
+  mutasiDisplayLimit.value += MUTASI_PAGE_SIZE
 }
 
-function onKkNominalInput(e: Event) {
-  const input = e.target as HTMLInputElement
-  const clean = input.value.replace(/\D/g, '')
-  const num = parseInt(clean, 10) || 0
-  kkForm.value.nominal = num
-  input.value = num ? num.toLocaleString('id-ID') : ''
+function showAllMutasi() {
+  mutasiDisplayLimit.value = filteredMutasi.value.length
 }
 
-function handleKmPhotoChange(uploadData: { base64: string; filename: string } | null) {
-  if (uploadData) {
-    kmPhotoBase64.value = uploadData.base64
-    kmPhotoFilename.value = uploadData.filename
-  } else {
-    kmPhotoBase64.value = ''
-    kmPhotoFilename.value = ''
-  }
-}
-
-function handleKkPhotoChange(uploadData: { base64: string; filename: string } | null) {
-  if (uploadData) {
-    kkPhotoBase64.value = uploadData.base64
-    kkPhotoFilename.value = uploadData.filename
-  } else {
-    kkPhotoBase64.value = ''
-    kkPhotoFilename.value = ''
-  }
-}
-
-// Submissions
-async function submitKasMasuk() {
-  if (!kmForm.value.nominal || kmForm.value.nominal <= 0) {
-    showToast('Nominal harus lebih besar dari 0', 'error')
-    return
-  }
-  if (kmForm.value.jenis_pembayaran === 'DEPOSIT' && !kmForm.value.nama_penerbit.trim()) {
-    showToast('Nama Penerbit / Klien wajib diisi untuk Deposit Saldo', 'error')
-    return
-  }
-
-  isSubmittingKm.value = true
-  try {
-    const res = await api.createKasMasuk({
-      id_order: null,
-      jenis_pembayaran: kmForm.value.jenis_pembayaran,
-      nominal: kmForm.value.nominal,
-      metode: kmForm.value.metode,
-      diinput_oleh: authStore.nama || 'OWNER',
-      status_verifikasi: 'VERIFIED',
-      nama_penerbit: kmForm.value.nama_penerbit?.trim(),
-      tanggal: kmForm.value.tanggal,
-      keterangan: kmForm.value.keterangan?.trim(),
-      foto_base64: kmPhotoBase64.value || undefined,
-      foto_filename: kmPhotoFilename.value || undefined,
-    })
-
-    if (res.success) {
-      showKasMasukModal.value = false
-      showToast(`Kas Masuk ${formatRupiah(kmForm.value.nominal)} berhasil dicatat!`, 'success')
-      kmForm.value = {
-        tanggal: getTodayISO(),
-        jenis_pembayaran: 'DEPOSIT',
-        nama_penerbit: '',
-        nominal: 0,
-        metode: 'BANK',
-        keterangan: '',
-      }
-      kmPhotoBase64.value = ''
-      kmPhotoFilename.value = ''
-      await loadData()
-    } else {
-      showToast('Gagal menyimpan kas masuk: ' + (res.error || 'Terjadi kesalahan'), 'error')
-    }
-  } catch (err: any) {
-    console.error('Submit kas masuk error:', err)
-    showToast(err?.message || 'Terjadi kesalahan jaringan saat menyimpan kas masuk.', 'error')
-  } finally {
-    isSubmittingKm.value = false
-  }
-}
-
-async function submitKasKeluar() {
-  if (!kkForm.value.nominal || kkForm.value.nominal <= 0) {
-    showToast('Nominal harus lebih besar dari 0', 'error')
-    return
-  }
-  if (!kkForm.value.kategori) {
-    showToast('Pilih kategori pengeluaran terlebih dahulu', 'error')
-    return
-  }
-  if (!kkForm.value.rincian.trim()) {
-    showToast('Rincian pengeluaran wajib diisi', 'error')
-    return
-  }
-
-  isSubmittingKk.value = true
-  try {
-    const res = await api.createKasKeluar({
-      tanggal: kkForm.value.tanggal,
-      kategori: kkForm.value.kategori,
-      rincian: kkForm.value.rincian.trim(),
-      nominal: kkForm.value.nominal,
-      sumber_kas: kkForm.value.sumber_kas,
-      diinput_oleh: authStore.nama || 'OWNER',
-      foto_base64: kkPhotoBase64.value || undefined,
-      foto_filename: kkPhotoFilename.value || undefined,
-    })
-
-    if (res.success) {
-      showKasKeluarModal.value = false
-      showToast(`Kas Keluar ${formatRupiah(kkForm.value.nominal)} berhasil disimpan!`, 'success')
-      kkForm.value = {
-        tanggal: getTodayISO(),
-        kategori: '' as KategoriKasKeluar,
-        rincian: '',
-        nominal: 0,
-        sumber_kas: 'KASIR_TUNAI',
-      }
-      kkPhotoBase64.value = ''
-      kkPhotoFilename.value = ''
-      await loadData()
-    } else {
-      showToast('Gagal menyimpan kas keluar: ' + (res.error || 'Terjadi kesalahan'), 'error')
-    }
-  } catch (err: any) {
-    console.error('Submit kas keluar error:', err)
-    showToast(err?.message || 'Terjadi kesalahan jaringan saat menyimpan kas keluar.', 'error')
-  } finally {
-    isSubmittingKk.value = false
-  }
-}
-
-function onEditNominalInput(e: Event) {
-  const input = e.target as HTMLInputElement
-  const clean = input.value.replace(/\D/g, '')
-  const num = parseInt(clean, 10) || 0
-  editForm.value.nominal = num
-}
-
+// Modal handlers
 function openEditModal(row: MutasiRow) {
-  const raw = row.raw as any
-  editForm.value = {
-    id: row.id,
-    tipe: row.tipe,
-    tanggal: row.tanggal ? row.tanggal.split('T')[0] : getTodayISO(),
-    nominal: row.nominal,
-    sumber_kas: (row.sumber_kas as SumberKas) || 'BANK',
-    kategori: raw?.kategori || '',
-    keterangan: raw?.rincian || raw?.keterangan || '',
-    id_order: raw?.id_order || '',
-    nama_penerbit: raw?.nama_penerbit || '',
-    jenis_pembayaran: raw?.jenis_pembayaran || '',
-  }
+  selectedMutasiRow.value = row
   showEditModal.value = true
 }
 
-async function submitEditMutasi() {
-  if (!editForm.value.id || editForm.value.nominal <= 0) return
-  isSubmittingEdit.value = true
-  try {
-    if (editForm.value.tipe === 'MASUK') {
-      const res = await api.updateKasMasuk({
-        id_kas_masuk: editForm.value.id,
-        tanggal: editForm.value.tanggal,
-        nominal: editForm.value.nominal,
-        metode: editForm.value.sumber_kas,
-        keterangan: editForm.value.keterangan,
-        nama_penerbit: editForm.value.nama_penerbit,
-      })
-      if (!res.success) {
-        showToast(res.error || 'Gagal memperbarui Kas Masuk', 'error')
-        return
-      }
-    } else {
-      const res = await api.updateKasKeluar({
-        id_kas_keluar: editForm.value.id,
-        tanggal: editForm.value.tanggal,
-        nominal: editForm.value.nominal,
-        kategori: editForm.value.kategori,
-        sumber_kas: editForm.value.sumber_kas,
-        rincian: editForm.value.keterangan,
-      })
-      if (!res.success) {
-        showToast(res.error || 'Gagal memperbarui Kas Keluar', 'error')
-        return
-      }
-    }
-    showEditModal.value = false
-    showToast('Data mutasi kas berhasil diperbarui!', 'success')
-    await loadData()
-  } catch (err: any) {
-    showToast(err?.message || 'Terjadi kesalahan saat menyimpan perubahan', 'error')
-  } finally {
-    isSubmittingEdit.value = false
-  }
+async function onModalSuccess(msg: string) {
+  showToast(msg, 'success')
+  await loadData()
 }
 
-async function executeDeleteMutasi() {
-  if (!editForm.value.id) return
-
-  isSubmittingEdit.value = true
-  try {
-    if (editForm.value.tipe === 'MASUK') {
-      const res = await api.deleteKasMasuk(editForm.value.id)
-      if (!res.success) {
-        showToast(res.error || 'Gagal membatalkan Kas Masuk', 'error')
-        return
-      }
-    } else {
-      const res = await api.deleteKasKeluar(editForm.value.id)
-      if (!res.success) {
-        showToast(res.error || 'Gagal menghapus Kas Keluar', 'error')
-        return
-      }
-    }
-    showDeleteMutasiConfirmModal.value = false
-    showEditModal.value = false
-    showToast('Data mutasi kas berhasil dihapus!', 'success')
-    await loadData()
-  } catch (err: any) {
-    showToast(err?.message || 'Terjadi kesalahan saat menghapus data', 'error')
-  } finally {
-    isSubmittingEdit.value = false
-  }
+function onModalError(msg: string) {
+  showToast(msg, 'error')
 }
 
 async function exportExcel() {
@@ -1188,27 +726,11 @@ async function exportExcel() {
 }
 
 async function loadData(force = false) {
-  isLoading.value = true
-  try {
-    const params = force ? { nocache: 'true' } : undefined
-    const [kmRes, kkRes, clRes, ordRes] = await Promise.all([
-      api.getKasMasuk(params),
-      api.getKasKeluar(params),
-      api.getClients(params).catch(() => ({ success: false, data: [] })),
-      api.getOrders(params).catch(() => ({ success: false, data: [] })),
-    ])
-
-    if (kmRes.success && kmRes.data) kasMasukList.value = kmRes.data
-    if (kkRes.success && kkRes.data) kasKeluarList.value = kkRes.data
-    if (clRes.success && clRes.data) clientsList.value = clRes.data
-    if (ordRes.success && ordRes.data) ordersList.value = ordRes.data
-  } finally {
-    isLoading.value = false
-  }
+  await financeStore.loadFinanceData({ force })
 }
 
 onMounted(() => {
-  loadData(true)
+  loadData(false)
   if (route.query.action === 'input-kas-masuk') {
     showKasMasukModal.value = true
   } else if (route.query.action === 'input-kas-keluar') {

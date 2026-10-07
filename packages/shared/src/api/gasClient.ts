@@ -37,12 +37,17 @@ function notifyNetworkStatus(isOnline: boolean) {
 
 // ============================================================
 // GAS API CLIENT
-// Ganti GAS_URL setelah deploy Google Apps Script
+// Konfigurasi GAS_URL dapat diatur via .env (VITE_GAS_URL)
+// atau GitHub Secrets saat build CI/CD.
 // ============================================================
 
 export const CONFIG = {
-  GAS_URL: 'https://script.google.com/macros/s/AKfycbwGVC-HCtsQygsRgrAUSlF4V-IpU5pCHEojxO02tUWLMGq-Dz1CQHtVmV4MnNPzJYcFOA/exec',
-  APP_NAME: 'KBM Percetakan',
+  GAS_URL:
+    ((import.meta.env?.VITE_GAS_URL as string | undefined)?.trim()) ||
+    'https://script.google.com/macros/s/AKfycbwGVC-HCtsQygsRgrAUSlF4V-IpU5pCHEojxO02tUWLMGq-Dz1CQHtVmV4MnNPzJYcFOA/exec',
+  APP_NAME:
+    ((import.meta.env?.VITE_APP_NAME as string | undefined)?.trim()) ||
+    'KBM Percetakan',
 }
 
 // ---- Timeout helper ----
@@ -214,16 +219,16 @@ export const api = {
     })
     return res
   },
-  deleteOrder: async (id_order: string) => {
-    const res = await gasPost<{ id_order: string }>('deleteOrder', { id_order })
+  deleteOrder: async (id_order: string, permanent = false) => {
+    const res = await gasPost<{ id_order: string }>('deleteOrder', { id_order, permanent })
     tryLogSync({
       entity_type: 'ORDER',
-      title: `Batalkan Order: ${id_order}`,
+      title: permanent ? `Hapus Permanen Order: ${id_order}` : `Batalkan Order: ${id_order}`,
       subtitle: `ID: ${id_order}`,
       nominal: 0,
       status: res.success ? 'SYNCED' : 'FAILED',
       action: 'deleteOrder',
-      payload: { id_order },
+      payload: { id_order, permanent },
       error_message: res.error,
     })
     return res
@@ -336,6 +341,15 @@ export const api = {
   // Clients
   getClients: (params?: { nocache?: boolean | string }) =>
     gasGet<import('../types').Client[]>('getClients', params ?? {}),
+
+  // Bundle Finansial Terpadu (1 round-trip HTTP)
+  getFinanceBundle: (params?: { nocache?: boolean | string }) =>
+    gasGet<{
+      orders: import('../types').Order[]
+      kas_masuk: import('../types').KasMasuk[]
+      kas_keluar: import('../types').KasKeluar[]
+      clients: import('../types').Client[]
+    }>('getFinanceBundle', params ?? {}),
 
   // Reset & Maintenance
   resetData: (payload: {

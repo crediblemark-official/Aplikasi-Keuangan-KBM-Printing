@@ -56,6 +56,7 @@ function doGet(e) {
       'getKasMasuk': () => handleGetKasMasuk(e.parameter),
       'getKasKeluar': () => handleGetKasKeluar(e.parameter),
       'getClients': () => handleGetClients(e.parameter),
+      'getFinanceBundle': () => handleGetFinanceBundle(e.parameter),
       'getSummaryReport': () => handleGetSummaryReport(e.parameter),
     };
 
@@ -83,6 +84,7 @@ function doPost(e) {
     const handlers = {
       'ping': () => ({ success: true, message: 'pong', timestamp: Date.now() }),
       'getOrders': () => handleGetOrders(e.parameter),
+      'getFinanceBundle': () => handleGetFinanceBundle(body || e.parameter),
       'createOrder': () => handleCreateOrder(body),
       'updateOrder': () => handleUpdateOrder(body),
       'deleteOrder': () => handleDeleteOrder(body),
@@ -110,28 +112,72 @@ function doPost(e) {
   }
 }
 
-// ---- CACHING SERVICE HELPERS (Hemat Kuota Eksekusi GAS) ------
+// ---- CACHING SERVICE HELPERS (Hemat Kuota Eksekusi GAS & Chunked Cache) ------
 const CACHE_TTL_SECONDS = 120; // 2 menit
+const CACHE_CHUNK_SIZE = 90000; // Limit aman per-item (limit absolut GAS = 100.000 karakter)
 
 function getScriptCache(key) {
   try {
-    const raw = CacheService.getScriptCache().get(key);
+    const cache = CacheService.getScriptCache();
+    // 1. Cek apakah tersimpan dalam mode chunked (multi-part)
+    const chunksMeta = cache.get(key + '__chunks');
+    if (chunksMeta) {
+      const numChunks = parseInt(chunksMeta, 10);
+      if (!isNaN(numChunks) && numChunks > 0) {
+        const chunkKeys = [];
+        for (let i = 0; i < numChunks; i++) {
+          chunkKeys.push(key + '__chunk_' + i);
+        }
+        const chunkMap = cache.getAll(chunkKeys);
+        let fullStr = '';
+        for (let i = 0; i < numChunks; i++) {
+          const part = chunkMap[key + '__chunk_' + i];
+          if (!part) {
+            // Sebagian chunk hilang/expired, batalkan cache
+            return null;
+          }
+          fullStr += part;
+        }
+        return JSON.parse(fullStr);
+      }
+    }
+
+    // 2. Cek penyimpanan standar single-item
+    const raw = cache.get(key);
     if (raw) return JSON.parse(raw);
   } catch (e) {
-    Logger.log('Cache read notice: ' + e);
+    Logger.log('Cache read notice (' + key + '): ' + e);
   }
   return null;
 }
 
 function putScriptCache(key, data, ttlSeconds = CACHE_TTL_SECONDS) {
   try {
+    const cache = CacheService.getScriptCache();
     const str = JSON.stringify(data);
-    // Limit per item di CacheService adalah 100KB
-    if (str.length < 100000) {
-      CacheService.getScriptCache().put(key, str, ttlSeconds);
+
+    // Jika ukuran di bawah limit, simpan langsung
+    if (str.length <= CACHE_CHUNK_SIZE) {
+      cache.put(key, str, ttlSeconds);
+      cache.remove(key + '__chunks');
+      return;
     }
+
+    // Payload besar: pecah ke dalam chunk multi-part (bypass limit 100KB)
+    const numChunks = Math.ceil(str.length / CACHE_CHUNK_SIZE);
+    if (numChunks > 30) {
+      Logger.log('Cache put warning: payload melebihi 2.5MB, melewati cache memory.');
+      return;
+    }
+
+    const chunkEntries = {};
+    chunkEntries[key + '__chunks'] = String(numChunks);
+    for (let i = 0; i < numChunks; i++) {
+      chunkEntries[key + '__chunk_' + i] = str.substring(i * CACHE_CHUNK_SIZE, (i + 1) * CACHE_CHUNK_SIZE);
+    }
+    cache.putAll(chunkEntries, ttlSeconds);
   } catch (e) {
-    Logger.log('Cache put notice: ' + e);
+    Logger.log('Cache put notice (' + key + '): ' + e);
   }
 }
 
@@ -139,12 +185,27 @@ function invalidateCache(keys) {
   try {
     const cache = CacheService.getScriptCache();
     let allKeys = Array.isArray(keys) ? keys.slice() : [keys];
+
+    // Otomatis invalidasi bundle finansial jika ada entitas data yang diubah
+    allKeys.push('finance_bundle_all');
+
     // Selalu invalidasi cache laporan summary agar tidak basi setelah mutasi data
     const summaryPeriods = getScriptCache('__summary_periods');
     if (Array.isArray(summaryPeriods) && summaryPeriods.length) {
       allKeys = allKeys.concat(summaryPeriods.map(p => 'summary_report_' + p));
     }
-    cache.removeAll(allKeys);
+
+    // Perluas seluruh keys untuk menyertakan kemungkinan pecahan chunk
+    const expandedKeys = [];
+    allKeys.forEach(k => {
+      expandedKeys.push(k);
+      expandedKeys.push(k + '__chunks');
+      for (let i = 0; i < 30; i++) {
+        expandedKeys.push(k + '__chunk_' + i);
+      }
+    });
+
+    cache.removeAll(expandedKeys);
   } catch (e) {
     Logger.log('Cache invalidate notice: ' + e);
   }
@@ -156,7 +217,8 @@ function invalidateAllCaches() {
     'kas_masuk_all',
     'dashboard_summary',
     'clients_all',
-    'kas_keluar_all'
+    'kas_keluar_all',
+    'finance_bundle_all'
   ]);
 }
 
@@ -657,10 +719,14 @@ function handleDeleteOrder(body) {
 
     for (let i = 1; i < data.length; i++) {
       if (String(data[i][idCol]).trim() === String(id_order).trim()) {
-        sheet.getRange(i + 1, statusCol + 1).setValue('BATAL');
+        if (body.permanent === true) {
+          sheet.deleteRow(i + 1);
+        } else {
+          sheet.getRange(i + 1, statusCol + 1).setValue('BATAL');
+        }
         SpreadsheetApp.flush();
         invalidateCache(['orders_all', 'kas_masuk_all', 'dashboard_summary']);
-        return { success: true, data: { id_order } };
+        return { success: true, data: { id_order, permanent: body.permanent === true } };
       }
     }
     return { success: false, error: 'Order tidak ditemukan' };
@@ -1256,6 +1322,32 @@ function addClientIfNew(nama_penerbit, kontak, alamat) {
       }
     }
   }
+}
+
+// ---- BUNDLE FINANSIAL TERPADU (Single Network Round-Trip) ----
+function handleGetFinanceBundle(params) {
+  params = params || {};
+  const nocache = params.nocache === 'true' || params.nocache === true || params.force === 'true';
+  if (!nocache) {
+    const cached = getScriptCache('finance_bundle_all');
+    if (cached) return { success: true, data: cached, _cached: true };
+  }
+
+  // Ambil data orders, kas masuk, kas keluar, dan clients dalam 1 eksekusi
+  const ordersRes = handleGetOrders(params);
+  const kmRes = handleGetKasMasuk(params);
+  const kkRes = handleGetKasKeluar(params);
+  const clientsRes = handleGetClients(params);
+
+  const bundleData = {
+    orders: (ordersRes && ordersRes.success && ordersRes.data) ? ordersRes.data : [],
+    kas_masuk: (kmRes && kmRes.success && kmRes.data) ? kmRes.data : [],
+    kas_keluar: (kkRes && kkRes.success && kkRes.data) ? kkRes.data : [],
+    clients: (clientsRes && clientsRes.success && clientsRes.data) ? clientsRes.data : []
+  };
+
+  putScriptCache('finance_bundle_all', bundleData, CACHE_TTL_SECONDS);
+  return { success: true, data: bundleData };
 }
 
 // ---- UTILS ----

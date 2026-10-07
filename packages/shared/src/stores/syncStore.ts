@@ -348,8 +348,8 @@ export const useSyncStore = defineStore('sync', () => {
           break
         }
         case 'deleteOrder': {
-          const { id_order } = item.payload as any
-          res = await api.deleteOrder(id_order)
+          const { id_order, permanent } = item.payload as any
+          res = await api.deleteOrder(id_order, permanent)
           break
         }
         case 'verifyKasMasuk': {

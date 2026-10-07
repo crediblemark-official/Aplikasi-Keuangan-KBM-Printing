@@ -1,5 +1,5 @@
 <template>
-  <div class="flex w-full h-full min-h-screen bg-white">
+  <div class="flex w-full h-full overflow-hidden bg-white">
     <!-- Desktop Sidebar (Direct Universal Shared Component) -->
     <DesktopSidebar
       brand-title="KBM Dashboard"

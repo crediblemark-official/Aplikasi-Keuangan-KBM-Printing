@@ -27,6 +27,19 @@
           </div>
           <button
             type="button"
+            @click="orderStore.refreshOrders()"
+            :disabled="orderStore.isLoading || orderStore.isRefreshing"
+            class="h-8 px-2 sm:px-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 text-xs font-semibold inline-flex items-center gap-1.5 transition-all shadow-2xs shrink-0 cursor-pointer disabled:opacity-50"
+            title="Segarkan Data Operasional"
+          >
+            <svg class="w-3.5 h-3.5" :class="{ 'animate-spin': orderStore.isLoading || orderStore.isRefreshing }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span class="hidden sm:inline">{{ orderStore.isRefreshing ? 'Menyinkronkan...' : 'Refresh' }}</span>
+          </button>
+          <button
+            type="button"
             @click="logout"
             title="Keluar / Logout"
             class="flex items-center justify-center w-8 h-8 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100 transition-colors text-xs font-semibold cursor-pointer shrink-0"

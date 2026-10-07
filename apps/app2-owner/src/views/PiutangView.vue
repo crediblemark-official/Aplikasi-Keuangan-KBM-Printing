@@ -10,13 +10,15 @@
           />
         </div>
         <button
-          @click="loadData"
-          class="btn-secondary h-8 text-xs font-semibold inline-flex items-center gap-1.5 px-2.5 rounded-md cursor-pointer"
+          @click="loadData(true)"
+          :disabled="isLoading || isRefreshing"
+          class="btn-secondary h-8 text-xs font-semibold inline-flex items-center gap-1.5 px-2.5 rounded-md cursor-pointer disabled:opacity-50"
+          title="Segarkan Data Piutang"
         >
-          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg class="w-3.5 h-3.5" :class="{ 'animate-spin': isLoading || isRefreshing }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          <span class="hidden sm:inline">Refresh</span>
+          <span class="hidden sm:inline">{{ isRefreshing ? 'Menyinkronkan...' : 'Refresh' }}</span>
         </button>
       </template>
     </PageHeader>
@@ -24,8 +26,8 @@
     <!-- Summary Metrics Strip -->
     <MetricStrip :items="summaryMetrics" />
 
-    <!-- Main Tab Selector Bar -->
-    <div class="px-[8px] sm:px-[15px] lg:px-[20px] py-2.5 border-b border-slate-200 bg-slate-50/60 flex flex-wrap items-center justify-between gap-2.5">
+    <!-- Main Tab Selector Bar (Sticky) -->
+    <div class="sticky top-0 z-30 px-[8px] sm:px-[15px] lg:px-[20px] py-2.5 border-b border-slate-200 bg-white flex flex-wrap items-center justify-between gap-2.5 shadow-xs">
       <div class="inline-flex p-1 bg-slate-200/80 rounded-xl gap-1">
         <button
           @click="mainTab = 'PIUTANG'"
@@ -331,7 +333,8 @@ import TableStateRow from '@shared/components/TableStateRow.vue'
 import TableScrollWrapper from '@shared/components/TableScrollWrapper.vue'
 import BaseModal from '@shared/components/BaseModal.vue'
 import BaseButton from '@shared/components/BaseButton.vue'
-import { api } from '@shared/api/gasClient'
+import { useFinanceStore } from '../stores/finance'
+import { storeToRefs } from 'pinia'
 import {
   formatRupiah,
   formatFinishing,
@@ -343,11 +346,17 @@ import {
 } from '@shared/utils/formatters'
 import type { Order, KasMasuk, PiutangRow } from '@shared/types'
 
-const isLoading = ref(false)
+const financeStore = useFinanceStore()
+const {
+  ordersList: rawOrdersList,
+  kasMasukList: rawKasMasukList,
+  isLoading,
+  isRefreshing,
+} = storeToRefs(financeStore)
+
 const mainTab = ref<'PIUTANG' | 'DEPOSIT'>('PIUTANG')
 
 // Tab 1 state
-const rows = ref<PiutangRow[]>([])
 const search = ref('')
 const statusFilter = ref('ALL')
 
@@ -359,8 +368,6 @@ const statusFilters = [
 ]
 
 // Tab 2 state
-const rawOrdersList = ref<Order[]>([])
-const rawKasMasukList = ref<KasMasuk[]>([])
 const depositFilter = ref('ALL')
 const selectedDepositPublisher = ref<PublisherDepositSummary | null>(null)
 const showDetailModal = ref(false)
@@ -569,47 +576,35 @@ const summaryMetrics = computed(() => {
   ]
 })
 
-async function loadData() {
-  isLoading.value = true
-  try {
-    const [ordersRes, kmRes] = await Promise.all([
-      api.getOrders(),
-      api.getKasMasuk(),
-    ])
-
-    if (ordersRes.success && ordersRes.data && kmRes.success && kmRes.data) {
-      const orders: Order[] = ordersRes.data
-      const kasMasukList: KasMasuk[] = kmRes.data
-
-      rawOrdersList.value = orders
-      rawKasMasukList.value = kasMasukList
-
-      rows.value = orders.map((order) => {
-        const payments = kasMasukList.filter(
-          (k) => k.id_order === order.id_order && (k as any).status_verifikasi !== 'BATAL',
-        )
-        const total_masuk = payments.reduce((s, k) => s + k.nominal, 0)
-        const total_masuk_verified = payments
-          .filter((k) => k.status_verifikasi === 'VERIFIED')
-          .reduce((s, k) => s + k.nominal, 0)
-        const has_pending = payments.some((k) => k.status_verifikasi === 'PENDING')
-        // Sudut pandang owner: sisa tagihan & status bayar dihitung dari pembayaran TERVERIFIKASI saja
-        const sisa_tagihan = Math.max(0, order.total_harga - total_masuk_verified)
-        const status_bayar = hitungStatusBayar(total_masuk_verified, order.total_harga)
-        return {
-          order,
-          total_masuk,
-          total_masuk_verified,
-          has_pending,
-          sisa_tagihan,
-          status_bayar,
-        }
-      })
+const rows = computed<PiutangRow[]>(() => {
+  return rawOrdersList.value.map((order) => {
+    const payments = rawKasMasukList.value.filter(
+      (k) => k.id_order === order.id_order && (k as any).status_verifikasi !== 'BATAL',
+    )
+    const total_masuk = payments.reduce((s, k) => s + k.nominal, 0)
+    const total_masuk_verified = payments
+      .filter((k) => k.status_verifikasi === 'VERIFIED')
+      .reduce((s, k) => s + k.nominal, 0)
+    const has_pending = payments.some((k) => k.status_verifikasi === 'PENDING')
+    // Sudut pandang owner: sisa tagihan & status bayar dihitung dari pembayaran TERVERIFIKASI saja
+    const sisa_tagihan = Math.max(0, order.total_harga - total_masuk_verified)
+    const status_bayar = hitungStatusBayar(total_masuk_verified, order.total_harga)
+    return {
+      order,
+      total_masuk,
+      total_masuk_verified,
+      has_pending,
+      sisa_tagihan,
+      status_bayar,
     }
-  } finally {
-    isLoading.value = false
-  }
+  })
+})
+
+async function loadData(force = false) {
+  await financeStore.loadFinanceData({ force })
 }
 
-onMounted(loadData)
+onMounted(() => {
+  loadData(false)
+})
 </script>

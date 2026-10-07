@@ -18,13 +18,14 @@
 
         <!-- Refresh Button -->
         <button
-          @click="loadData"
-          class="btn-secondary h-8 text-xs font-semibold inline-flex items-center gap-1.5 px-2.5 rounded-md cursor-pointer shrink-0"
+          @click="loadData(true)"
+          :disabled="isLoading || isRefreshing"
+          class="btn-secondary h-8 text-xs font-semibold inline-flex items-center gap-1.5 px-2.5 rounded-md cursor-pointer shrink-0 disabled:opacity-50"
         >
-          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg class="w-3.5 h-3.5" :class="{ 'animate-spin': isLoading || isRefreshing }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          <span class="hidden sm:inline">Refresh</span>
+          <span class="hidden sm:inline">{{ isRefreshing ? 'Menyinkronkan...' : 'Refresh' }}</span>
         </button>
 
         <!-- Catat Pembayaran Order Button -->
@@ -43,8 +44,8 @@
     <!-- Summary Metrics Strip -->
     <MetricStrip :items="summaryMetrics" />
 
-    <!-- Control Bar: Date Filter, Status Filter & Ringkasan -->
-    <div class="px-[8px] sm:px-[15px] lg:px-[20px] py-2.5 border-b border-slate-200 bg-white flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+    <!-- Control Bar: Date Filter, Status Filter & Ringkasan (Sticky) -->
+    <div class="sticky top-0 z-30 px-[8px] sm:px-[15px] lg:px-[20px] py-2.5 border-b border-slate-200 bg-white flex flex-col md:flex-row md:items-center justify-between gap-2.5 shadow-xs">
       <!-- Date Filter Bar (Tanggal, Bulan, Tahun, Rentang) -->
       <DateFilterBar v-model="dateFilter" />
 
@@ -71,7 +72,12 @@
 
         <!-- Info Count -->
         <div class="text-xs text-slate-500 font-medium shrink-0 whitespace-nowrap">
-          <strong class="text-slate-800">{{ filteredPiutangRows.length }}</strong> order
+          <span v-if="hasMoreRows">
+            Menampilkan <strong class="text-slate-800">{{ displayedPiutangRows.length }}</strong> dari <strong class="text-slate-800">{{ filteredPiutangRows.length }}</strong> order
+          </span>
+          <span v-else>
+            <strong class="text-slate-800">{{ filteredPiutangRows.length }}</strong> order
+          </span>
         </div>
       </div>
     </div>
@@ -121,7 +127,7 @@
           />
 
           <tr
-            v-for="row in filteredPiutangRows"
+            v-for="row in displayedPiutangRows"
             :key="row.order.id_order"
             class="group/row hover:bg-slate-50/70 transition-colors"
           >
@@ -171,40 +177,55 @@
 
             <!-- Tgl DP -->
             <td class="align-top py-3 whitespace-nowrap text-xs text-slate-700 border-l-2 border-amber-300 bg-amber-50/40 group-hover/row:bg-amber-100/70 transition-colors">
-              <template v-for="tx in row.payments.filter(t => t.jenis_pembayaran === 'DP')" :key="tx.id">
+              <template v-for="tx in row.dpPayments" :key="tx.id">
                 <div>{{ formatTanggal(tx.tanggal) }}</div>
               </template>
-              <span v-if="row.payments.filter(t => t.jenis_pembayaran === 'DP').length === 0" class="text-slate-300 italic">—</span>
+              <span v-if="row.dpPayments.length === 0" class="text-slate-300 italic">—</span>
             </td>
 
             <!-- Nominal DP -->
-            <td class="text-right align-top py-3 whitespace-nowrap text-xs font-mono font-bold bg-amber-50/40 group-hover/row:bg-amber-100/70 transition-colors"
-              :class="row.payments.filter(t => t.jenis_pembayaran === 'DP').some(t => t.status_verifikasi === 'PENDING') ? 'text-amber-700' : 'text-slate-900'">
-              <template v-for="tx in row.payments.filter(t => t.jenis_pembayaran === 'DP')" :key="tx.id">
+            <td
+              class="text-right align-top py-3 whitespace-nowrap text-xs font-mono font-bold bg-amber-50/40 group-hover/row:bg-amber-100/70 transition-colors"
+              :class="row.dpPending ? 'text-amber-700' : 'text-slate-900'"
+            >
+              <template v-for="tx in row.dpPayments" :key="tx.id">
                 <div>{{ formatRupiah(tx.nominal) }}</div>
               </template>
-              <span v-if="row.payments.filter(t => t.jenis_pembayaran === 'DP').length === 0" class="text-slate-300 font-normal italic">—</span>
+              <span v-if="row.dpPayments.length === 0" class="text-slate-300 font-normal italic">—</span>
             </td>
 
             <!-- Metode DP -->
             <td class="align-top py-3 whitespace-nowrap text-xs text-slate-700 bg-amber-50/40 group-hover/row:bg-amber-100/70 transition-colors">
-              <template v-for="tx in row.payments.filter(t => t.jenis_pembayaran === 'DP')" :key="tx.id">
+              <template v-for="tx in row.dpPayments" :key="tx.id">
                 <div>{{ formatMetode(tx.metode) }}</div>
               </template>
-              <span v-if="row.payments.filter(t => t.jenis_pembayaran === 'DP').length === 0" class="text-slate-300 italic">—</span>
+              <span v-if="row.dpPayments.length === 0" class="text-slate-300 italic">—</span>
             </td>
 
             <!-- Bukti/Status DP -->
             <td class="text-center align-top py-3 text-xs bg-amber-50/40 group-hover/row:bg-amber-100/70 transition-colors">
-              <template v-for="tx in row.payments.filter(t => t.jenis_pembayaran === 'DP')" :key="tx.id">
+              <template v-for="tx in row.dpPayments" :key="tx.id">
                 <div class="flex items-center justify-center gap-1">
-                  <a v-if="tx.fileId" :href="`https://drive.google.com/file/d/${tx.fileId}/view`" target="_blank" rel="noopener"
-                    class="text-blue-600 hover:text-blue-800 font-bold underline cursor-pointer">Resi</a>
-                  <button v-if="tx.status_verifikasi === 'PENDING'" @click.stop="verifyTx(tx)" :disabled="verifyingId === tx.id"
-                    type="button" class="px-1.5 py-0.5 font-bold rounded bg-amber-500 hover:bg-amber-600 text-white cursor-pointer transition-colors">
+                  <a
+                    v-if="tx.fileId"
+                    :href="`https://drive.google.com/file/d/${tx.fileId}/view`"
+                    target="_blank"
+                    rel="noopener"
+                    class="text-blue-600 hover:text-blue-800 font-bold underline cursor-pointer"
+                  >
+                    Resi
+                  </a>
+                  <button
+                    v-if="tx.status_verifikasi === 'PENDING'"
+                    @click.stop="verifyTx(tx)"
+                    :disabled="verifyingId === tx.id"
+                    type="button"
+                    class="px-1.5 py-0.5 font-bold rounded bg-amber-500 hover:bg-amber-600 text-white cursor-pointer transition-colors"
+                  >
                     {{ verifyingId === tx.id ? '...' : 'Verif' }}
                   </button>
                   <span v-else class="text-emerald-600 font-bold" title="Terverifikasi">✓</span>
+
                   <!-- Tombol Edit Pembayaran DP -->
                   <button
                     @click.stop="openEditPaymentModal(tx, row.order)"
@@ -218,45 +239,60 @@
                   </button>
                 </div>
               </template>
-              <span v-if="row.payments.filter(t => t.jenis_pembayaran === 'DP').length === 0" class="text-slate-300 italic">—</span>
+              <span v-if="row.dpPayments.length === 0" class="text-slate-300 italic">—</span>
             </td>
 
             <!-- Tgl Pelunasan -->
             <td class="align-top py-3 whitespace-nowrap text-xs text-slate-700 border-l-2 border-emerald-300 bg-emerald-50/40 group-hover/row:bg-emerald-100/70 transition-colors">
-              <template v-for="tx in row.payments.filter(t => t.jenis_pembayaran !== 'DP')" :key="tx.id">
+              <template v-for="tx in row.pelunasanPayments" :key="tx.id">
                 <div>{{ formatTanggal(tx.tanggal) }}</div>
               </template>
-              <span v-if="row.payments.filter(t => t.jenis_pembayaran !== 'DP').length === 0" class="text-slate-300 italic">—</span>
+              <span v-if="row.pelunasanPayments.length === 0" class="text-slate-300 italic">—</span>
             </td>
 
             <!-- Nominal Pelunasan -->
-            <td class="text-right align-top py-3 whitespace-nowrap text-xs font-mono font-bold bg-emerald-50/40 group-hover/row:bg-emerald-100/70 transition-colors"
-              :class="row.payments.filter(t => t.jenis_pembayaran !== 'DP').some(t => t.status_verifikasi === 'PENDING') ? 'text-amber-700' : 'text-slate-900'">
-              <template v-for="tx in row.payments.filter(t => t.jenis_pembayaran !== 'DP')" :key="tx.id">
+            <td
+              class="text-right align-top py-3 whitespace-nowrap text-xs font-mono font-bold bg-emerald-50/40 group-hover/row:bg-emerald-100/70 transition-colors"
+              :class="row.pelunasanPending ? 'text-amber-700' : 'text-slate-900'"
+            >
+              <template v-for="tx in row.pelunasanPayments" :key="tx.id">
                 <div>{{ formatRupiah(tx.nominal) }}</div>
               </template>
-              <span v-if="row.payments.filter(t => t.jenis_pembayaran !== 'DP').length === 0" class="text-slate-300 font-normal italic">—</span>
+              <span v-if="row.pelunasanPayments.length === 0" class="text-slate-300 font-normal italic">—</span>
             </td>
 
             <!-- Metode Pelunasan -->
             <td class="align-top py-3 whitespace-nowrap text-xs text-slate-700 bg-emerald-50/40 group-hover/row:bg-emerald-100/70 transition-colors">
-              <template v-for="tx in row.payments.filter(t => t.jenis_pembayaran !== 'DP')" :key="tx.id">
+              <template v-for="tx in row.pelunasanPayments" :key="tx.id">
                 <div>{{ formatMetode(tx.metode) }}</div>
               </template>
-              <span v-if="row.payments.filter(t => t.jenis_pembayaran !== 'DP').length === 0" class="text-slate-300 italic">—</span>
+              <span v-if="row.pelunasanPayments.length === 0" class="text-slate-300 italic">—</span>
             </td>
 
             <!-- Bukti/Status Pelunasan -->
             <td class="text-center align-top py-3 text-xs bg-emerald-50/40 group-hover/row:bg-emerald-100/70 transition-colors">
-              <template v-for="tx in row.payments.filter(t => t.jenis_pembayaran !== 'DP')" :key="tx.id">
+              <template v-for="tx in row.pelunasanPayments" :key="tx.id">
                 <div class="flex items-center justify-center gap-1">
-                  <a v-if="tx.fileId" :href="`https://drive.google.com/file/d/${tx.fileId}/view`" target="_blank" rel="noopener"
-                    class="text-blue-600 hover:text-blue-800 font-bold underline cursor-pointer">Resi</a>
-                  <button v-if="tx.status_verifikasi === 'PENDING'" @click.stop="verifyTx(tx)" :disabled="verifyingId === tx.id"
-                    type="button" class="px-1.5 py-0.5 font-bold rounded bg-amber-500 hover:bg-amber-600 text-white cursor-pointer transition-colors">
+                  <a
+                    v-if="tx.fileId"
+                    :href="`https://drive.google.com/file/d/${tx.fileId}/view`"
+                    target="_blank"
+                    rel="noopener"
+                    class="text-blue-600 hover:text-blue-800 font-bold underline cursor-pointer"
+                  >
+                    Resi
+                  </a>
+                  <button
+                    v-if="tx.status_verifikasi === 'PENDING'"
+                    @click.stop="verifyTx(tx)"
+                    :disabled="verifyingId === tx.id"
+                    type="button"
+                    class="px-1.5 py-0.5 font-bold rounded bg-amber-500 hover:bg-amber-600 text-white cursor-pointer transition-colors"
+                  >
                     {{ verifyingId === tx.id ? '...' : 'Verif' }}
                   </button>
                   <span v-else class="text-emerald-600 font-bold" title="Terverifikasi">✓</span>
+
                   <!-- Tombol Edit Pembayaran Pelunasan -->
                   <button
                     @click.stop="openEditPaymentModal(tx, row.order)"
@@ -270,7 +306,7 @@
                   </button>
                 </div>
               </template>
-              <span v-if="row.payments.filter(t => t.jenis_pembayaran !== 'DP').length === 0" class="text-slate-300 italic">—</span>
+              <span v-if="row.pelunasanPayments.length === 0" class="text-slate-300 italic">—</span>
             </td>
 
             <!-- 6. Sudah Masuk -->
@@ -320,285 +356,70 @@
       </table>
     </TableScrollWrapper>
 
-    <!-- ================================================================= -->
-    <!-- MODAL: CATAT PEMBAYARAN ORDER BARU                                -->
-    <!-- ================================================================= -->
-    <BaseModal v-model="showPaymentModal" title="Catat Pembayaran Order Cetak">
-      <form @submit.prevent="submitPayment" class="space-y-4">
-        <!-- Tanggal & Jenis Bayar -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label class="form-label">Tanggal Bayar *</label>
-            <input v-model="paymentForm.tanggal" type="date" class="form-input bg-white" required />
-          </div>
-          <div>
-            <label class="form-label">Jenis Pembayaran *</label>
-            <select v-model="paymentForm.jenis_pembayaran" class="form-input bg-white font-medium" required>
-              <option value="DP">Uang Muka (DP)</option>
-              <option value="PELUNASAN">Pelunasan Tagihan</option>
-            </select>
-          </div>
-        </div>
+    <!-- Load More Section -->
+    <div
+      v-if="hasMoreRows"
+      class="px-4 py-3.5 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs"
+    >
+      <div class="flex items-center gap-2 text-xs text-slate-600 font-medium">
+        <span>Menampilkan <strong>{{ displayedPiutangRows.length }}</strong> dari total <strong>{{ filteredPiutangRows.length }}</strong> data order</span>
+        <span class="text-slate-300">|</span>
+        <span class="text-slate-500 font-mono">Tersisa {{ filteredPiutangRows.length - displayedPiutangRows.length }} order lagi</span>
+      </div>
 
-        <!-- Pilih Order Cetak (Wajib) -->
-        <div>
-          <label class="form-label">Pilih Transaksi / Order Cetak *</label>
-          <select
-            v-model="paymentForm.id_order"
-            class="form-input bg-white font-medium"
-            required
-          >
-            <option value="" disabled>-- Pilih Order yang akan dibayar --</option>
-            <option v-for="ord in availableOrders" :key="ord.order.id_order" :value="ord.order.id_order">
-              {{ ord.order.id_order }} — {{ ord.order.nama_penerbit }} — {{ ord.order.judul_penulis }} (Sisa: {{ formatRupiah(ord.sisa_tagihan) }})
-            </option>
-          </select>
-        </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <button
+          type="button"
+          @click="loadMore"
+          class="h-8 px-4 rounded-lg text-xs font-bold bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 shadow-2xs hover:border-slate-400 active:scale-97 transition-all inline-flex items-center gap-1.5 cursor-pointer"
+        >
+          <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+          </svg>
+          <span>Muat Lebih Banyak (+{{ nextBatchCount }})</span>
+        </button>
 
-        <!-- Ringkasan Order Terpilih -->
-        <div v-if="selectedOrder" class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 text-xs">
-          <div class="flex justify-between items-start">
-            <div>
-              <span class="text-slate-500">Judul Buku:</span>
-              <span class="font-bold text-slate-900 ml-1.5">{{ selectedOrder.judul_penulis }}</span>
-            </div>
-            <span class="font-mono text-slate-500 font-semibold">{{ selectedOrder.id_order }}</span>
-          </div>
-          <div class="flex justify-between items-center text-slate-600">
-            <span>Total Tagihan: <strong class="text-slate-900">{{ formatRupiah(selectedOrder.total_harga) }}</strong></span>
-            <span>Sisa Tagihan: <strong class="text-rose-600 font-bold">{{ formatRupiah(selectedOrderSisa) }}</strong></span>
-          </div>
-          <div class="pt-1.5 flex gap-2 border-t border-slate-200/80">
-            <button
-              v-if="selectedOrderSisa > 0"
-              type="button"
-              @click="paymentForm.nominal = selectedOrderSisa"
-              class="px-2.5 py-1 rounded bg-emerald-50 text-emerald-700 font-bold hover:bg-emerald-100 transition-colors cursor-pointer border border-emerald-200"
-            >
-              Isi Lunas ({{ formatRupiah(selectedOrderSisa) }})
-            </button>
-            <button
-              type="button"
-              @click="paymentForm.nominal = Math.round(selectedOrder.total_harga * 0.5)"
-              class="px-2.5 py-1 rounded bg-blue-50 text-blue-700 font-bold hover:bg-blue-100 transition-colors cursor-pointer border border-blue-200"
-            >
-              Isi DP 50% ({{ formatRupiah(Math.round(selectedOrder.total_harga * 0.5)) }})
-            </button>
-          </div>
-        </div>
-
-        <!-- Nama Penerbit (Read-only / Locked) -->
-        <div>
-          <label class="form-label flex items-center justify-between">
-            <span>Nama Penerbit / Klien *</span>
-            <span class="text-[11px] text-slate-400 font-normal flex items-center gap-1">
-              <svg class="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-              Terkunci sesuai data order
-            </span>
-          </label>
-          <input
-            :value="paymentForm.nama_penerbit"
-            type="text"
-            readonly
-            placeholder="Pilih order di atas terlebih dahulu"
-            class="form-input bg-slate-100 text-slate-600 font-medium cursor-not-allowed select-none"
-            required
-          />
-        </div>
-
-        <!-- Nominal & Metode -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label class="form-label">Nominal Bayar *</label>
-            <div class="flex rounded-lg border border-slate-300 overflow-hidden focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white transition-all shadow-2xs">
-              <span class="inline-flex items-center px-3 bg-slate-100 border-r border-slate-200 text-xs font-mono font-bold text-slate-500 select-none">
-                Rp
-              </span>
-              <input
-                :value="paymentForm.nominal ? paymentForm.nominal.toLocaleString('id-ID') : ''"
-                @input="onNominalInput"
-                type="text"
-                inputmode="numeric"
-                placeholder="0"
-                class="w-full px-3 py-2 text-sm font-bold font-mono text-slate-900 outline-none border-0 bg-transparent"
-                required
-              />
-            </div>
-          </div>
-          <div>
-            <label class="form-label">Metode Pembayaran *</label>
-            <select v-model="paymentForm.metode" class="form-input bg-white" required>
-              <option value="BANK">🏦 Bank</option>
-              <option value="KASIR_TUNAI">💵 Kasir Tunai</option>
-              <option value="QRIS">📱 QRIS</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Catatan -->
-        <div>
-          <label class="form-label">Catatan / Rincian Pembayaran</label>
-          <textarea
-            v-model="paymentForm.keterangan"
-            rows="2"
-            placeholder="Contoh: Pembayaran DP 50% via transfer m-banking"
-            class="form-input resize-none bg-white"
-          ></textarea>
-        </div>
-
-        <!-- Upload Bukti Transfer -->
-        <div>
-          <label class="form-label">Upload Bukti Transfer / Resi (Opsional)</label>
-          <ImageUploader
-            label="Pilih / Foto Bukti Transfer"
-            sublabel="Otomatis dikompres sebelum upload"
-            @change="handlePhotoChange"
-          />
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="flex gap-3 pt-2">
-          <BaseButton variant="secondary" type="button" @click="showPaymentModal = false" class="flex-1">
-            Batal
-          </BaseButton>
-          <BaseButton type="submit" :loading="isSubmittingPayment" class="flex-1">
-            Simpan Pembayaran Order
-          </BaseButton>
-        </div>
-      </form>
-    </BaseModal>
+        <button
+          v-if="filteredPiutangRows.length - displayedPiutangRows.length > PAGE_SIZE"
+          type="button"
+          @click="showAll"
+          class="h-8 px-3 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 transition-all cursor-pointer"
+        >
+          Tampilkan Semua ({{ filteredPiutangRows.length }})
+        </button>
+      </div>
+    </div>
 
     <!-- ================================================================= -->
-    <!-- MODAL: EDIT PEMBAYARAN ORDER (KOREKSI DP / PELUNASAN)             -->
+    <!-- MODAL: CATAT PEMBAYARAN ORDER BARU (Modular Component)            -->
     <!-- ================================================================= -->
-    <BaseModal v-model="showEditPaymentModal" :title="`Edit Pembayaran (${editPaymentForm.jenis_pembayaran === 'DP' ? 'Uang Muka DP' : 'Pelunasan'})`">
-      <form @submit.prevent="submitEditPayment" class="space-y-4">
-        <!-- Info Order Terkait -->
-        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1 text-xs">
-          <div class="flex items-center justify-between">
-            <span class="text-slate-500 font-mono">Order: <strong class="text-slate-800">{{ editPaymentForm.id_order }}</strong></span>
-            <span class="font-mono text-slate-500">ID Kas: <strong class="text-slate-800">{{ editPaymentForm.id_kas_masuk }}</strong></span>
-          </div>
-          <p class="font-bold text-slate-900 truncate">{{ editPaymentForm.judul }}</p>
-          <p class="text-slate-600 font-semibold">{{ editPaymentForm.nama_penerbit }} • Total Tagihan: {{ formatRupiah(editPaymentForm.total_harga) }}</p>
-        </div>
-
-        <!-- Tanggal & Metode Bayar -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label class="form-label">Tanggal Bayar *</label>
-            <input v-model="editPaymentForm.tanggal" type="date" class="form-input bg-white" required />
-          </div>
-          <div>
-            <label class="form-label">Metode Pembayaran *</label>
-            <select v-model="editPaymentForm.metode" class="form-input bg-white font-medium" required>
-              <option value="BANK">🏦 Bank</option>
-              <option value="KASIR_TUNAI">💵 Kasir Tunai</option>
-              <option value="QRIS">📱 QRIS</option>
-              <option value="SALDO_DEPOSIT">💳 Saldo Deposit</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Nominal -->
-        <div>
-          <label class="form-label">Nominal Bayar *</label>
-          <div class="flex rounded-lg border border-slate-300 overflow-hidden focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 bg-white transition-all shadow-2xs">
-            <span class="inline-flex items-center px-3 bg-slate-100 border-r border-slate-200 text-xs font-mono font-bold text-slate-500 select-none">
-              Rp
-            </span>
-            <input
-              :value="editPaymentForm.nominal ? editPaymentForm.nominal.toLocaleString('id-ID') : ''"
-              @input="onEditPaymentNominalInput"
-              type="text"
-              inputmode="numeric"
-              placeholder="0"
-              class="w-full px-3 py-2 text-sm font-bold font-mono text-slate-900 outline-none border-0 bg-transparent"
-              required
-            />
-          </div>
-        </div>
-
-        <!-- Catatan -->
-        <div>
-          <label class="form-label">Catatan / Keterangan Pembayaran</label>
-          <input
-            v-model="editPaymentForm.keterangan"
-            type="text"
-            placeholder="Catatan rincian pembayaran..."
-            class="form-input bg-white"
-          />
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="pt-3 flex items-center justify-between gap-2 border-t border-slate-100">
-          <button
-            @click="showDeletePaymentConfirmModal = true"
-            type="button"
-            class="px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-rose-200 cursor-pointer"
-            :disabled="isSubmittingEditPayment"
-          >
-            Batalkan Pembayaran Ini
-          </button>
-          <div class="flex items-center gap-2">
-            <button
-              @click="showEditPaymentModal = false"
-              type="button"
-              class="btn-secondary text-xs px-3 py-1.5"
-              :disabled="isSubmittingEditPayment"
-            >
-              Batal
-            </button>
-            <button
-              type="submit"
-              class="btn-primary text-xs px-4 py-1.5"
-              :disabled="isSubmittingEditPayment || !editPaymentForm.nominal"
-            >
-              {{ isSubmittingEditPayment ? 'Menyimpan...' : 'Simpan Perubahan' }}
-            </button>
-          </div>
-        </div>
-      </form>
-    </BaseModal>
-
-    <!-- Modern Styled Confirm Modal for Cancel/Delete Payment -->
-    <ConfirmModal
-      v-model="showDeletePaymentConfirmModal"
-      title="Batalkan Pembayaran Order?"
-      :message="`Yakin ingin membatalkan/menghapus pembayaran ${editPaymentForm.id_kas_masuk}?`"
-      detail="Data kas dan sisa piutang order cetak ini akan otomatis disesuaikan dan dihitung ulang."
-      confirm-text="Ya, Batalkan Pembayaran"
-      cancel-text="Kembali"
-      type="danger"
-      :loading="isSubmittingEditPayment"
-      @confirm="executeDeletePayment()"
+    <PaymentOrderModal
+      v-model="showPaymentModal"
+      :orders-list="ordersList"
+      :kas-masuk-list="kasMasukList"
+      :initial-data="selectedPaymentInitialData"
+      @success="loadData"
+      @toast="showToast"
     />
 
-    <!-- Snackbar Toast (Success & Error support) -->
-    <transition
-      enter-active-class="transition-all duration-300 ease-out"
-      enter-from-class="opacity-0 translate-y-2.5"
-      enter-to-class="opacity-100 translate-y-0"
-      leave-active-class="transition-all duration-300 ease-in"
-      leave-from-class="opacity-100 translate-y-0"
-      leave-to-class="opacity-0 translate-y-2.5"
-    >
-      <div
-        v-if="snackbar"
-        class="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-[10000] px-5 py-3 rounded-xl text-sm font-semibold shadow-xl flex items-center gap-2.5"
-        :class="snackbarType === 'error' ? 'bg-rose-600 text-white shadow-rose-200' : 'bg-emerald-600 text-white shadow-emerald-200'"
-      >
-        <svg v-if="snackbarType === 'error'" class="w-4 h-4 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <svg v-else class="w-4 h-4 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-        </svg>
-        <span>{{ snackbar }}</span>
-      </div>
-    </transition>
+    <!-- ================================================================= -->
+    <!-- MODAL: EDIT & BATAL PEMBAYARAN ORDER (Modular Component)          -->
+    <!-- ================================================================= -->
+    <EditPaymentOrderModal
+      v-model="showEditPaymentModal"
+      :tx="selectedEditTx"
+      :order="selectedEditOrder"
+      :kas-masuk-list="kasMasukList"
+      @success="loadData"
+      @toast="showToast"
+    />
+
+    <!-- Toast Notification (Shared Component) -->
+    <ToastNotification
+      :message="toastMessage"
+      :type="toastType"
+      @close="clearToast"
+    />
   </div>
 </template>
 
@@ -611,13 +432,14 @@ import MetricStrip from '@shared/components/MetricStrip.vue'
 import TableStateRow from '@shared/components/TableStateRow.vue'
 import StatusBadge from '@shared/components/StatusBadge.vue'
 import TableScrollWrapper from '@shared/components/TableScrollWrapper.vue'
-import BaseModal from '@shared/components/BaseModal.vue'
-import ConfirmModal from '@shared/components/ConfirmModal.vue'
-import ImageUploader from '@shared/components/ImageUploader.vue'
+import ToastNotification from '@shared/components/ToastNotification.vue'
+import PaymentOrderModal from '../components/PaymentOrderModal.vue'
+import EditPaymentOrderModal from '../components/EditPaymentOrderModal.vue'
 import SearchInput from '@shared/components/SearchInput.vue'
 import DateFilterBar from '@shared/components/DateFilterBar.vue'
 import { api } from '@shared/api/gasClient'
 import { useAuthStore } from '../stores/auth'
+import { useToast } from '@shared/utils/useToast'
 import {
   formatRupiah,
   formatTanggal,
@@ -629,47 +451,27 @@ import {
   getVerificationStatus,
 } from '@shared/utils/formatters'
 import type { KasMasuk, Order, SumberKas, PiutangRow, DateFilterValue } from '@shared/types'
+import { useFinanceStore } from '../stores/finance'
+import { storeToRefs } from 'pinia'
 
 const route = useRoute()
 const authStore = useAuthStore()
+const financeStore = useFinanceStore()
 
-const isLoading = ref(false)
-const isSubmittingPayment = ref(false)
+const { kasMasukList, ordersList, isLoading, isRefreshing } = storeToRefs(financeStore)
 const verifyingId = ref<string | null>(null)
-const snackbar = ref('')
-const snackbarType = ref<'success' | 'error'>('success')
 const searchQuery = ref('')
 const statusFilter = ref<'ALL' | 'PIUTANG' | 'LUNAS' | 'PENDING_VERIF'>('ALL')
 const dateFilter = ref<DateFilterValue>({ mode: 'ALL' })
 
-function showToast(msg: string, type: 'success' | 'error' = 'success') {
-  snackbar.value = msg
-  snackbarType.value = type
-  setTimeout(() => {
-    if (snackbar.value === msg) snackbar.value = ''
-  }, 4000)
-}
+const { toastMessage, toastType, showToast, clearToast } = useToast()
 
-// Modal Edit Pembayaran Order
+// Modal States
+const showPaymentModal = ref(false)
+const selectedPaymentInitialData = ref<any>(null)
 const showEditPaymentModal = ref(false)
-const showDeletePaymentConfirmModal = ref(false)
-const isSubmittingEditPayment = ref(false)
-const editPaymentForm = ref({
-  id_kas_masuk: '',
-  id_order: '',
-  judul: '',
-  nama_penerbit: '',
-  total_harga: 0,
-  jenis_pembayaran: 'DP',
-  tanggal: '',
-  nominal: 0,
-  metode: 'BANK',
-  keterangan: '',
-})
-
-// Raw Data
-const kasMasukList = ref<KasMasuk[]>([])
-const ordersList = ref<Order[]>([])
+const selectedEditTx = ref<OrderTxRow | null>(null)
+const selectedEditOrder = ref<Order | null>(null)
 
 export interface OrderTxRow {
   id: string
@@ -687,6 +489,10 @@ export interface OrderTxRow {
 
 export interface EnrichedPiutangRow extends PiutangRow {
   payments: OrderTxRow[]
+  dpPayments: OrderTxRow[]
+  pelunasanPayments: OrderTxRow[]
+  dpPending: boolean
+  pelunasanPending: boolean
 }
 
 // All payments linked to orders
@@ -726,6 +532,10 @@ const pendingVerifikasiCount = computed(() => allOrdersTx.value.filter((t) => t.
 const piutangRows = computed<EnrichedPiutangRow[]>(() => {
   return ordersList.value.map((order) => {
     const payments = allOrdersTx.value.filter((tx) => tx.id_order === order.id_order)
+    const dpPayments = payments.filter((tx) => tx.jenis_pembayaran === 'DP')
+    const pelunasanPayments = payments.filter((tx) => tx.jenis_pembayaran !== 'DP')
+    const dpPending = dpPayments.some((tx) => tx.status_verifikasi === 'PENDING')
+    const pelunasanPending = pelunasanPayments.some((tx) => tx.status_verifikasi === 'PENDING')
     const total_masuk = payments.reduce((s, k) => s + k.nominal, 0)
     const total_masuk_verified = payments
       .filter((k) => k.status_verifikasi === 'VERIFIED')
@@ -743,6 +553,10 @@ const piutangRows = computed<EnrichedPiutangRow[]>(() => {
       sisa_tagihan,
       status_bayar,
       payments,
+      dpPayments,
+      pelunasanPayments,
+      dpPending,
+      pelunasanPending,
     }
   })
 })
@@ -796,6 +610,35 @@ const filteredPiutangRows = computed(() => {
   })
 })
 
+// Load More / Pagination State
+const PAGE_SIZE = 25
+const displayLimit = ref(PAGE_SIZE)
+
+// Reset batas tampilan jika filter atau pencarian berubah
+watch([statusFilter, dateFilter, searchQuery], () => {
+  displayLimit.value = PAGE_SIZE
+})
+
+const displayedPiutangRows = computed(() => {
+  return filteredPiutangRows.value.slice(0, displayLimit.value)
+})
+
+const hasMoreRows = computed(() => {
+  return displayedPiutangRows.value.length < filteredPiutangRows.value.length
+})
+
+const nextBatchCount = computed(() => {
+  return Math.min(PAGE_SIZE, filteredPiutangRows.value.length - displayedPiutangRows.value.length)
+})
+
+function loadMore() {
+  displayLimit.value += PAGE_SIZE
+}
+
+function showAll() {
+  displayLimit.value = filteredPiutangRows.value.length
+}
+
 const totalTagihanPiutang = computed(() => filteredPiutangRows.value.reduce((s, r) => s + r.order.total_harga, 0))
 const totalMasukPiutang = computed(() => filteredPiutangRows.value.reduce((s, r) => s + r.total_masuk_verified, 0))
 const totalSisaPiutang = computed(() => filteredPiutangRows.value.reduce((s, r) => s + r.sisa_tagihan, 0))
@@ -843,39 +686,15 @@ const summaryMetrics = computed(() => [
   },
 ])
 
-// Modal State
-const showPaymentModal = ref(false)
-const photoBase64 = ref('')
-const photoFilename = ref('')
-
-const paymentForm = ref({
-  tanggal: getTodayISO(),
-  jenis_pembayaran: 'DP' as 'DP' | 'PELUNASAN',
-  id_order: '',
-  nama_penerbit: '',
-  nominal: 0,
-  metode: 'BANK' as SumberKas,
-  keterangan: '',
-})
-
+// Modal Handlers
 function openNewPaymentModal() {
-  paymentForm.value = {
-    tanggal: getTodayISO(),
-    jenis_pembayaran: 'DP',
-    id_order: '',
-    nama_penerbit: '',
-    nominal: 0,
-    metode: 'BANK',
-    keterangan: '',
-  }
-  photoBase64.value = ''
-  photoFilename.value = ''
+  selectedPaymentInitialData.value = null
   showPaymentModal.value = true
 }
 
 function openPaymentModalForOrder(row: PiutangRow) {
   const isPelunasan = row.status_bayar === 'DP'
-  paymentForm.value = {
+  selectedPaymentInitialData.value = {
     tanggal: getTodayISO(),
     jenis_pembayaran: isPelunasan ? 'PELUNASAN' : 'DP',
     id_order: row.order.id_order,
@@ -884,80 +703,13 @@ function openPaymentModalForOrder(row: PiutangRow) {
     metode: 'BANK',
     keterangan: `Pembayaran ${isPelunasan ? 'Pelunasan' : 'DP'} Order ${row.order.id_order}`,
   }
-  photoBase64.value = ''
-  photoFilename.value = ''
   showPaymentModal.value = true
 }
 
-const availableOrders = computed(() => {
-  return ordersList.value
-    .map((order) => {
-      const orderPayments = kasMasukList.value.filter(
-        (k) => k.id_order === order.id_order && (k as any).status_verifikasi !== 'BATAL'
-      )
-      const paid = orderPayments.reduce((s, k) => s + k.nominal, 0)
-      const sisa = Math.max(0, order.total_harga - paid)
-      return { order, sisa_tagihan: sisa, total_bayar: paid }
-    })
-    .filter((item) => item.sisa_tagihan > 0 || item.order.status_order === 'PROSES')
-    .sort((a, b) => b.order.id_order.localeCompare(a.order.id_order))
-})
-
-const selectedOrder = computed(() => {
-  if (!paymentForm.value.id_order) return null
-  return ordersList.value.find((o) => o.id_order === paymentForm.value.id_order) || null
-})
-
-const selectedOrderSisa = computed(() => {
-  if (!selectedOrder.value) return 0
-  const orderPayments = kasMasukList.value.filter(
-    (k) => k.id_order === selectedOrder.value!.id_order && (k as any).status_verifikasi !== 'BATAL'
-  )
-  const paid = orderPayments.reduce((s, k) => s + k.nominal, 0)
-  return Math.max(0, selectedOrder.value.total_harga - paid)
-})
-
-watch(
-  () => paymentForm.value.id_order,
-  (newId) => {
-    if (newId && selectedOrder.value) {
-      paymentForm.value.nama_penerbit = selectedOrder.value.nama_penerbit
-      if (paymentForm.value.jenis_pembayaran === 'PELUNASAN' && selectedOrderSisa.value > 0) {
-        paymentForm.value.nominal = selectedOrderSisa.value
-      } else if (paymentForm.value.jenis_pembayaran === 'DP' && !paymentForm.value.nominal) {
-        paymentForm.value.nominal = Math.round(selectedOrder.value.total_harga * 0.5)
-      }
-    }
-  }
-)
-
-watch(
-  () => paymentForm.value.jenis_pembayaran,
-  (newJenis) => {
-    if (newJenis === 'PELUNASAN' && selectedOrder.value && selectedOrderSisa.value > 0) {
-      paymentForm.value.nominal = selectedOrderSisa.value
-    } else if (newJenis === 'DP' && selectedOrder.value) {
-      paymentForm.value.nominal = Math.round(selectedOrder.value.total_harga * 0.5)
-    }
-  }
-)
-
-function onNominalInput(e: Event) {
-  const input = e.target as HTMLInputElement
-  const clean = input.value.replace(/\D/g, '')
-  const num = parseInt(clean, 10) || 0
-  paymentForm.value.nominal = num
-  input.value = num ? num.toLocaleString('id-ID') : ''
-}
-
-function handlePhotoChange(uploadData: { base64: string; filename: string } | null) {
-  if (uploadData) {
-    photoBase64.value = uploadData.base64
-    photoFilename.value = uploadData.filename
-  } else {
-    photoBase64.value = ''
-    photoFilename.value = ''
-  }
+function openEditPaymentModal(tx: OrderTxRow, order: Order) {
+  selectedEditTx.value = tx
+  selectedEditOrder.value = order
+  showEditPaymentModal.value = true
 }
 
 async function verifyTx(tx: OrderTxRow) {
@@ -967,8 +719,7 @@ async function verifyTx(tx: OrderTxRow) {
     if (res.success) {
       const item = kasMasukList.value.find((k) => k.id_kas_masuk === tx.id)
       if (item) item.status_verifikasi = 'VERIFIED'
-      snackbar.value = `Pembayaran ${formatRupiah(tx.nominal)} berhasil diverifikasi!`
-      setTimeout(() => { snackbar.value = '' }, 3000)
+      showToast(`Pembayaran ${formatRupiah(tx.nominal)} berhasil diverifikasi!`, 'success')
     }
   } catch (e) {
     console.error('Gagal verifikasi:', e)
@@ -977,143 +728,12 @@ async function verifyTx(tx: OrderTxRow) {
   }
 }
 
-async function submitPayment() {
-  if (!paymentForm.value.id_order) {
-    showToast('Silakan pilih Transaksi / Order Cetak terlebih dahulu', 'error')
-    return
-  }
-  if (!paymentForm.value.nominal || paymentForm.value.nominal <= 0) {
-    showToast('Nominal harus lebih besar dari 0', 'error')
-    return
-  }
-
-  isSubmittingPayment.value = true
-  try {
-    const res = await api.createKasMasuk({
-      id_order: paymentForm.value.id_order.trim(),
-      jenis_pembayaran: paymentForm.value.jenis_pembayaran,
-      nominal: paymentForm.value.nominal,
-      metode: paymentForm.value.metode,
-      diinput_oleh: authStore.nama || 'OWNER',
-      status_verifikasi: 'VERIFIED',
-      nama_penerbit: paymentForm.value.nama_penerbit?.trim(),
-      tanggal: paymentForm.value.tanggal,
-      keterangan: paymentForm.value.keterangan?.trim(),
-      foto_base64: photoBase64.value || undefined,
-      foto_filename: photoFilename.value || undefined,
-    })
-
-    if (res.success) {
-      showPaymentModal.value = false
-      showToast(`Pembayaran Order ${formatRupiah(paymentForm.value.nominal)} berhasil dicatat!`, 'success')
-      paymentForm.value = {
-        tanggal: getTodayISO(),
-        jenis_pembayaran: 'DP',
-        id_order: '',
-        nama_penerbit: '',
-        nominal: 0,
-        metode: 'BANK',
-        keterangan: '',
-      }
-      photoBase64.value = ''
-      photoFilename.value = ''
-      await loadData()
-    } else {
-      showToast('Gagal menyimpan pembayaran: ' + (res.error || 'Terjadi kesalahan'), 'error')
-    }
-  } catch (err: any) {
-    console.error('Submit payment error:', err)
-    showToast(err?.message || 'Terjadi kesalahan jaringan saat menyimpan pembayaran.', 'error')
-  } finally {
-    isSubmittingPayment.value = false
-  }
-}
-
-function onEditPaymentNominalInput(e: Event) {
-  const input = e.target as HTMLInputElement
-  const clean = input.value.replace(/\D/g, '')
-  const num = parseInt(clean, 10) || 0
-  editPaymentForm.value.nominal = num
-}
-
-function openEditPaymentModal(tx: OrderTxRow, order: Order) {
-  editPaymentForm.value = {
-    id_kas_masuk: tx.id,
-    id_order: order.id_order,
-    judul: order.judul_penulis,
-    nama_penerbit: order.nama_penerbit,
-    total_harga: order.total_harga,
-    jenis_pembayaran: tx.jenis_pembayaran,
-    tanggal: tx.tanggal ? tx.tanggal.split('T')[0] : getTodayISO(),
-    nominal: tx.nominal,
-    metode: tx.metode,
-    keterangan: tx.keterangan || '',
-  }
-  showEditPaymentModal.value = true
-}
-
-async function submitEditPayment() {
-  if (!editPaymentForm.value.id_kas_masuk || editPaymentForm.value.nominal <= 0) return
-  isSubmittingEditPayment.value = true
-  try {
-    const res = await api.updateKasMasuk({
-      id_kas_masuk: editPaymentForm.value.id_kas_masuk,
-      tanggal: editPaymentForm.value.tanggal,
-      nominal: editPaymentForm.value.nominal,
-      metode: editPaymentForm.value.metode,
-      keterangan: editPaymentForm.value.keterangan,
-    })
-    if (!res.success) {
-      showToast(res.error || 'Gagal memperbarui pembayaran', 'error')
-      return
-    }
-    showEditPaymentModal.value = false
-    showToast('Pembayaran order berhasil diperbarui!', 'success')
-    await loadData()
-  } catch (err: any) {
-    showToast(err?.message || 'Terjadi kesalahan jaringan saat memperbarui pembayaran', 'error')
-  } finally {
-    isSubmittingEditPayment.value = false
-  }
-}
-
-const executeDeletePayment = async () => {
-  if (!editPaymentForm.value.id_kas_masuk) return
-
-  isSubmittingEditPayment.value = true
-  try {
-    const res = await api.deleteKasMasuk(editPaymentForm.value.id_kas_masuk)
-    if (!res.success) {
-      showToast(res.error || 'Gagal membatalkan pembayaran', 'error')
-      return
-    }
-    showDeletePaymentConfirmModal.value = false
-    showEditPaymentModal.value = false
-    showToast('Pembayaran order berhasil dibatalkan!', 'success')
-    await loadData()
-  } catch (err: any) {
-    showToast(err?.message || 'Terjadi kesalahan jaringan saat membatalkan pembayaran', 'error')
-  } finally {
-    isSubmittingEditPayment.value = false
-  }
-}
-
-async function loadData() {
-  isLoading.value = true
-  try {
-    const [kmRes, ordRes] = await Promise.all([
-      api.getKasMasuk(),
-      api.getOrders().catch(() => ({ success: false, data: [] })),
-    ])
-    if (kmRes.success && kmRes.data) kasMasukList.value = kmRes.data
-    if (ordRes.success && ordRes.data) ordersList.value = ordRes.data
-  } finally {
-    isLoading.value = false
-  }
+async function loadData(force = false) {
+  await financeStore.loadFinanceData({ force })
 }
 
 onMounted(() => {
-  loadData()
+  loadData(false)
   if (route.query.tab === 'verifikasi') {
     statusFilter.value = 'PENDING_VERIF'
   }

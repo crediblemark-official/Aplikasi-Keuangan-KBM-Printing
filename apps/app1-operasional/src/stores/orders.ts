@@ -2,52 +2,28 @@ import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import { api } from '@shared/api/gasClient'
 import { useSyncStore } from '@shared/stores/syncStore'
+import { getStorage, setStorage } from '@shared/utils/persistentStorage'
 import type { Order, KasMasuk } from '@shared/types'
 import { hitungStatusBayar, getTodayISO } from '@shared/utils/formatters'
 
 const STORAGE_KEY = 'kbm_cached_orders_v2'
 const KM_STORAGE_KEY = 'kbm_cached_kas_masuk_v2'
 
-function loadCachedOrders(): Order[] {
+function quickInitialLoad<T>(key: string): T[] {
   try {
     if (typeof localStorage !== 'undefined') {
-      const raw = localStorage.getItem(STORAGE_KEY) || sessionStorage.getItem('kbm_cached_orders_v1')
+      const raw = localStorage.getItem(key) || sessionStorage.getItem(key)
       if (raw) return JSON.parse(raw)
     }
   } catch {}
   return []
-}
-
-function saveCachedOrders(items: Order[]) {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
-    }
-  } catch {}
-}
-
-function loadCachedKasMasuk(): KasMasuk[] {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      const raw = localStorage.getItem(KM_STORAGE_KEY) || sessionStorage.getItem('kbm_cached_kas_masuk_v1')
-      if (raw) return JSON.parse(raw)
-    }
-  } catch {}
-  return []
-}
-
-function saveCachedKasMasuk(items: KasMasuk[]) {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(KM_STORAGE_KEY, JSON.stringify(items))
-    }
-  } catch {}
 }
 
 export const useOrderStore = defineStore('orders', () => {
-  const orders = ref<Order[]>(loadCachedOrders())
-  const kasMasukList = ref<KasMasuk[]>(loadCachedKasMasuk())
+  const orders = ref<Order[]>(quickInitialLoad<Order>(STORAGE_KEY))
+  const kasMasukList = ref<KasMasuk[]>(quickInitialLoad<KasMasuk>(KM_STORAGE_KEY))
   const isLoading = ref(false)
+  const isRefreshing = ref(false)
   const error = ref<string | null>(null)
   const currentOrderId = ref<string | null>(null)
 
@@ -56,11 +32,31 @@ export const useOrderStore = defineStore('orders', () => {
   let lastFetchKasMasukTime = 0
   const CACHE_TTL_MS = 30_000 // 30 detik
 
-  // Auto-persist to localStorage (Tahan saat offline / tab ditutup)
+  // Hidrasi data lengkap dari IndexedDB di latar belakang
+  async function hydrateFromIndexedDB() {
+    try {
+      const [cachedOrders, cachedKm] = await Promise.all([
+        getStorage<Order[]>(STORAGE_KEY, []),
+        getStorage<KasMasuk[]>(KM_STORAGE_KEY, []),
+      ])
+      if (cachedOrders.length && !orders.value.length) {
+        orders.value = cachedOrders
+      }
+      if (cachedKm.length && !kasMasukList.value.length) {
+        kasMasukList.value = cachedKm
+      }
+    } catch (e) {
+      console.warn('[useOrderStore] Gagal hidrasi dari IndexedDB:', e)
+    }
+  }
+
+  hydrateFromIndexedDB()
+
+  // Auto-persist ke IndexedDB secara asynchronous (kapasitas tanpa batas & tidak membekukan UI)
   watch(
     orders,
     (val) => {
-      saveCachedOrders(val)
+      setStorage(STORAGE_KEY, val)
     },
     { deep: true },
   )
@@ -68,7 +64,7 @@ export const useOrderStore = defineStore('orders', () => {
   watch(
     kasMasukList,
     (val) => {
-      saveCachedKasMasuk(val)
+      setStorage(KM_STORAGE_KEY, val)
     },
     { deep: true },
   )
@@ -147,7 +143,11 @@ export const useOrderStore = defineStore('orders', () => {
       return
     }
 
-    isLoading.value = true
+    if (orders.value.length === 0) {
+      isLoading.value = true
+    } else {
+      isRefreshing.value = true
+    }
     error.value = null
     try {
       const cleanSearch = search && search.trim() !== '' ? search.trim() : undefined
@@ -160,7 +160,7 @@ export const useOrderStore = defineStore('orders', () => {
         // Merge with existing local orders:
         // HANYA pertahankan data lokal yang berstatus offline pending (ORD-OFFLINE-*).
         // Order reguler yang tidak ada di respon backend berarti sudah dihapus dari Sheet,
-        // sehingga harus dibuang dari memori lokal dan localStorage.
+        // sehingga harus dibuang dari memori lokal dan localStorage/IndexedDB.
         const backendIds = new Set(res.data.map((o) => o.id_order.trim()))
         const localPending = orders.value.filter(
           (o) => o.id_order.startsWith('ORD-OFFLINE-') && !backendIds.has(o.id_order.trim()),
@@ -176,6 +176,7 @@ export const useOrderStore = defineStore('orders', () => {
       }
     } finally {
       isLoading.value = false
+      isRefreshing.value = false
     }
   }
 
@@ -363,6 +364,42 @@ export const useOrderStore = defineStore('orders', () => {
     }
   }
 
+  async function deleteOrder(id_order: string, permanent = true) {
+    const trimmedId = id_order.trim()
+    isLoading.value = true
+    try {
+      if (trimmedId.startsWith('ORD-OFFLINE')) {
+        try {
+          const syncStore = useSyncStore()
+          const logIdx = syncStore.logs.findIndex(
+            (l) => l.action === 'createOrder' && (l.payload?.temp_id_order === trimmedId || (l.payload?.order as any)?.id_order === trimmedId),
+          )
+          if (logIdx !== -1) {
+            syncStore.logs.splice(logIdx, 1)
+          }
+        } catch {}
+        orders.value = orders.value.filter((o) => o.id_order.trim() !== trimmedId)
+        if (currentOrderId.value === trimmedId) {
+          currentOrderId.value = null
+        }
+        return { success: true }
+      }
+
+      const res = await api.deleteOrder(trimmedId, permanent)
+      if (res.success) {
+        orders.value = orders.value.filter((o) => o.id_order.trim() !== trimmedId)
+        if (currentOrderId.value === trimmedId) {
+          currentOrderId.value = null
+        }
+      }
+      return res
+    } catch (err: any) {
+      return { success: false, error: err?.message || String(err) }
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   function setCurrentOrder(id: string) {
     currentOrderId.value = id
   }
@@ -374,6 +411,7 @@ export const useOrderStore = defineStore('orders', () => {
   return {
     orders,
     isLoading,
+    isRefreshing,
     error,
     currentOrder,
     activeOrders,
@@ -385,6 +423,7 @@ export const useOrderStore = defineStore('orders', () => {
     createOrder,
     updateOrder,
     updateOrderStatus,
+    deleteOrder,
     ensureOrderLoaded,
     setCurrentOrder,
   }
