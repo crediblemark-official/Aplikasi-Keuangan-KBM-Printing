@@ -28,100 +28,73 @@
         <div
           class="relative w-full sm:max-w-2xl bg-white sm:rounded-2xl shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[85vh] h-[85vh] border border-slate-200 overflow-hidden"
         >
-          <!-- Header Modal -->
-          <div class="px-4 py-3 bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 text-white shrink-0 border-b border-indigo-900/50">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-500 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-purple-500/30 shrink-0">
-                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                  </svg>
-                </div>
-                <div>
-                  <div class="flex items-center gap-2">
-                    <h3 class="font-bold text-sm text-white tracking-tight">KBM Business AI Advisor</h3>
-                    <span
-                      class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold border"
-                      :class="isGeminiActive
-                        ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
-                        : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'"
-                    >
-                      <span
-                        class="w-1.5 h-1.5 rounded-full animate-pulse"
-                        :class="isGeminiActive ? 'bg-blue-400' : 'bg-emerald-400'"
-                      ></span>
-                      {{ isGeminiActive ? 'Gemini Auto-Rotate' : 'Ollama Cloud' }}
-                    </span>
-                  </div>
-                  <p class="text-[11px] text-slate-300 mt-0.5">
-                    Executive Financial Intelligence & Business Strategy (Read-Only)
-                  </p>
-                </div>
+          <!-- Header Modal (Single Sleek Bar) -->
+          <div class="px-3.5 py-2 bg-slate-950 text-white shrink-0 border-b border-white/10 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-purple-500 to-indigo-600 flex items-center justify-center text-white shadow-xs shrink-0">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
               </div>
-
-              <div class="flex items-center gap-1.5">
-                <button
-                  @click="clearChat"
-                  type="button"
-                  class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
-                  title="Bersihkan percakapan"
-                >
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-                <button
-                  @click="isOpen = false"
-                  type="button"
-                  class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
-                  title="Tutup AI Advisor"
-                >
-                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
+              <h3 class="font-bold text-xs sm:text-sm text-white shrink-0 tracking-tight">AI Advisor</h3>
+              <div class="h-3.5 w-px bg-white/20 shrink-0"></div>
+              <select
+                v-model="selectedModel"
+                class="bg-slate-900 text-purple-200 border border-purple-500/30 hover:border-purple-400/60 rounded-md px-2 py-0.5 text-[11px] font-medium outline-none cursor-pointer max-w-[210px] sm:max-w-[260px] truncate"
+              >
+                <optgroup label="Google Gemini">
+                  <option v-for="m in geminiModels" :key="m.id" :value="m.id">
+                    {{ m.name }}
+                  </option>
+                </optgroup>
+                <optgroup label="Ollama Cloud">
+                  <option v-for="m in ollamaModels" :key="m.id" :value="m.id">
+                    {{ m.name }}
+                  </option>
+                </optgroup>
+              </select>
             </div>
 
-            <!-- Model Switcher Bar -->
-            <div class="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between gap-2 text-xs">
-              <div class="flex items-center gap-2 text-slate-300">
-                <span class="text-slate-400 font-medium">Model:</span>
-                <select
-                  v-model="selectedModel"
-                  class="bg-slate-900 text-purple-200 border border-purple-500/40 rounded-lg px-2.5 py-1 text-xs font-medium outline-none focus:border-purple-400 cursor-pointer max-w-[280px] truncate"
-                >
-                  <optgroup label="Google Gemini">
-                    <option v-for="m in geminiModels" :key="m.id" :value="m.id">
-                      {{ m.name }}
-                    </option>
-                  </optgroup>
-                  <optgroup label="Ollama Cloud">
-                    <option v-for="m in ollamaModels" :key="m.id" :value="m.id">
-                      {{ m.name }}
-                    </option>
-                  </optgroup>
-                </select>
-              </div>
+            <div class="flex items-center gap-1 shrink-0">
+              <button
+                @click="clearChat"
+                type="button"
+                class="p-1.5 text-slate-400 hover:text-white rounded-md hover:bg-white/10 transition-colors cursor-pointer"
+                title="Bersihkan percakapan"
+              >
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+              <button
+                @click="isOpen = false"
+                type="button"
+                class="p-1.5 text-slate-400 hover:text-white rounded-md hover:bg-white/10 transition-colors cursor-pointer"
+                title="Tutup AI Advisor"
+              >
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
           </div>
 
-          <!-- Quick Insight Chips (Prompt Cepat Siap Pakai) -->
-          <div class="p-2.5 bg-slate-50 border-b border-slate-200 overflow-x-auto shrink-0 flex items-center gap-1.5 no-scrollbar">
+          <!-- Quick Insight Chips (Compact Strip) -->
+          <div class="px-3 py-1.5 bg-slate-50 border-b border-slate-200 overflow-x-auto shrink-0 flex items-center gap-1.5 no-scrollbar">
             <button
               v-for="chip in quickChips"
               :key="chip.label"
               @click="askQuickQuestion(chip.prompt)"
               type="button"
-              class="shrink-0 px-2.5 py-1 text-xs font-medium rounded-lg bg-white hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 border border-slate-200 text-slate-700 transition-all cursor-pointer shadow-2xs inline-flex items-center gap-1.5"
+              class="shrink-0 px-2 py-0.5 text-[11px] font-medium rounded-md bg-white hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 border border-slate-200 text-slate-600 transition-all cursor-pointer shadow-2xs inline-flex items-center gap-1"
             >
-              <span>{{ chip.icon }}</span>
+              <span class="text-xs">{{ chip.icon }}</span>
               <span>{{ chip.label }}</span>
             </button>
           </div>
 
           <!-- Chat Conversation Body -->
-          <div ref="chatContainer" class="flex-1 p-4 overflow-y-auto space-y-4 bg-slate-50/50">
+          <div ref="chatContainer" class="flex-1 p-3.5 overflow-y-auto space-y-3.5 bg-slate-50/50">
             <!-- Pesan Chat -->
             <div
               v-for="(msg, idx) in messages"
@@ -140,7 +113,7 @@
               </div>
 
               <div
-                class="max-w-[92%] sm:max-w-[85%] rounded-2xl px-4 py-3 shadow-2xs text-[13.5px] leading-relaxed"
+                class="max-w-[92%] sm:max-w-[85%] rounded-2xl px-4 py-2.5 shadow-2xs text-[13.5px] leading-relaxed"
                 :class="msg.role === 'user'
                   ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white font-medium rounded-tr-xs'
                   : 'bg-white text-slate-800 border border-slate-200/90 rounded-tl-xs'"
@@ -153,30 +126,30 @@
 
             <!-- Loading Indicator saat memproses -->
             <div v-if="isLoading" class="flex items-start gap-2 animate-pulse">
-              <div class="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 text-xs font-bold">
+              <div class="w-6 h-6 rounded-md bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 text-xs font-bold">
                 AI
               </div>
-              <div class="bg-white border border-slate-200 rounded-2xl rounded-tl-xs px-4 py-3 text-xs text-slate-600 shadow-2xs flex items-center gap-2.5">
-                <span class="w-2.5 h-2.5 rounded-full bg-purple-600 animate-ping"></span>
+              <div class="bg-white border border-slate-200 rounded-2xl rounded-tl-xs px-3.5 py-2 text-xs text-slate-600 shadow-2xs flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-purple-600 animate-ping"></span>
                 <span>Menganalisis data finansial KBM Printing...</span>
               </div>
             </div>
           </div>
 
           <!-- Footer Chat Input -->
-          <div class="p-3 bg-white border-t border-slate-200 shrink-0 space-y-2">
+          <div class="p-2.5 bg-white border-t border-slate-200 shrink-0">
             <form @submit.prevent="sendMessage" class="flex items-center gap-2">
               <input
                 ref="inputRef"
                 v-model="inputQuery"
                 type="text"
                 placeholder="Tanyakan analisis finansial atau piutang..."
-                class="form-input flex-1 bg-slate-50 text-xs sm:text-[13px] py-2.5 px-3.5 rounded-xl border-slate-300 focus:bg-white transition-all outline-none"
+                class="form-input flex-1 bg-slate-50 text-xs sm:text-[13px] py-2 px-3 rounded-xl border-slate-300 focus:bg-white transition-all outline-none"
                 :disabled="isLoading"
               />
               <button
                 type="submit"
-                class="h-9 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-red-600 hover:from-indigo-700 hover:to-red-700 text-white font-semibold text-xs shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                class="h-8.5 px-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-red-600 hover:from-indigo-700 hover:to-red-700 text-white font-semibold text-xs shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                 :disabled="isLoading || !inputQuery.trim()"
               >
                 <span>Kirim</span>
@@ -185,10 +158,6 @@
                 </svg>
               </button>
             </form>
-            <div class="flex items-center justify-between text-[11px] text-slate-400 px-1">
-              <span>Analisis berbasis data riil transaksi (Read-Only)</span>
-              <span>Tekan Enter ↵ untuk mengirim</span>
-            </div>
           </div>
         </div>
       </div>
