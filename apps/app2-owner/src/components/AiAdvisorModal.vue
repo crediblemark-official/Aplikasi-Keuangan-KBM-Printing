@@ -84,34 +84,24 @@
             </div>
 
             <!-- Model Switcher Bar -->
-            <div class="mt-2.5 pt-2 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-[11px]">
-              <div class="flex items-center gap-1.5 text-slate-300">
-                <span>Model AI:</span>
+            <div class="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between gap-2 text-xs">
+              <div class="flex items-center gap-2 text-slate-300">
+                <span class="text-slate-400 font-medium">Model:</span>
                 <select
                   v-model="selectedModel"
-                  class="bg-slate-900 text-purple-200 border border-purple-500/40 rounded-lg px-2 py-0.5 text-[11px] font-medium outline-none focus:border-purple-400 cursor-pointer max-w-[260px] truncate"
+                  class="bg-slate-900 text-purple-200 border border-purple-500/40 rounded-lg px-2.5 py-1 text-xs font-medium outline-none focus:border-purple-400 cursor-pointer max-w-[280px] truncate"
                 >
-                  <optgroup label="🔄 Google Gemini Free Pool (Auto-Rotate)">
+                  <optgroup label="Google Gemini">
                     <option v-for="m in geminiModels" :key="m.id" :value="m.id">
                       {{ m.name }}
                     </option>
                   </optgroup>
-                  <optgroup label="☁️ Ollama Cloud Free Credits">
+                  <optgroup label="Ollama Cloud">
                     <option v-for="m in ollamaModels" :key="m.id" :value="m.id">
                       {{ m.name }}
                     </option>
                   </optgroup>
                 </select>
-              </div>
-              <div class="flex items-center gap-1.5 text-[10px] text-purple-300/80">
-                <span v-if="selectedModel === 'auto'" class="text-emerald-300 font-bold">
-                  ✨ Auto-Rotate Aktif (1.000+ RPD)
-                </span>
-                <span v-else>
-                  ⚡ 0 Kuota Worker
-                </span>
-                <span>•</span>
-                <span>100% Free Tier</span>
               </div>
             </div>
           </div>
@@ -123,7 +113,7 @@
               :key="chip.label"
               @click="askQuickQuestion(chip.prompt)"
               type="button"
-              class="shrink-0 px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-white hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 border border-slate-200 text-slate-700 transition-all cursor-pointer shadow-2xs inline-flex items-center gap-1.5"
+              class="shrink-0 px-2.5 py-1 text-xs font-medium rounded-lg bg-white hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 border border-slate-200 text-slate-700 transition-all cursor-pointer shadow-2xs inline-flex items-center gap-1.5"
             >
               <span>{{ chip.icon }}</span>
               <span>{{ chip.label }}</span>
@@ -132,32 +122,6 @@
 
           <!-- Chat Conversation Body -->
           <div ref="chatContainer" class="flex-1 p-4 overflow-y-auto space-y-4 bg-slate-50/50">
-            <!-- Welcome Banner jika chat masih awal -->
-            <div v-if="messages.length === 1" class="p-3.5 rounded-xl bg-indigo-50/80 border border-indigo-100 text-xs text-indigo-950 space-y-2">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2 font-bold text-indigo-900">
-                  <span>👋 Selamat Datang di KBM Business AI Advisor!</span>
-                </div>
-                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-200/60 text-indigo-900 font-bold">
-                  {{ selectedModelLabel }}
-                </span>
-              </div>
-              <p class="text-slate-600 leading-relaxed">
-                Asisten ini terhubung dengan <strong>{{ isGeminiActive ? 'Google Gemini' : 'Ollama Cloud' }}</strong> dengan fitur <strong>Auto-Rotate</strong> cerdas. Setiap pertanyaan otomatis menyertakan metrik riil omzet, kas masuk, kas keluar, dan sisa piutang KBM Printing.
-              </p>
-              <div class="pt-1 flex flex-wrap gap-1.5 text-[11px]">
-                <span class="px-2 py-0.5 rounded bg-white font-medium text-slate-700 border border-indigo-100">
-                  🔄 Auto-Rotate Model Anti Limit
-                </span>
-                <span class="px-2 py-0.5 rounded bg-white font-medium text-slate-700 border border-indigo-100">
-                  🔒 Read-Only Aman (Tanpa mutasi data)
-                </span>
-                <span class="px-2 py-0.5 rounded bg-white font-medium text-slate-700 border border-indigo-100">
-                  📊 Live Financial Data Injection
-                </span>
-              </div>
-            </div>
-
             <!-- Pesan Chat -->
             <div
               v-for="(msg, idx) in messages"
@@ -165,25 +129,25 @@
               class="flex flex-col gap-1"
               :class="msg.role === 'user' ? 'items-end' : 'items-start'"
             >
-              <div class="flex items-center gap-1.5 text-[10px] text-slate-400 px-1 font-medium">
-                <span v-if="msg.role === 'assistant'">🤖 KBM AI Advisor</span>
-                <span v-else>👤 Anda</span>
-                <span v-if="msg.model" class="text-purple-600 font-mono">
-                  ({{ msg.model }}<span v-if="msg.rotated" class="text-emerald-600 font-bold ml-1">🔄 auto-rotated</span>)
+              <div class="flex items-center gap-1.5 text-[11px] text-slate-400 px-1 font-medium">
+                <span v-if="msg.role === 'assistant'" class="font-semibold text-slate-600">KBM AI Advisor</span>
+                <span v-else class="font-semibold text-slate-600">Anda</span>
+                <span v-if="msg.model" class="text-slate-400 font-mono text-[10px]">
+                  ({{ msg.model }})
                 </span>
                 <span>•</span>
                 <span>{{ msg.time }}</span>
               </div>
 
               <div
-                class="max-w-[92%] sm:max-w-[85%] rounded-2xl px-4 py-3 text-xs leading-relaxed shadow-2xs"
+                class="max-w-[92%] sm:max-w-[85%] rounded-2xl px-4 py-3 shadow-2xs text-[13.5px] leading-relaxed"
                 :class="msg.role === 'user'
                   ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white font-medium rounded-tr-xs'
                   : 'bg-white text-slate-800 border border-slate-200/90 rounded-tl-xs'"
               >
                 <!-- Render Jawaban Markdown-Friendly -->
-                <div v-if="msg.role === 'assistant'" class="prose-ai space-y-2" v-html="formatMarkdown(msg.content)"></div>
-                <div v-else class="whitespace-pre-wrap">{{ msg.content }}</div>
+                <div v-if="msg.role === 'assistant'" class="prose-ai" v-html="formatMarkdown(msg.content)"></div>
+                <div v-else class="whitespace-pre-wrap leading-relaxed">{{ msg.content }}</div>
               </div>
             </div>
 
@@ -194,7 +158,7 @@
               </div>
               <div class="bg-white border border-slate-200 rounded-2xl rounded-tl-xs px-4 py-3 text-xs text-slate-600 shadow-2xs flex items-center gap-2.5">
                 <span class="w-2.5 h-2.5 rounded-full bg-purple-600 animate-ping"></span>
-                <span>Menganalisis data via <strong>{{ isGeminiActive ? 'Gemini' : 'Ollama' }}</strong> ({{ selectedModel }})...</span>
+                <span>Menganalisis data finansial KBM Printing...</span>
               </div>
             </div>
           </div>
@@ -206,13 +170,13 @@
                 ref="inputRef"
                 v-model="inputQuery"
                 type="text"
-                placeholder="Tanyakan insight, misal: 'Berapa persen rasio piutang terhadap omzet bulan ini?'"
-                class="form-input flex-1 bg-slate-50 text-xs py-2.5 px-3.5 rounded-xl border-slate-300 focus:bg-white transition-all outline-none"
+                placeholder="Tanyakan analisis finansial atau piutang..."
+                class="form-input flex-1 bg-slate-50 text-xs sm:text-[13px] py-2.5 px-3.5 rounded-xl border-slate-300 focus:bg-white transition-all outline-none"
                 :disabled="isLoading"
               />
               <button
                 type="submit"
-                class="h-9 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-red-600 hover:from-indigo-700 hover:to-red-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                class="h-9 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-red-600 hover:from-indigo-700 hover:to-red-700 text-white font-semibold text-xs shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                 :disabled="isLoading || !inputQuery.trim()"
               >
                 <span>Kirim</span>
@@ -221,8 +185,8 @@
                 </svg>
               </button>
             </form>
-            <div class="flex items-center justify-between text-[10px] text-slate-400 px-1">
-              <span>💡 Auto-Rotate otomatis mengalihkan request jika suatu model mencapai batas RPM.</span>
+            <div class="flex items-center justify-between text-[11px] text-slate-400 px-1">
+              <span>Analisis berbasis data riil transaksi (Read-Only)</span>
               <span>Tekan Enter ↵ untuk mengirim</span>
             </div>
           </div>
@@ -295,13 +259,10 @@ function getNowTime() {
 const messages = ref<ChatMessage[]>([
   {
     role: 'assistant',
-    content: `Halo Pak/Bu Owner! Saya **KBM AI Advisor** dengan fitur **Auto-Rotate Model** (${selectedModel.value === 'auto' ? 'Gemini Free Pool' : selectedModel.value}).
-    
-Saya siap menganalisis kinerja finansial, piutang tertunggak, efisiensi bahan baku kertas, dan strategi bisnis percetakan berdasarkan data riil terkini.
-    
-Silakan pilih prompt cepat di atas atau ketik pertanyaan langsung!`,
+    content: `Halo Pak/Bu! Saya siap menganalisis data finansial, ringkasan omzet, piutang mitra, dan biaya operasional KBM Printing.
+
+Silakan pilih topik di atas atau ketik pertanyaan analisis Anda.`,
     time: getNowTime(),
-    model: selectedModel.value === 'auto' ? 'Auto-Rotate' : selectedModel.value,
   },
 ])
 
@@ -309,9 +270,8 @@ function clearChat() {
   messages.value = [
     {
       role: 'assistant',
-      content: `Percakapan telah dibersihkan. Silakan ajukan pertanyaan insight baru!`,
+      content: `Percakapan telah dibersihkan. Silakan ajukan pertanyaan analisis baru.`,
       time: getNowTime(),
-      model: selectedModel.value === 'auto' ? 'Auto-Rotate' : selectedModel.value,
     },
   ]
 }
@@ -415,7 +375,25 @@ async function sendMessage() {
 
 <style scoped>
 .prose-ai {
-  line-height: 1.6;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: #1e293b;
+  letter-spacing: -0.01em;
+}
+:deep(.prose-ai p) {
+  margin-top: 0.25rem;
+  margin-bottom: 0.35rem;
+}
+:deep(.prose-ai p:first-child) {
+  margin-top: 0;
+}
+:deep(.prose-ai p:last-child) {
+  margin-bottom: 0;
+}
+:deep(.prose-ai ul),
+:deep(.prose-ai ol) {
+  margin-top: 0.25rem;
+  margin-bottom: 0.35rem;
 }
 .animate-fade-in {
   animation: fadeIn 0.15s ease-out;
