@@ -5,7 +5,7 @@
       @click="isOpen = true"
       type="button"
       class="fixed bottom-6 right-6 z-40 group flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-indigo-600 via-purple-600 to-red-600 text-white font-bold text-xs shadow-lg shadow-purple-600/30 hover:shadow-xl hover:shadow-purple-600/40 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer border border-white/20 select-none"
-      title="Buka KBM Business AI Advisor (Ollama Cloud)"
+      title="Buka KBM Business AI Advisor (Gemini & Ollama Cloud)"
     >
       <div class="relative flex items-center justify-center">
         <span class="absolute inline-flex h-full w-full rounded-full bg-white opacity-40 animate-ping"></span>
@@ -15,7 +15,7 @@
       </div>
       <span class="tracking-wide">AI Advisor</span>
       <span class="hidden sm:inline-block px-1.5 py-0.5 rounded text-[10px] bg-white/20 font-mono text-purple-100">
-        Ollama Cloud
+        {{ currentProviderLabel }}
       </span>
     </button>
 
@@ -40,9 +40,17 @@
                 <div>
                   <div class="flex items-center gap-2">
                     <h3 class="font-bold text-sm text-white tracking-tight">KBM Business AI Advisor</h3>
-                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                      Ollama Cloud
+                    <span
+                      class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold border"
+                      :class="isGeminiActive
+                        ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                        : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'"
+                    >
+                      <span
+                        class="w-1.5 h-1.5 rounded-full animate-pulse"
+                        :class="isGeminiActive ? 'bg-blue-400' : 'bg-emerald-400'"
+                      ></span>
+                      {{ isGeminiActive ? 'Gemini Auto-Rotate' : 'Ollama Cloud' }}
                     </span>
                   </div>
                   <p class="text-[11px] text-slate-300 mt-0.5">
@@ -76,22 +84,34 @@
             </div>
 
             <!-- Model Switcher Bar -->
-            <div class="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between gap-2 text-[11px]">
+            <div class="mt-2.5 pt-2 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-[11px]">
               <div class="flex items-center gap-1.5 text-slate-300">
                 <span>Model AI:</span>
                 <select
                   v-model="selectedModel"
-                  class="bg-slate-900 text-purple-200 border border-purple-500/40 rounded-lg px-2 py-0.5 text-[11px] font-medium outline-none focus:border-purple-400 cursor-pointer"
+                  class="bg-slate-900 text-purple-200 border border-purple-500/40 rounded-lg px-2 py-0.5 text-[11px] font-medium outline-none focus:border-purple-400 cursor-pointer max-w-[260px] truncate"
                 >
-                  <option v-for="m in modelList" :key="m.id" :value="m.id">
-                    {{ m.name }}
-                  </option>
+                  <optgroup label="🔄 Google Gemini Free Pool (Auto-Rotate)">
+                    <option v-for="m in geminiModels" :key="m.id" :value="m.id">
+                      {{ m.name }}
+                    </option>
+                  </optgroup>
+                  <optgroup label="☁️ Ollama Cloud Free Credits">
+                    <option v-for="m in ollamaModels" :key="m.id" :value="m.id">
+                      {{ m.name }}
+                    </option>
+                  </optgroup>
                 </select>
               </div>
-              <div class="hidden sm:flex items-center gap-1 text-[10px] text-purple-300/80">
-                <span>⚡ 0 Kuota Worker</span>
+              <div class="flex items-center gap-1.5 text-[10px] text-purple-300/80">
+                <span v-if="selectedModel === 'auto'" class="text-emerald-300 font-bold">
+                  ✨ Auto-Rotate Aktif (1.000+ RPD)
+                </span>
+                <span v-else>
+                  ⚡ 0 Kuota Worker
+                </span>
                 <span>•</span>
-                <span>Cloud Free Credits</span>
+                <span>100% Free Tier</span>
               </div>
             </div>
           </div>
@@ -119,21 +139,21 @@
                   <span>👋 Selamat Datang di KBM Business AI Advisor!</span>
                 </div>
                 <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-200/60 text-indigo-900 font-bold">
-                  {{ selectedModel }}
+                  {{ selectedModelLabel }}
                 </span>
               </div>
               <p class="text-slate-600 leading-relaxed">
-                Asisten ini terhubung dengan <strong>Ollama Cloud</strong> dan secara otomatis menganalisis seluruh data omzet, arus kas, sisa piutang, dan efisiensi biaya percetakan KBM Printing.
+                Asisten ini terhubung dengan <strong>{{ isGeminiActive ? 'Google Gemini' : 'Ollama Cloud' }}</strong> dengan fitur <strong>Auto-Rotate</strong> cerdas. Setiap pertanyaan otomatis menyertakan metrik riil omzet, kas masuk, kas keluar, dan sisa piutang KBM Printing.
               </p>
               <div class="pt-1 flex flex-wrap gap-1.5 text-[11px]">
                 <span class="px-2 py-0.5 rounded bg-white font-medium text-slate-700 border border-indigo-100">
-                  ☁️ Powered by Ollama Cloud
+                  🔄 Auto-Rotate Model Anti Limit
                 </span>
                 <span class="px-2 py-0.5 rounded bg-white font-medium text-slate-700 border border-indigo-100">
-                  🔒 Read-Only Aman (Tanpa mutasi database)
+                  🔒 Read-Only Aman (Tanpa mutasi data)
                 </span>
                 <span class="px-2 py-0.5 rounded bg-white font-medium text-slate-700 border border-indigo-100">
-                  📊 Konteks Finansial Riil Terkini
+                  📊 Live Financial Data Injection
                 </span>
               </div>
             </div>
@@ -148,7 +168,9 @@
               <div class="flex items-center gap-1.5 text-[10px] text-slate-400 px-1 font-medium">
                 <span v-if="msg.role === 'assistant'">🤖 KBM AI Advisor</span>
                 <span v-else>👤 Anda</span>
-                <span v-if="msg.model" class="text-purple-600 font-mono">({{ msg.model }})</span>
+                <span v-if="msg.model" class="text-purple-600 font-mono">
+                  ({{ msg.model }}<span v-if="msg.rotated" class="text-emerald-600 font-bold ml-1">🔄 auto-rotated</span>)
+                </span>
                 <span>•</span>
                 <span>{{ msg.time }}</span>
               </div>
@@ -165,14 +187,14 @@
               </div>
             </div>
 
-            <!-- Loading Indicator saat memproses dengan Ollama Cloud -->
+            <!-- Loading Indicator saat memproses -->
             <div v-if="isLoading" class="flex items-start gap-2 animate-pulse">
               <div class="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 text-xs font-bold">
                 AI
               </div>
               <div class="bg-white border border-slate-200 rounded-2xl rounded-tl-xs px-4 py-3 text-xs text-slate-600 shadow-2xs flex items-center gap-2.5">
                 <span class="w-2.5 h-2.5 rounded-full bg-purple-600 animate-ping"></span>
-                <span>Menganalisis data via Ollama Cloud (<strong>{{ selectedModel }}</strong>)...</span>
+                <span>Menganalisis data via <strong>{{ isGeminiActive ? 'Gemini' : 'Ollama' }}</strong> ({{ selectedModel }})...</span>
               </div>
             </div>
           </div>
@@ -184,7 +206,7 @@
                 ref="inputRef"
                 v-model="inputQuery"
                 type="text"
-                placeholder="Tanyakan insight, misal: 'Siapa penerbit yang paling prioritas ditagih?'"
+                placeholder="Tanyakan insight, misal: 'Berapa persen rasio piutang terhadap omzet bulan ini?'"
                 class="form-input flex-1 bg-slate-50 text-xs py-2.5 px-3.5 rounded-xl border-slate-300 focus:bg-white transition-all outline-none"
                 :disabled="isLoading"
               />
@@ -200,7 +222,7 @@
               </button>
             </form>
             <div class="flex items-center justify-between text-[10px] text-slate-400 px-1">
-              <span>💡 Pertanyaan dianalisis berdasarkan angka aktual database kas & piutang.</span>
+              <span>💡 Auto-Rotate otomatis mengalihkan request jika suatu model mencapai batas RPM.</span>
               <span>Tekan Enter ↵ untuk mengirim</span>
             </div>
           </div>
@@ -211,7 +233,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, watch, onMounted } from 'vue'
+import { ref, computed, nextTick, watch } from 'vue'
 import { useFinanceStore } from '../stores/finance'
 import { api } from '@shared/api/gasClient'
 import { formatRupiah } from '@shared/utils/formatters'
@@ -224,20 +246,53 @@ const inputQuery = ref('')
 const chatContainer = ref<HTMLElement | null>(null)
 const inputRef = ref<HTMLInputElement | null>(null)
 
-// Daftar Model Cloud Gratis yang didukung
-const modelList = [
-  { id: 'gemma4:31b', name: 'gemma4:31b (Rekomendasi Cepat)' },
-  { id: 'gpt-oss:120b', name: 'gpt-oss:120b (Deep Reasoning)' },
-  { id: 'gpt-oss:20b', name: 'gpt-oss:20b (Ringkas & Cepat)' },
-  { id: 'nemotron-3-nano:30b', name: 'nemotron-3-nano:30b' },
-  { id: 'nemotron-3-super', name: 'nemotron-3-super' },
-  { id: 'nemotron-3-ultra', name: 'nemotron-3-ultra' },
+// Daftar Model Gemini Gratis
+const geminiModels = [
+  { id: 'auto', name: '🔄 Auto-Rotate (Gemini Free Pool - 1.000+ RPD)' },
+  { id: 'gemini-3.1-flash-lite', name: '⚡ Gemini 3.1 Flash Lite (500 RPD, 15 RPM)' },
+  { id: 'gemini-3.5-flash-lite', name: '⚡ Gemini 3.5 Flash Lite (500 RPD, 15 RPM)' },
+  { id: 'gemini-2.5-flash-lite', name: '⚡ Gemini 2.5 Flash Lite (20 RPD, 10 RPM)' },
+  { id: 'gemini-3.7-flash', name: '🧠 Gemini 3.7 Flash (20 RPD, 5 RPM)' },
+  { id: 'gemini-3.6-flash', name: '🧠 Gemini 3.6 Flash (20 RPD, 5 RPM)' },
+  { id: 'gemini-3.5-flash', name: '🧠 Gemini 3.5 Flash (20 RPD, 5 RPM)' },
+  { id: 'gemini-3.8-flash', name: '🧠 Gemini 3.8 Flash (20 RPD, 5 RPM)' },
+  { id: 'gemma-4-31b-it', name: '🌐 Gemma 4 31B IT (14.4K RPD, 30 RPM)' },
 ]
 
-const selectedModel = ref(localStorage.getItem('kbm_ai_model') || 'gemma4:31b')
+// Daftar Model Ollama Cloud Gratis
+const ollamaModels = [
+  { id: 'gemma4:31b', name: '☁️ Ollama: gemma4:31b (Cepat & Mantap)' },
+  { id: 'gpt-oss:120b', name: '☁️ Ollama: gpt-oss:120b (Deep Reasoning)' },
+  { id: 'gpt-oss:20b', name: '☁️ Ollama: gpt-oss:20b (Ringan & Cepat)' },
+  { id: 'nemotron-3-nano:30b', name: '☁️ Ollama: nemotron-3-nano:30b' },
+  { id: 'nemotron-3-super', name: '☁️ Ollama: nemotron-3-super' },
+  { id: 'nemotron-3-ultra', name: '☁️ Ollama: nemotron-3-ultra' },
+]
+
+const selectedModel = ref(localStorage.getItem('kbm_ai_model') || 'auto')
 
 watch(selectedModel, (val) => {
   localStorage.setItem('kbm_ai_model', val)
+})
+
+const isGeminiActive = computed(() => {
+  return (
+    selectedModel.value === 'auto' ||
+    selectedModel.value.startsWith('gemini') ||
+    selectedModel.value.startsWith('gemma-4')
+  )
+})
+
+const currentProviderLabel = computed(() => {
+  if (selectedModel.value === 'auto') return 'Gemini Auto'
+  if (isGeminiActive.value) return 'Gemini'
+  return 'Ollama Cloud'
+})
+
+const selectedModelLabel = computed(() => {
+  const all = [...geminiModels, ...ollamaModels]
+  const found = all.find((m) => m.id === selectedModel.value)
+  return found ? found.name : selectedModel.value
 })
 
 interface ChatMessage {
@@ -245,6 +300,7 @@ interface ChatMessage {
   content: string
   time: string
   model?: string
+  rotated?: boolean
 }
 
 const quickChips = [
@@ -263,13 +319,13 @@ function getNowTime() {
 const messages = ref<ChatMessage[]>([
   {
     role: 'assistant',
-    content: `Halo Pak/Bu Owner! Saya **KBM AI Advisor** terhubung ke **Ollama Cloud** (${selectedModel.value}).
+    content: `Halo Pak/Bu Owner! Saya **KBM AI Advisor** dengan fitur **Auto-Rotate Model** (${selectedModel.value === 'auto' ? 'Gemini Free Pool' : selectedModel.value}).
     
-Saya siap menganalisis kinerja finansial, piutang tertunggak, efisiensi bahan baku, dan strategi bisnis percetakan berdasarkan data riil terkini.
+Saya siap menganalisis kinerja finansial, piutang tertunggak, efisiensi bahan baku kertas, dan strategi bisnis percetakan berdasarkan data riil terkini.
     
 Silakan pilih prompt cepat di atas atau ketik pertanyaan langsung!`,
     time: getNowTime(),
-    model: selectedModel.value,
+    model: selectedModel.value === 'auto' ? 'Auto-Rotate' : selectedModel.value,
   },
 ])
 
@@ -279,7 +335,7 @@ function clearChat() {
       role: 'assistant',
       content: `Percakapan telah dibersihkan. Silakan ajukan pertanyaan insight baru!`,
       time: getNowTime(),
-      model: selectedModel.value,
+      model: selectedModel.value === 'auto' ? 'Auto-Rotate' : selectedModel.value,
     },
   ]
 }
@@ -312,7 +368,6 @@ function askQuickQuestion(promptText: string) {
 function formatMarkdown(text: string): string {
   if (!text) return ''
   let html = text
-    // Escaping
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -492,10 +547,10 @@ async function sendMessage() {
         content: res.data.message,
         time: getNowTime(),
         model: res.data.model || selectedModel.value,
+        rotated: (res.data as any).rotated,
       })
     } else {
-      // Fallback lokal jika ada error API
-      console.warn('Ollama Cloud error, menggunakan fallback lokal:', res.error)
+      console.warn('AI Service error, menggunakan fallback lokal:', res.error)
       const fallbackMsg = generateLocalFallback(query)
       messages.value.push({
         role: 'assistant',
