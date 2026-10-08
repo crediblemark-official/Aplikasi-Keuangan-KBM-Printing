@@ -24,34 +24,6 @@
             </template>
             Faktur & Cetak
           </BaseButton>
-          <template v-if="order && order.status_order === 'BATAL'">
-            <BaseButton
-              variant="secondary"
-              @click="restoreOrder"
-              :disabled="isUpdatingStatus"
-              size="sm"
-            >
-              <template #icon>
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              </template>
-              Pulihkan
-            </BaseButton>
-            <BaseButton
-              @click="showDeleteModal = true"
-              :disabled="isDeleting"
-              size="sm"
-              class="!bg-rose-600 hover:!bg-rose-700 !text-white !border-rose-600 shadow-xs"
-            >
-              <template #icon>
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </template>
-              Hapus Order
-            </BaseButton>
-          </template>
         </template>
       </PageHeader>
     </ion-header>
@@ -136,45 +108,53 @@
           </div>
         </div>
 
-        <!-- Banner Khusus Order Batal -->
-        <div v-if="order.status_order === 'BATAL'" class="m-4 sm:m-6 p-4 rounded-2xl bg-rose-50/80 border border-rose-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
-          <div class="flex items-start gap-3">
-            <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 mt-0.5">
+        <!-- Banner Khusus Order Batal (Modern & Refined Card) -->
+        <div
+          v-if="order.status_order === 'BATAL'"
+          class="m-4 sm:m-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-rose-50/70 via-white to-slate-50/50 border border-rose-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4"
+        >
+          <div class="flex items-start gap-3.5">
+            <div class="w-10 h-10 rounded-xl bg-rose-100/80 text-rose-600 border border-rose-200/60 flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
               </svg>
             </div>
             <div>
-              <div class="flex items-center gap-2">
-                <h4 class="text-sm font-bold text-rose-950">Status Pesanan: BATAL</h4>
-                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-200/70 text-rose-800">Tidak Diproduksi</span>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h4 class="text-sm font-bold text-slate-900 tracking-tight">Status Pesanan: BATAL</h4>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-200/60">
+                  Tidak Diproduksi
+                </span>
               </div>
-              <p class="text-xs text-rose-700/90 mt-1 leading-relaxed max-w-xl">
-                Pesanan ini telah dibatalkan. Anda dapat memulihkannya kembali ke proses produksi atau menghapus data order secara permanen dari sistem.
+              <p class="text-xs text-slate-600 mt-1 max-w-xl leading-relaxed">
+                Pesanan ini telah dibatalkan dan dihentikan dari antrean produksi. Anda dapat memulihkannya kembali ke proses pengerjaan atau menghapus data order secara permanen dari sistem.
               </p>
             </div>
           </div>
-          <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+          <div class="flex items-center gap-2.5 shrink-0 self-start md:self-center">
             <button
               type="button"
               @click="restoreOrder"
               :disabled="isUpdatingStatus"
-              class="px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl transition-all cursor-pointer shadow-2xs hover:shadow-xs"
+              class="h-9 px-3.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 active:bg-slate-100 border border-slate-300 rounded-xl transition-all cursor-pointer shadow-2xs hover:shadow-xs inline-flex items-center gap-1.5 disabled:opacity-60"
               title="Kembalikan status order ke PROSES"
             >
-              Pulihkan ke Proses
+              <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span>Pulihkan ke Proses</span>
             </button>
             <button
               type="button"
               @click="showDeleteModal = true"
               :disabled="isDeleting"
-              class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-xl transition-all cursor-pointer shadow-sm shadow-rose-600/30 flex items-center gap-1.5"
-              title="Hapus data order secara permanen"
+              class="h-9 px-4 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-xl transition-all cursor-pointer shadow-xs shadow-rose-600/25 inline-flex items-center gap-1.5 disabled:opacity-60"
+              title="Hapus data order secara permanen dari sistem"
             >
-              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg class="w-3.5 h-3.5 text-rose-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
-              Hapus Permanen
+              <span>Hapus Permanen</span>
             </button>
           </div>
         </div>
