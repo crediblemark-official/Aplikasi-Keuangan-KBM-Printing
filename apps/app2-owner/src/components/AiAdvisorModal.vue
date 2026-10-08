@@ -4,15 +4,10 @@
     <button
       @click="isOpen = true"
       type="button"
-      class="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] right-4 lg:bottom-6 lg:right-6 z-40 group flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-full bg-gradient-to-r from-indigo-600 via-purple-600 to-red-600 text-white font-bold text-xs shadow-lg shadow-purple-600/30 hover:shadow-xl hover:shadow-purple-600/40 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer border border-white/20 select-none"
+      class="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] right-4 lg:bottom-6 lg:right-6 z-40 group flex items-center gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white font-bold text-xs shadow-lg shadow-red-600/30 hover:shadow-xl hover:shadow-red-600/40 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer border border-red-400/30 select-none"
       title="Buka AI Advisor"
     >
-      <div class="relative flex items-center justify-center">
-        <span class="absolute inline-flex h-full w-full rounded-full bg-white opacity-40 animate-ping"></span>
-        <svg class="w-4 h-4 text-white relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
-      </div>
+      <KbmLogo :size="18" variant="icon" class="shrink-0" />
       <span class="tracking-wide">AI Advisor</span>
     </button>
 
@@ -25,22 +20,18 @@
         <div
           class="relative w-full h-[100dvh] sm:h-[85vh] sm:max-w-2xl bg-white rounded-none sm:rounded-2xl shadow-2xl flex flex-col border-0 sm:border border-slate-200 overflow-hidden"
         >
-          <!-- Header Modal (Single Sleek Bar) -->
+          <!-- Header Modal (Single Sleek Bar - KBM Brand Red & Neutral Theme) -->
           <div
-            class="px-3.5 py-2.5 sm:py-2 bg-slate-950 text-white shrink-0 border-b border-white/10 flex items-center justify-between gap-3"
+            class="px-3.5 py-2.5 sm:py-2 bg-slate-900 text-white shrink-0 border-b border-slate-800 flex items-center justify-between gap-3"
             style="padding-top: max(env(safe-area-inset-top, 0px), 10px);"
           >
-            <div class="flex items-center gap-2.5 min-w-0">
-              <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-purple-500 to-indigo-600 flex items-center justify-center text-white shadow-xs shrink-0">
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
+            <div class="flex items-center gap-2 min-w-0">
+              <KbmLogo :size="20" variant="icon" class="shrink-0" />
               <h3 class="font-bold text-xs sm:text-sm text-white shrink-0 tracking-tight">AI Advisor</h3>
               <div class="h-3.5 w-px bg-white/20 shrink-0"></div>
               <select
                 v-model="selectedModel"
-                class="bg-slate-900 text-purple-200 border border-purple-500/30 hover:border-purple-400/60 rounded-md px-2 py-0.5 text-[11px] font-medium outline-none cursor-pointer max-w-[210px] sm:max-w-[260px] truncate"
+                class="bg-slate-800 text-slate-100 border border-slate-700 hover:border-red-500/70 focus:border-red-500 rounded-md px-2 py-0.5 text-[11px] font-medium outline-none cursor-pointer max-w-[200px] sm:max-w-[260px] truncate transition-colors"
               >
                 <optgroup label="Google Gemini">
                   <option v-for="m in geminiModels" :key="m.id" :value="m.id">
@@ -86,7 +77,7 @@
               :key="chip.label"
               @click="askQuickQuestion(chip.prompt)"
               type="button"
-              class="shrink-0 px-2 py-0.5 text-[11px] font-medium rounded-md bg-white hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 border border-slate-200 text-slate-600 transition-all cursor-pointer shadow-2xs inline-flex items-center gap-1"
+              class="shrink-0 px-2 py-0.5 text-[11px] font-medium rounded-md bg-white hover:bg-red-50 hover:text-red-700 hover:border-red-300 border border-slate-200 text-slate-600 transition-all cursor-pointer shadow-2xs inline-flex items-center gap-1"
             >
               <span class="text-xs">{{ chip.icon }}</span>
               <span>{{ chip.label }}</span>
@@ -126,11 +117,11 @@
 
             <!-- Loading Indicator saat memproses -->
             <div v-if="isLoading" class="flex items-start gap-2 animate-pulse">
-              <div class="w-6 h-6 rounded-md bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 text-xs font-bold">
+              <div class="w-6 h-6 rounded-md bg-red-100 flex items-center justify-center text-red-600 shrink-0 text-xs font-bold">
                 AI
               </div>
               <div class="bg-white border border-slate-200 rounded-2xl rounded-tl-xs px-3.5 py-2 text-xs text-slate-600 shadow-2xs flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-purple-600 animate-ping"></span>
+                <span class="w-2 h-2 rounded-full bg-red-600 animate-ping"></span>
                 <span>Menganalisis data finansial KBM Printing...</span>
               </div>
             </div>
@@ -152,7 +143,7 @@
               />
               <button
                 type="submit"
-                class="h-8.5 px-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-red-600 hover:from-indigo-700 hover:to-red-700 text-white font-semibold text-xs shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                class="h-8.5 px-3.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-semibold text-xs shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                 :disabled="isLoading || !inputQuery.trim()"
               >
                 <span>Kirim</span>
@@ -172,6 +163,7 @@
 import { ref, computed, nextTick, watch } from 'vue'
 import { useFinanceStore } from '../stores/finance'
 import { api } from '@shared/api/gasClient'
+import KbmLogo from '@shared/components/KbmLogo.vue'
 import {
   geminiModels,
   ollamaModels,

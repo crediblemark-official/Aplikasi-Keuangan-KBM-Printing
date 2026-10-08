@@ -80,7 +80,7 @@ export function formatInline(text: string): string {
     .replace(/>/g, '&gt;')
 
   // Code inline: `code`
-  s = s.replace(/`([^`]+)`/g, '<code class="bg-slate-100 text-indigo-700 px-1 py-0.5 rounded font-mono text-[12px]">$1</code>')
+  s = s.replace(/`([^`]+)`/g, '<code class="bg-slate-100 text-red-700 px-1 py-0.5 rounded font-mono text-[12px]">$1</code>')
 
   // Bold + Italic: ***text***
   s = s.replace(/\*\*\*(.*?)\*\*\*/g, '<strong class="font-bold text-slate-900"><em class="italic">$1</em></strong>')
@@ -190,7 +190,7 @@ export function formatMarkdown(text: string): string {
     if (trimmed.startsWith('> ')) {
       closeList()
       output.push(
-        `<blockquote class="border-l-2 border-indigo-500 pl-3 py-1 my-1.5 text-slate-600 italic bg-indigo-50/40 rounded-r">${formatInline(trimmed.slice(2))}</blockquote>`
+        `<blockquote class="border-l-2 border-red-500 pl-3 py-1 my-1.5 text-slate-700 italic bg-red-50/40 rounded-r">${formatInline(trimmed.slice(2))}</blockquote>`
       )
       continue
     }
@@ -205,7 +205,7 @@ export function formatMarkdown(text: string): string {
       }
       const isSub = bulletMatch[1].length >= 2
       output.push(
-        `<li class="flex items-start gap-2 ${isSub ? 'pl-4 text-slate-700' : 'text-slate-800'}"><span class="text-indigo-600 font-bold shrink-0 leading-relaxed select-none">•</span><div class="flex-1">${formatInline(bulletMatch[2])}</div></li>`
+        `<li class="flex items-start gap-2 ${isSub ? 'pl-4 text-slate-700' : 'text-slate-800'}"><span class="text-red-600 font-bold shrink-0 leading-relaxed select-none">•</span><div class="flex-1">${formatInline(bulletMatch[2])}</div></li>`
       )
       continue
     }
