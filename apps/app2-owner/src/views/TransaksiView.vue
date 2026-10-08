@@ -107,468 +107,26 @@
       </div>
     </div>
 
-    <!-- ================================================================= -->
-    <!-- TABEL REKONSILIASI: KAS MASUK TANPA ORDER                         -->
-    <!-- ================================================================= -->
-    <TableScrollWrapper v-if="statusFilter === 'UNLINKED'">
-      <div class="p-3.5 sm:p-4 bg-amber-50/60 border-b border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <div>
-          <h4 class="text-xs sm:text-sm font-bold text-amber-950 flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-            Daftar Kas Masuk Tanpa Order (Tercatat di Buku Kas)
-          </h4>
-          <p class="text-[11px] sm:text-xs text-amber-800 mt-0.5">
-            Transaksi uang masuk di bawah ini berstatus terverifikasi dan masuk ke saldo Buku Kas, namun nomor order referensinya tidak ada di sheet Orders.
-          </p>
-        </div>
-        <div class="sm:text-right shrink-0">
-          <span class="text-[11px] font-semibold text-slate-500 block">Total Nominal:</span>
-          <span class="text-base font-black font-mono text-amber-800">{{ formatRupiah(totalUnlinkedNominal) }}</span>
-        </div>
-      </div>
-      <table class="data-table w-full min-w-[1000px]">
-        <thead>
-          <tr class="whitespace-nowrap bg-slate-50 text-slate-600 text-xs">
-            <th class="py-2.5 px-3 text-left">ID Kas Masuk</th>
-            <th class="py-2.5 px-3 text-left">Tanggal</th>
-            <th class="py-2.5 px-3 text-left">Nomor Order Terkait</th>
-            <th class="py-2.5 px-3 text-left">Nama Penerbit</th>
-            <th class="py-2.5 px-3 text-left">Jenis Bayar</th>
-            <th class="py-2.5 px-3 text-left">Metode Kas</th>
-            <th class="py-2.5 px-3 text-right">Nominal Masuk</th>
-            <th class="py-2.5 px-3 text-center">Status Verifikasi</th>
-            <th class="py-2.5 px-3 text-left">Keterangan</th>
-            <th class="py-2.5 px-3 text-center">Bukti Resi</th>
-            <th class="py-2.5 px-3 text-center">Tindakan</th>
-          </tr>
-        </thead>
-        <tbody>
-          <TableStateRow
-            :colspan="11"
-            :loading="isLoading"
-            :is-empty="filteredUnlinkedPayments.length === 0"
-            empty-text="Tidak ada data kas masuk tanpa order pada periode ini"
-          />
-          <tr
-            v-for="item in filteredUnlinkedPayments"
-            :key="item.id"
-            class="hover:bg-amber-50/30 transition-colors"
-          >
-            <td class="font-mono font-bold text-xs text-slate-800 px-3 py-3 whitespace-nowrap">{{ item.id }}</td>
-            <td class="whitespace-nowrap text-xs text-slate-700 px-3 py-3">{{ formatTanggal(item.tanggal) }}</td>
-            <td class="px-3 py-3 whitespace-nowrap">
-              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                <span>{{ item.id_order || 'Tanpa ID Order' }}</span>
-                <span class="text-[10px] text-rose-500 font-sans font-medium">(Tidak Ada di Order)</span>
-              </span>
-            </td>
-            <td class="font-medium text-xs text-slate-900 px-3 py-3 whitespace-nowrap">{{ item.nama_penerbit }}</td>
-            <td class="text-xs text-slate-700 px-3 py-3 whitespace-nowrap">{{ item.jenis_pembayaran }}</td>
-            <td class="text-xs text-slate-700 px-3 py-3 whitespace-nowrap">{{ formatMetode(item.metode) }}</td>
-            <td class="text-right font-mono font-bold text-xs text-emerald-600 px-3 py-3 whitespace-nowrap">
-              {{ formatRupiah(item.nominal) }}
-            </td>
-            <td class="text-center px-3 py-3 whitespace-nowrap">
-              <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                {{ item.status_verifikasi }}
-              </span>
-            </td>
-            <td class="text-xs text-slate-600 max-w-[260px] truncate px-3 py-3" :title="item.keterangan">
-              {{ item.keterangan || '-' }}
-            </td>
-            <td class="text-center px-3 py-3 whitespace-nowrap">
-              <a
-                v-if="item.fileId"
-                :href="`https://drive.google.com/file/d/${item.fileId}/view`"
-                target="_blank"
-                rel="noopener"
-                class="text-blue-600 hover:text-blue-800 font-bold underline text-xs"
-              >
-                Lihat
-              </a>
-              <span v-else class="text-slate-300 text-xs italic">-</span>
-            </td>
-            <td class="text-center px-3 py-3 whitespace-nowrap">
-              <button
-                @click="router.push('/dashboard/buku-kas')"
-                type="button"
-                class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 shadow-2xs transition-all cursor-pointer inline-flex items-center gap-1"
-              >
-                <span>Buku Kas</span>
-                <svg class="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </TableScrollWrapper>
+    <!-- TABEL REKONSILIASI: KAS MASUK TANPA ORDER -->
+    <TransaksiUnlinkedTable
+      v-if="statusFilter === 'UNLINKED'"
+      :items="filteredUnlinkedPayments"
+      :total-nominal="totalUnlinkedNominal"
+      :is-loading="isLoading"
+    />
 
-    <!-- ================================================================= -->
-    <!-- TABEL GABUNGAN: ORDER, RINCIAN PEMBAYARAN MASUK, & PIUTANG       -->
-    <!-- ================================================================= -->
-    <TableScrollWrapper v-else>
-      <table class="data-table w-full min-w-[1900px]">
-        <thead>
-          <!-- Baris 1: Group Headers -->
-          <tr class="whitespace-nowrap">
-            <th colspan="7" class="text-center font-bold text-xs border-b border-slate-300 py-2.5 text-slate-700 bg-slate-100">Info Order</th>
-            <th colspan="4" class="text-center font-bold text-xs border-b border-amber-300 border-l-2 border-amber-400 py-2.5 text-amber-900 bg-amber-100">Uang Muka (DP)</th>
-            <th colspan="4" class="text-center font-bold text-xs border-b border-emerald-300 border-l-2 border-emerald-400 py-2.5 text-emerald-900 bg-emerald-100">Pelunasan</th>
-            <th colspan="4" class="text-center font-bold text-xs border-b border-sky-300 border-l-2 border-sky-400 py-2.5 text-sky-950 bg-sky-100">Ringkasan Tagihan</th>
-          </tr>
-          <!-- Baris 2: Kolom Detail -->
-          <tr class="whitespace-nowrap">
-            <th class="bg-slate-50 text-slate-600">ID Order</th>
-            <th class="bg-slate-50 text-slate-600">Penerbit</th>
-            <th class="bg-slate-50 text-slate-600">
-              <div class="inline-flex items-center gap-1.5">
-                <span>Judul</span>
-                <button
-                  type="button"
-                  @click="toggleAllJudul"
-                  class="text-[10px] font-normal text-slate-500 hover:text-red-700 bg-slate-100 hover:bg-slate-200/80 px-1.5 py-0.5 rounded transition-all cursor-pointer select-none"
-                  :title="isAllJudulExpanded ? 'Ciutkan semua judul' : 'Lihat semua judul lengkap'"
-                >
-                  {{ isAllJudulExpanded ? '▲ Ciutkan' : '▼ Lihat Semua' }}
-                </button>
-              </div>
-            </th>
-            <th class="text-right bg-slate-50 text-slate-600">Qty</th>
-            <th class="bg-slate-50 text-slate-600">Ukuran</th>
-            <th class="bg-slate-50 text-slate-600">Kertas</th>
-            <th class="text-right bg-slate-50 text-slate-600">Total Tagihan</th>
-            <th class="border-l-2 border-amber-400 bg-amber-50 text-amber-800">Tgl DP</th>
-            <th class="text-right bg-amber-50 text-amber-800">Nominal DP</th>
-            <th class="bg-amber-50 text-amber-800">Metode DP</th>
-            <th class="text-center bg-amber-50 text-amber-800">Bukti DP</th>
-            <th class="border-l-2 border-emerald-400 bg-emerald-50 text-emerald-800">Tgl Pelunasan</th>
-            <th class="text-right bg-emerald-50 text-emerald-800">Nominal Pelunasan</th>
-            <th class="bg-emerald-50 text-emerald-800">Metode Pelunasan</th>
-            <th class="text-center bg-emerald-50 text-emerald-800">Bukti Pelunasan</th>
-            <th class="text-right border-l-2 border-sky-400 bg-sky-50 text-sky-800">Sudah Masuk</th>
-            <th class="text-right bg-sky-50 text-sky-800">Sisa Piutang</th>
-            <th class="text-center bg-sky-50 text-sky-800">Status Bayar</th>
-            <th class="text-center bg-sky-50 text-sky-800">Aksi</th>
-          </tr>
-        </thead>
-        <tbody>
-          <TableStateRow
-            :colspan="19"
-            :loading="isLoading"
-            :is-empty="filteredPiutangRows.length === 0"
-            empty-text="Tidak ada data transaksi order pada filter ini"
-          />
-
-          <tr
-            v-for="row in displayedPiutangRows"
-            :key="row.order.id_order"
-            class="group/row hover:bg-slate-50/70 transition-colors"
-          >
-            <!-- 1. ID Order -->
-            <td class="font-mono text-xs font-semibold text-slate-700 whitespace-nowrap align-top py-3">
-              <div class="inline-flex items-center gap-1.5">
-                <span>{{ row.order.id_order }}</span>
-                <span
-                  v-if="row.has_pending"
-                  class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"
-                  title="Ada transfer kasir yang menunggu verifikasi"
-                ></span>
-              </div>
-            </td>
-
-            <!-- 2. Penerbit -->
-            <td
-              class="font-bold text-slate-900 align-top py-3 transition-all"
-              :class="expandedPenerbit[row.order.id_order] ? 'min-w-[180px] max-w-[280px]' : 'max-w-[150px]'"
-              :title="row.order.nama_penerbit"
-            >
-              <div
-                @click="togglePenerbit(row.order.id_order)"
-                class="cursor-pointer group select-text rounded p-1 -m-1 hover:bg-slate-100 transition-colors"
-                title="Klik untuk melihat / menciutkan penerbit"
-              >
-                <p :class="expandedPenerbit[row.order.id_order] ? 'whitespace-normal break-words leading-snug' : 'truncate'">
-                  {{ row.order.nama_penerbit }}
-                </p>
-              </div>
-            </td>
-
-            <!-- 3. Judul -->
-            <td
-              class="align-top py-3 transition-all"
-              :class="expandedJudul[row.order.id_order] ? 'min-w-[260px] max-w-[420px]' : 'max-w-[200px]'"
-            >
-              <div
-                @click="toggleJudul(row.order.id_order)"
-                class="cursor-pointer group select-text rounded p-1.5 -m-1 transition-all hover:bg-red-50/70 border border-transparent hover:border-red-200"
-                :title="expandedJudul[row.order.id_order] ? 'Klik untuk menciutkan judul' : 'Klik untuk melihat teks judul lengkap'"
-              >
-                <div class="flex items-start justify-between gap-1">
-                  <p
-                    class="font-semibold text-xs text-slate-800 transition-colors group-hover:text-red-700"
-                    :class="expandedJudul[row.order.id_order] ? 'whitespace-normal break-words leading-relaxed' : 'truncate'"
-                  >
-                    {{ row.order.judul_penulis }}
-                  </p>
-                  <span
-                    class="text-[10px] text-slate-400 group-hover:text-red-600 shrink-0 font-mono transition-transform mt-0.5"
-                    :class="expandedJudul[row.order.id_order] ? 'rotate-180 text-red-600 font-bold' : ''"
-                  >
-                    ▼
-                  </span>
-                </div>
-                <div v-if="expandedJudul[row.order.id_order]" class="mt-1 flex items-center justify-between border-t border-red-100 pt-1">
-                  <span class="text-[9px] text-red-600 font-semibold">Teks Lengkap</span>
-                  <span class="text-[9px] text-slate-400 group-hover:text-red-600 font-medium">▲ Klik untuk Ciutkan</span>
-                </div>
-              </div>
-            </td>
-
-            <!-- 4. Qty -->
-            <td class="text-right align-top py-3 whitespace-nowrap font-mono font-bold text-slate-900 text-xs">
-              {{ row.order.jml_pcs }}
-            </td>
-
-            <!-- 5. Ukuran -->
-            <td class="align-top py-3 whitespace-nowrap text-xs text-slate-700">
-              {{ row.order.ukuran_custom || row.order.ukuran }}
-            </td>
-
-            <!-- 6. Kertas -->
-            <td class="align-top py-3 text-xs text-slate-600 whitespace-nowrap">
-              {{ formatKertasOrder(row.order) }}
-            </td>
-
-            <!-- 4. Total Tagihan -->
-            <td class="text-right font-mono font-bold text-slate-900 whitespace-nowrap align-top py-3">
-              {{ formatRupiah(row.order.total_harga) }}
-            </td>
-
-            <!-- Tgl DP -->
-            <td class="align-top py-3 whitespace-nowrap text-xs text-slate-700 border-l-2 border-amber-300 bg-amber-50/40 group-hover/row:bg-amber-100/70 transition-colors">
-              <template v-for="tx in row.dpPayments" :key="tx.id">
-                <div>{{ formatTanggal(tx.tanggal) }}</div>
-              </template>
-              <span v-if="row.dpPayments.length === 0" class="text-slate-300 italic">—</span>
-            </td>
-
-            <!-- Nominal DP -->
-            <td
-              class="text-right align-top py-3 whitespace-nowrap text-xs font-mono font-bold bg-amber-50/40 group-hover/row:bg-amber-100/70 transition-colors"
-              :class="row.dpPending ? 'text-amber-700' : 'text-slate-900'"
-            >
-              <template v-for="tx in row.dpPayments" :key="tx.id">
-                <div>{{ formatRupiah(tx.nominal) }}</div>
-              </template>
-              <span v-if="row.dpPayments.length === 0" class="text-slate-300 font-normal italic">—</span>
-            </td>
-
-            <!-- Metode DP -->
-            <td class="align-top py-3 whitespace-nowrap text-xs text-slate-700 bg-amber-50/40 group-hover/row:bg-amber-100/70 transition-colors">
-              <template v-for="tx in row.dpPayments" :key="tx.id">
-                <div>{{ formatMetode(tx.metode) }}</div>
-              </template>
-              <span v-if="row.dpPayments.length === 0" class="text-slate-300 italic">—</span>
-            </td>
-
-            <!-- Bukti/Status DP -->
-            <td class="text-center align-top py-3 text-xs bg-amber-50/40 group-hover/row:bg-amber-100/70 transition-colors">
-              <template v-for="tx in row.dpPayments" :key="tx.id">
-                <div class="flex items-center justify-center gap-1">
-                  <a
-                    v-if="tx.fileId"
-                    :href="`https://drive.google.com/file/d/${tx.fileId}/view`"
-                    target="_blank"
-                    rel="noopener"
-                    class="text-blue-600 hover:text-blue-800 font-bold underline cursor-pointer"
-                  >
-                    Resi
-                  </a>
-                  <button
-                    v-if="tx.status_verifikasi === 'PENDING'"
-                    @click.stop="verifyTx(tx)"
-                    :disabled="verifyingId === tx.id"
-                    type="button"
-                    class="px-1.5 py-0.5 font-bold rounded bg-amber-500 hover:bg-amber-600 text-white cursor-pointer transition-colors"
-                  >
-                    {{ verifyingId === tx.id ? '...' : 'Verif' }}
-                  </button>
-                  <span v-else class="text-emerald-600 font-bold" title="Terverifikasi">✓</span>
-
-                  <!-- Tombol Edit Pembayaran DP -->
-                  <button
-                    @click.stop="openEditPaymentModal(tx, row.order)"
-                    type="button"
-                    class="px-1.5 py-0.5 rounded text-[10px] font-bold text-amber-800 bg-amber-100 hover:bg-amber-200 border border-amber-300 transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs"
-                    title="Edit Data Transaksi DP"
-                  >
-                    <svg class="w-3 h-3 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    <span>Edit</span>
-                  </button>
-                </div>
-              </template>
-              <span v-if="row.dpPayments.length === 0" class="text-slate-300 italic">—</span>
-            </td>
-
-            <!-- Tgl Pelunasan -->
-            <td class="align-top py-3 whitespace-nowrap text-xs text-slate-700 border-l-2 border-emerald-300 bg-emerald-50/40 group-hover/row:bg-emerald-100/70 transition-colors">
-              <template v-for="tx in row.pelunasanPayments" :key="tx.id">
-                <div>{{ formatTanggal(tx.tanggal) }}</div>
-              </template>
-              <span v-if="row.pelunasanPayments.length === 0" class="text-slate-300 italic">—</span>
-            </td>
-
-            <!-- Nominal Pelunasan -->
-            <td
-              class="text-right align-top py-3 whitespace-nowrap text-xs font-mono font-bold bg-emerald-50/40 group-hover/row:bg-emerald-100/70 transition-colors"
-              :class="row.pelunasanPending ? 'text-amber-700' : 'text-slate-900'"
-            >
-              <template v-for="tx in row.pelunasanPayments" :key="tx.id">
-                <div>{{ formatRupiah(tx.nominal) }}</div>
-              </template>
-              <span v-if="row.pelunasanPayments.length === 0" class="text-slate-300 font-normal italic">—</span>
-            </td>
-
-            <!-- Metode Pelunasan -->
-            <td class="align-top py-3 whitespace-nowrap text-xs text-slate-700 bg-emerald-50/40 group-hover/row:bg-emerald-100/70 transition-colors">
-              <template v-for="tx in row.pelunasanPayments" :key="tx.id">
-                <div>{{ formatMetode(tx.metode) }}</div>
-              </template>
-              <span v-if="row.pelunasanPayments.length === 0" class="text-slate-300 italic">—</span>
-            </td>
-
-            <!-- Bukti/Status Pelunasan -->
-            <td class="text-center align-top py-3 text-xs bg-emerald-50/40 group-hover/row:bg-emerald-100/70 transition-colors">
-              <template v-for="tx in row.pelunasanPayments" :key="tx.id">
-                <div class="flex items-center justify-center gap-1">
-                  <a
-                    v-if="tx.fileId"
-                    :href="`https://drive.google.com/file/d/${tx.fileId}/view`"
-                    target="_blank"
-                    rel="noopener"
-                    class="text-blue-600 hover:text-blue-800 font-bold underline cursor-pointer"
-                  >
-                    Resi
-                  </a>
-                  <button
-                    v-if="tx.status_verifikasi === 'PENDING'"
-                    @click.stop="verifyTx(tx)"
-                    :disabled="verifyingId === tx.id"
-                    type="button"
-                    class="px-1.5 py-0.5 font-bold rounded bg-amber-500 hover:bg-amber-600 text-white cursor-pointer transition-colors"
-                  >
-                    {{ verifyingId === tx.id ? '...' : 'Verif' }}
-                  </button>
-                  <span v-else class="text-emerald-600 font-bold" title="Terverifikasi">✓</span>
-
-                  <!-- Tombol Edit Pembayaran Pelunasan -->
-                  <button
-                    @click.stop="openEditPaymentModal(tx, row.order)"
-                    type="button"
-                    class="px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs"
-                    title="Edit Data Transaksi Pelunasan"
-                  >
-                    <svg class="w-3 h-3 text-emerald-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    <span>Edit</span>
-                  </button>
-                </div>
-              </template>
-              <span v-if="row.pelunasanPayments.length === 0" class="text-slate-300 italic">—</span>
-            </td>
-
-            <!-- 6. Sudah Masuk -->
-            <td class="text-right font-mono font-semibold text-emerald-700 whitespace-nowrap align-top py-3 border-l-2 border-sky-300 bg-sky-50/30 group-hover/row:bg-sky-100/60 transition-colors">
-              <div class="inline-flex items-center gap-1.5 justify-end">
-                <span>{{ formatRupiah(row.total_masuk ?? row.total_masuk_verified) }}</span>
-                <span
-                  v-if="row.has_pending"
-                  class="text-[10px] text-amber-700 font-bold bg-amber-100 px-1 rounded border border-amber-300"
-                  title="Ada transaksi kasir menunggu approval"
-                >
-                  Wait
-                </span>
-              </div>
-              <div
-                v-if="row.total_masuk_verified > row.order.total_harga"
-                class="text-[10px] font-bold text-emerald-600 mt-0.5"
-                title="Pembayaran melebihi total tagihan faktur"
-              >
-                +{{ formatRupiah(row.total_masuk_verified - row.order.total_harga) }} (Lebih)
-              </div>
-            </td>
-
-            <!-- 7. Sisa Piutang -->
-            <td class="text-right font-extrabold whitespace-nowrap align-top py-3 bg-sky-50/30 group-hover/row:bg-sky-100/60 transition-colors"
-                :class="row.sisa_tagihan > 0 ? 'text-rose-600' : 'text-emerald-600'">
-              {{ formatRupiah(row.sisa_tagihan) }}
-            </td>
-
-            <!-- 8. Status Bayar Badge -->
-            <td class="text-center whitespace-nowrap align-top py-3 bg-sky-50/30 group-hover/row:bg-sky-100/60 transition-colors">
-              <StatusBadge :status="row.status_bayar" :verification="getVerificationStatus(row.payments)" />
-            </td>
-
-            <!-- 9. Aksi -->
-            <td class="text-center whitespace-nowrap align-middle py-3 px-3 bg-sky-50/30 group-hover/row:bg-sky-100/60 transition-colors">
-              <div class="inline-flex items-center justify-center gap-1.5 whitespace-nowrap">
-                <!-- Tombol Bayar jika ada sisa tagihan -->
-                <button
-                  v-if="row.sisa_tagihan > 0"
-                  @click.stop="openPaymentModalForOrder(row)"
-                  type="button"
-                  class="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs hover:shadow-xs whitespace-nowrap"
-                  title="Catat pembayaran piutang baru"
-                >
-                  <svg class="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
-                  </svg>
-                  <span>+ Bayar</span>
-                </button>
-                <span
-                  v-else
-                  class="px-2 py-1 text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg font-bold inline-flex items-center gap-1 whitespace-nowrap"
-                >
-                  ✓ Lunas
-                </span>
-
-                <!-- Tombol Edit Order (Data Faktur & Spek) -->
-                <button
-                  @click.stop="openEditOrderModal(row.order)"
-                  type="button"
-                  class="px-2.5 py-1 text-xs font-bold rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs hover:shadow-xs whitespace-nowrap"
-                  title="Edit Data Order (Judul, Harga, Spek, Status)"
-                >
-                  <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                  <span>Edit Order</span>
-                </button>
-
-                <!-- Tombol Edit Kas jika ada pembayaran -->
-                <button
-                  v-if="row.payments.length > 0"
-                  @click.stop="openSelectEditPayment(row)"
-                  type="button"
-                  class="px-2.5 py-1 text-xs font-bold rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs hover:shadow-xs whitespace-nowrap"
-                  :title="`Edit Data Pembayaran (${row.payments.length} transaksi)`"
-                >
-                  <svg class="w-3.5 h-3.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                  <span>Edit Kas</span>
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </TableScrollWrapper>
+    <!-- TABEL GABUNGAN: ORDER, RINCIAN PEMBAYARAN MASUK, & PIUTANG -->
+    <TransaksiOrderTable
+      v-else
+      :rows="displayedPiutangRows"
+      :is-loading="isLoading"
+      :verifying-id="verifyingId"
+      @verify-tx="verifyTx"
+      @edit-payment="openEditPaymentModal"
+      @edit-order="openEditOrderModal"
+      @bayar-order="openPaymentModalForOrder"
+      @select-edit-payment="openSelectEditPayment"
+    />
 
     <!-- Load More Section -->
     <div
@@ -604,9 +162,7 @@
       </div>
     </div>
 
-    <!-- ================================================================= -->
-    <!-- MODAL: CATAT PEMBAYARAN ORDER BARU (Modular Component)            -->
-    <!-- ================================================================= -->
+    <!-- MODAL: CATAT PEMBAYARAN ORDER BARU -->
     <PaymentOrderModal
       v-model="showPaymentModal"
       :orders-list="ordersList"
@@ -616,9 +172,7 @@
       @toast="showToast"
     />
 
-    <!-- ================================================================= -->
-    <!-- MODAL: EDIT & BATAL PEMBAYARAN ORDER (Modular Component)          -->
-    <!-- ================================================================= -->
+    <!-- MODAL: EDIT & BATAL PEMBAYARAN ORDER -->
     <EditPaymentOrderModal
       v-model="showEditPaymentModal"
       :tx="selectedEditTx"
@@ -628,9 +182,7 @@
       @toast="showToast"
     />
 
-    <!-- ================================================================= -->
-    <!-- MODAL: EDIT DATA ORDER (Judul, Harga, Spek, Status)               -->
-    <!-- ================================================================= -->
+    <!-- MODAL: EDIT DATA ORDER -->
     <EditOrderModal
       v-model="showEditOrderModal"
       :order="selectedEditOrderData"
@@ -639,9 +191,7 @@
       @toast="showToast"
     />
 
-    <!-- ================================================================= -->
-    <!-- MODAL: PILIH PEMBAYARAN UNTUK DIEDIT (Jika Ada > 1 Transaksi)    -->
-    <!-- ================================================================= -->
+    <!-- MODAL: PILIH PEMBAYARAN UNTUK DIEDIT (Jika Ada > 1 Transaksi) -->
     <BaseModal
       v-model="showPaymentChooserModal"
       title="Pilih Transaksi Pembayaran yang Ingin Diedit"
@@ -682,7 +232,7 @@
       </div>
     </BaseModal>
 
-    <!-- Toast Notification (Shared Component) -->
+    <!-- Toast Notification -->
     <ToastNotification
       :message="toastMessage"
       :type="toastType"
@@ -692,40 +242,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { storeToRefs } from 'pinia'
 import PageHeader from '@shared/components/PageHeader.vue'
 import BaseButton from '@shared/components/BaseButton.vue'
 import MetricStrip from '@shared/components/MetricStrip.vue'
-import TableStateRow from '@shared/components/TableStateRow.vue'
-import StatusBadge from '@shared/components/StatusBadge.vue'
-import TableScrollWrapper from '@shared/components/TableScrollWrapper.vue'
+import BaseModal from '@shared/components/BaseModal.vue'
+import SearchInput from '@shared/components/SearchInput.vue'
+import DateFilterBar from '@shared/components/DateFilterBar.vue'
 import ToastNotification from '@shared/components/ToastNotification.vue'
 import PaymentOrderModal from '../components/PaymentOrderModal.vue'
 import EditPaymentOrderModal from '../components/EditPaymentOrderModal.vue'
 import EditOrderModal from '../components/EditOrderModal.vue'
-import BaseModal from '@shared/components/BaseModal.vue'
-import SearchInput from '@shared/components/SearchInput.vue'
-import DateFilterBar from '@shared/components/DateFilterBar.vue'
+import TransaksiUnlinkedTable from '../components/transaksi/TransaksiUnlinkedTable.vue'
+import TransaksiOrderTable from '../components/transaksi/TransaksiOrderTable.vue'
+import { useTransaksiFilter, type OrderTxRow, type EnrichedPiutangRow } from '../composables/useTransaksiFilter'
 import { api } from '@shared/api/gasClient'
 import { useAuthStore } from '../stores/auth'
-import { useToast } from '@shared/utils/useToast'
-import {
-  formatRupiah,
-  formatTanggal,
-  formatMetode,
-  formatKertasOrder,
-  hitungStatusBayar,
-  getTodayISO,
-  isDateInFilterRange,
-  getVerificationStatus,
-} from '@shared/utils/formatters'
-import type { KasMasuk, Order, SumberKas, PiutangRow, DateFilterValue } from '@shared/types'
 import { useFinanceStore } from '../stores/finance'
-import { storeToRefs } from 'pinia'
+import { useToast } from '@shared/utils/useToast'
+import { formatRupiah, formatTanggal, formatMetode, getTodayISO } from '@shared/utils/formatters'
+import type { Order, PiutangRow, DateFilterValue } from '@shared/types'
 
 const route = useRoute()
-const router = useRouter()
 const authStore = useAuthStore()
 const financeStore = useFinanceStore()
 
@@ -736,6 +276,22 @@ const statusFilter = ref<'ALL' | 'PIUTANG' | 'LUNAS' | 'PENDING_VERIF' | 'UNLINK
 const dateFilter = ref<DateFilterValue>({ mode: 'ALL' })
 
 const { toastMessage, toastType, showToast, clearToast } = useToast()
+
+// Composable for filtering, search, pagination & summaries
+const {
+  PAGE_SIZE,
+  dateFilteredUnlinkedPayments,
+  filteredUnlinkedPayments,
+  totalUnlinkedNominal,
+  filterOptions,
+  filteredPiutangRows,
+  displayedPiutangRows,
+  hasMoreRows,
+  nextBatchCount,
+  loadMore,
+  showAll,
+  summaryMetrics,
+} = useTransaksiFilter(ordersList, kasMasukList, searchQuery, statusFilter, dateFilter)
 
 // Modal States
 const showPaymentModal = ref(false)
@@ -748,309 +304,6 @@ const selectedEditOrderData = ref<Order | null>(null)
 const showPaymentChooserModal = ref(false)
 const selectedChooserRow = ref<EnrichedPiutangRow | null>(null)
 
-// Expand / Collapse state for truncated cells
-const expandedJudul = ref<Record<string, boolean>>({})
-const expandedPenerbit = ref<Record<string, boolean>>({})
-const isAllJudulExpanded = ref(false)
-
-export interface OrderTxRow {
-  id: string
-  tanggal: string
-  id_order?: string | null
-  nama_penerbit: string
-  judul_buku?: string
-  jenis_pembayaran: string
-  metode: string
-  nominal: number
-  status_verifikasi: string
-  fileId?: string
-  keterangan?: string
-}
-
-export interface EnrichedPiutangRow extends PiutangRow {
-  payments: OrderTxRow[]
-  dpPayments: OrderTxRow[]
-  pelunasanPayments: OrderTxRow[]
-  dpPending: boolean
-  pelunasanPending: boolean
-}
-
-// All payments linked to orders
-const allOrdersTx = computed<OrderTxRow[]>(() => {
-  return kasMasukList.value
-    .filter((k) => {
-      if (k.jenis_pembayaran === 'NON_ORDER' || k.jenis_pembayaran === 'DEPOSIT') {
-        return false
-      }
-      if (k.status_verifikasi === 'BATAL') {
-        return false
-      }
-      return true
-    })
-    .map((k) => {
-      const order = ordersList.value.find((o) => o.id_order === k.id_order)
-      return {
-        id: k.id_kas_masuk,
-        tanggal: k.tanggal,
-        id_order: k.id_order,
-        nama_penerbit: (k.nama_penerbit || order?.nama_penerbit || '-').trim(),
-        judul_buku: order?.judul_penulis || '',
-        jenis_pembayaran: k.jenis_pembayaran,
-        metode: k.metode,
-        nominal: k.nominal,
-        status_verifikasi: k.status_verifikasi,
-        fileId: k.file_id_bukti,
-        keterangan: k.keterangan,
-      }
-    })
-    .sort((a, b) => b.tanggal.localeCompare(a.tanggal))
-})
-
-const pendingVerifikasiCount = computed(() => allOrdersTx.value.filter((t) => t.status_verifikasi === 'PENDING').length)
-
-// Master Rows (Orders with payments attached directly)
-const piutangRows = computed<EnrichedPiutangRow[]>(() => {
-  return ordersList.value.map((order) => {
-    const payments = allOrdersTx.value.filter((tx) => tx.id_order === order.id_order)
-    const dpPayments = payments.filter((tx) => tx.jenis_pembayaran === 'DP')
-    const pelunasanPayments = payments.filter((tx) => tx.jenis_pembayaran !== 'DP')
-    const dpPending = dpPayments.some((tx) => tx.status_verifikasi === 'PENDING')
-    const pelunasanPending = pelunasanPayments.some((tx) => tx.status_verifikasi === 'PENDING')
-    const total_masuk = payments.reduce((s, k) => s + k.nominal, 0)
-    const total_masuk_verified = payments
-      .filter((k) => k.status_verifikasi === 'VERIFIED')
-      .reduce((s, k) => s + k.nominal, 0)
-    const has_pending = payments.some((k) => k.status_verifikasi === 'PENDING')
-    // Sudut pandang owner: sisa tagihan & status bayar dihitung dari pembayaran TERVERIFIKASI saja
-    const sisa_tagihan = Math.max(0, order.total_harga - total_masuk_verified)
-    const status_bayar = hitungStatusBayar(total_masuk_verified, order.total_harga)
-
-    return {
-      order,
-      total_masuk,
-      total_masuk_verified,
-      has_pending,
-      sisa_tagihan,
-      status_bayar,
-      payments,
-      dpPayments,
-      pelunasanPayments,
-      dpPending,
-      pelunasanPending,
-    }
-  })
-})
-
-// Data baris yang disaring berdasarkan tanggal pembuatan order aktif
-// sehingga setiap order hanya tercatat di bulannya (tidak terhitung ganda antar bulan)
-// dan penjumlahan seluruh bulan (Agustus + September + ...) 100% klop dengan Grand Total
-const dateFilteredPiutangRows = computed(() => {
-  return piutangRows.value.filter((r) => {
-    if (dateFilter.value.mode !== 'ALL') {
-      return isDateInFilterRange(r.order.tanggal, dateFilter.value)
-    }
-    return true
-  })
-})
-
-// Transaksi kas masuk yang tercatat di Buku Kas namun nomor ordernya tidak ada di master Orders
-const unlinkedPayments = computed(() => {
-  const orderIdSet = new Set(ordersList.value.map((o) => o.id_order))
-  return kasMasukList.value
-    .filter((k) => {
-      if (k.status_verifikasi === 'BATAL') return false
-      return !k.id_order || !orderIdSet.has(k.id_order)
-    })
-    .map((k) => ({
-      id: k.id_kas_masuk,
-      tanggal: k.tanggal,
-      id_order: k.id_order,
-      nama_penerbit: k.nama_penerbit || '-',
-      nominal: k.nominal,
-      metode: k.metode,
-      jenis_pembayaran: k.jenis_pembayaran,
-      status_verifikasi: k.status_verifikasi,
-      keterangan: k.keterangan,
-      fileId: k.file_id_bukti,
-    }))
-    .sort((a, b) => b.tanggal.localeCompare(a.tanggal))
-})
-
-const dateFilteredUnlinkedPayments = computed(() => {
-  return unlinkedPayments.value.filter((k) => {
-    if (dateFilter.value.mode !== 'ALL') {
-      return isDateInFilterRange(k.tanggal, dateFilter.value)
-    }
-    return true
-  })
-})
-
-const filteredUnlinkedPayments = computed(() => {
-  return dateFilteredUnlinkedPayments.value.filter((k) => {
-    if (searchQuery.value.trim()) {
-      const q = searchQuery.value.toLowerCase()
-      return (
-        k.id.toLowerCase().includes(q) ||
-        (k.id_order && k.id_order.toLowerCase().includes(q)) ||
-        k.nama_penerbit.toLowerCase().includes(q) ||
-        (k.keterangan && k.keterangan.toLowerCase().includes(q))
-      )
-    }
-    return true
-  })
-})
-
-const totalUnlinkedNominal = computed(() =>
-  dateFilteredUnlinkedPayments.value
-    .filter((k) => k.status_verifikasi === 'VERIFIED')
-    .reduce((s, k) => s + k.nominal, 0)
-)
-
-const filterOptions = computed(() => [
-  { value: 'ALL' as const, label: 'Semua Order', count: dateFilteredPiutangRows.value.length },
-  {
-    value: 'PIUTANG' as const,
-    label: 'Ada Piutang',
-    count: dateFilteredPiutangRows.value.filter((r) => r.sisa_tagihan > 0).length,
-    badgeClass: 'bg-rose-50 text-rose-600 font-bold',
-  },
-  {
-    value: 'LUNAS' as const,
-    label: 'Lunas',
-    count: dateFilteredPiutangRows.value.filter((r) => r.sisa_tagihan <= 0).length,
-    badgeClass: 'bg-emerald-50 text-emerald-700 font-bold',
-  },
-  {
-    value: 'PENDING_VERIF' as const,
-    label: 'Perlu Verifikasi',
-    count: dateFilteredPiutangRows.value.filter((r) => r.has_pending).length,
-    badgeClass: dateFilteredPiutangRows.value.some((r) => r.has_pending)
-      ? 'bg-amber-500 text-white font-extrabold animate-pulse'
-      : 'bg-slate-300 text-slate-600',
-  },
-  ...(dateFilteredUnlinkedPayments.value.length > 0
-    ? [
-        {
-          value: 'UNLINKED' as const,
-          label: 'Tanpa Order',
-          count: dateFilteredUnlinkedPayments.value.length,
-          badgeClass: 'bg-amber-100 text-amber-800 font-bold',
-        },
-      ]
-    : []),
-])
-
-const filteredPiutangRows = computed(() => {
-  return dateFilteredPiutangRows.value.filter((r) => {
-    if (statusFilter.value === 'PIUTANG' && r.sisa_tagihan <= 0) return false
-    if (statusFilter.value === 'LUNAS' && r.sisa_tagihan > 0) return false
-    if (statusFilter.value === 'PENDING_VERIF' && !r.has_pending) return false
-
-    if (searchQuery.value.trim()) {
-      const q = searchQuery.value.toLowerCase()
-      return (
-        r.order.nama_penerbit.toLowerCase().includes(q) ||
-        r.order.judul_penulis.toLowerCase().includes(q) ||
-        r.order.id_order.toLowerCase().includes(q)
-      )
-    }
-    return true
-  })
-})
-
-// Load More / Pagination State
-const PAGE_SIZE = 25
-const displayLimit = ref(PAGE_SIZE)
-
-// Reset batas tampilan jika filter atau pencarian berubah
-watch([statusFilter, dateFilter, searchQuery], () => {
-  displayLimit.value = PAGE_SIZE
-})
-
-const displayedPiutangRows = computed(() => {
-  return filteredPiutangRows.value.slice(0, displayLimit.value)
-})
-
-const hasMoreRows = computed(() => {
-  return displayedPiutangRows.value.length < filteredPiutangRows.value.length
-})
-
-const nextBatchCount = computed(() => {
-  return Math.min(PAGE_SIZE, filteredPiutangRows.value.length - displayedPiutangRows.value.length)
-})
-
-function loadMore() {
-  displayLimit.value += PAGE_SIZE
-}
-
-function showAll() {
-  displayLimit.value = filteredPiutangRows.value.length
-}
-
-const totalTagihanPiutang = computed(() => filteredPiutangRows.value.reduce((s, r) => s + r.order.total_harga, 0))
-const totalMasukPiutang = computed(() => filteredPiutangRows.value.reduce((s, r) => s + r.total_masuk_verified, 0))
-const totalSisaPiutang = computed(() => filteredPiutangRows.value.reduce((s, r) => s + r.sisa_tagihan, 0))
-const totalKelebihanBayar = computed(() => Math.max(0, totalMasukPiutang.value - totalTagihanPiutang.value))
-const orderLunasCount = computed(() => filteredPiutangRows.value.filter((r) => r.sisa_tagihan <= 0).length)
-const filteredPendingVerifikasiCount = computed(() => filteredPiutangRows.value.filter((r) => r.has_pending).length)
-
-// Summary Metrics Bar
-const summaryMetrics = computed(() => [
-  {
-    label: 'Order Aktif',
-    value: filteredPiutangRows.value.filter((r) => r.order.status_order === 'PROSES').length,
-    minWidth: 'min-w-[120px]',
-  },
-  {
-    label: 'Total Nilai Tagihan',
-    value: formatRupiah(totalTagihanPiutang.value),
-    minWidth: 'min-w-[140px]',
-  },
-  {
-    label: 'Total Terbayar',
-    value: formatRupiah(totalMasukPiutang.value),
-    valueClass: 'text-emerald-600',
-    sub: totalKelebihanBayar.value > 0 ? `Lebih Bayar: +${formatRupiah(totalKelebihanBayar.value)}` : undefined,
-    subClass: 'text-emerald-700 font-semibold',
-    minWidth: 'min-w-[140px]',
-  },
-  ...(totalUnlinkedNominal.value > 0
-    ? [
-        {
-          label: 'Kas Tanpa Order',
-          value: formatRupiah(totalUnlinkedNominal.value),
-          valueClass: 'text-amber-600',
-          sub: `${dateFilteredUnlinkedPayments.value.length} mutasi (masuk Buku Kas)`,
-          subClass: 'text-amber-700 font-semibold',
-          subDot: 'bg-amber-500',
-          minWidth: 'min-w-[150px]',
-        },
-      ]
-    : []),
-  {
-    label: 'Sisa Piutang',
-    value: formatRupiah(totalSisaPiutang.value),
-    valueClass: 'text-rose-600',
-    minWidth: 'min-w-[140px]',
-  },
-  {
-    label: 'Perlu Verifikasi',
-    value: filteredPendingVerifikasiCount.value > 0 ? `${filteredPendingVerifikasiCount.value} Order` : '0 Pending',
-    valueClass: filteredPendingVerifikasiCount.value > 0 ? 'text-amber-600 font-extrabold' : 'text-slate-600',
-    sub: filteredPendingVerifikasiCount.value > 0 ? 'Menunggu Approval Owner' : 'Semua Tervalidasi',
-    subClass: filteredPendingVerifikasiCount.value > 0 ? 'text-amber-600' : 'text-slate-400',
-    subDot: filteredPendingVerifikasiCount.value > 0 ? 'bg-amber-500' : 'bg-emerald-500',
-    minWidth: 'min-w-[160px]',
-  },
-  {
-    label: 'Order Lunas',
-    value: `${orderLunasCount.value} / ${filteredPiutangRows.value.length}`,
-    valueClass: 'text-emerald-700',
-    minWidth: 'min-w-[130px]',
-  },
-])
-
-// Modal Handlers
 function openNewPaymentModal() {
   selectedPaymentInitialData.value = null
   showPaymentModal.value = true
@@ -1096,21 +349,6 @@ function choosePaymentToEdit(tx: OrderTxRow) {
   openEditPaymentModal(tx, selectedChooserRow.value.order)
 }
 
-function toggleJudul(id: string) {
-  expandedJudul.value[id] = !expandedJudul.value[id]
-}
-
-function togglePenerbit(id: string) {
-  expandedPenerbit.value[id] = !expandedPenerbit.value[id]
-}
-
-function toggleAllJudul() {
-  isAllJudulExpanded.value = !isAllJudulExpanded.value
-  for (const row of displayedPiutangRows.value) {
-    expandedJudul.value[row.order.id_order] = isAllJudulExpanded.value
-  }
-}
-
 async function verifyTx(tx: OrderTxRow) {
   verifyingId.value = tx.id
   try {
@@ -1144,5 +382,3 @@ onMounted(() => {
   }
 })
 </script>
-
-
