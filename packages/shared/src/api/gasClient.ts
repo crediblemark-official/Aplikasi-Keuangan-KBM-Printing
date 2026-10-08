@@ -365,4 +365,15 @@ export const api = {
   // Manual Backup PostgreSQL ke Google Sheets
   syncBackupToSheets: () =>
     gasPost<{ message: string; timestamp: number }>('syncBackup', {}),
+
+  // KBM Business AI Advisor via Ollama Cloud
+  aiChat: (payload: {
+    messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>
+    model?: string
+  }) =>
+    gasPost<{
+      message: string
+      thinking?: string
+      model: string
+    }>('aiChat', payload as any, 60000),
 }

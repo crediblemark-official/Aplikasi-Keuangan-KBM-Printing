@@ -75,6 +75,9 @@
       :current-path="route.path"
       @navigate="navigate"
     />
+
+    <!-- KBM Business AI Advisor (Ollama Cloud) -->
+    <AiAdvisorModal />
   </div>
 </template>
 
@@ -85,6 +88,7 @@ import DesktopSidebar from '@shared/components/DesktopSidebar.vue'
 import type { SidebarNavItem } from '@shared/components/DesktopSidebar.vue'
 import MobileBottomNav from '@shared/components/MobileBottomNav.vue'
 import type { BottomNavItem } from '@shared/components/MobileBottomNav.vue'
+import AiAdvisorModal from '../components/AiAdvisorModal.vue'
 import { api } from '@shared/api/gasClient'
 import { useAuthStore } from '../stores/auth'
 import { useSyncStore } from '@shared/stores/syncStore'

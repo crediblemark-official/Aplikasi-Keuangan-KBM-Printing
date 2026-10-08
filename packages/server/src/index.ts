@@ -435,11 +435,57 @@ async function handleSyncBackupToSheets(customGasUrl?: string) {
   }
 }
 
+// Handler integrasi Ollama Cloud
+async function handleAiChat(body: any, env?: any) {
+  try {
+    const { messages, model } = body || {}
+    if (!messages || !Array.isArray(messages)) {
+      return { success: false, error: 'Parameter messages harus berupa array [{ role, content }]' }
+    }
+
+    const apiKey =
+      (env as any)?.OLLAMA_API_KEY ||
+      process.env.OLLAMA_API_KEY ||
+      '361654291a15448aab20c16d74894024.mrX4sBHI54Fu6uFMHgtmsszk'
+    const selectedModel = model || 'gemma4:31b'
+
+    const resp = await fetch('https://ollama.com/api/chat', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: selectedModel,
+        messages,
+        stream: false,
+      }),
+    })
+
+    if (!resp.ok) {
+      const errText = await resp.text()
+      return { success: false, error: `Ollama Cloud Error (${resp.status}): ${errText}` }
+    }
+
+    const data: any = await resp.json()
+    return {
+      success: true,
+      message: data.message?.content || '',
+      thinking: data.message?.thinking || '',
+      model: data.model,
+    }
+  } catch (err: any) {
+    return { success: false, error: 'Gagal menghubungi Ollama Cloud: ' + (err?.message || err) }
+  }
+}
+
 // Unified Router for both REST and GAS query-based compatibility
 async function dispatchAction(action: string, params: any, body: any, env?: any) {
   switch (action) {
     case 'ping':
       return { success: true, message: 'pong', timestamp: Date.now() }
+    case 'aiChat':
+      return handleAiChat(body, env)
     case 'syncBackup':
     case 'syncBackupToSheets':
       return handleSyncBackupToSheets(env?.VITE_BACKUP_GAS_URL)
@@ -514,6 +560,13 @@ app.post('/api/kas-masuk', async (c) => c.json(await handleCreateKasMasuk(await 
 app.get('/api/kas-keluar', async (c) => c.json(await handleGetKasKeluar()))
 app.post('/api/kas-keluar', async (c) => c.json(await handleCreateKasKeluar(await c.req.json())))
 app.post('/api/backup/sheets', async (c) => c.json(await handleSyncBackupToSheets((c.env as any)?.VITE_BACKUP_GAS_URL)))
+app.post('/api/ai/chat', async (c) => {
+  let body: any = {}
+  try {
+    body = await c.req.json()
+  } catch {}
+  return c.json(await handleAiChat(body, c.env))
+})
 
 const PORT = Number(process.env.PORT) || 3001
 
