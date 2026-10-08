@@ -1,11 +1,11 @@
 <template>
   <div>
-    <!-- Floating Action Button (FAB) di Pojok Kanan Bawah -->
+    <!-- Floating Action Button (FAB) di Pojok Kanan Bawah (Dinaikkan di mobile agar tidak menutupi bottom navigation) -->
     <button
       @click="isOpen = true"
       type="button"
-      class="fixed bottom-6 right-6 z-40 group flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-indigo-600 via-purple-600 to-red-600 text-white font-bold text-xs shadow-lg shadow-purple-600/30 hover:shadow-xl hover:shadow-purple-600/40 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer border border-white/20 select-none"
-      title="Buka KBM Business AI Advisor (Gemini & Ollama Cloud)"
+      class="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] right-4 lg:bottom-6 lg:right-6 z-40 group flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-full bg-gradient-to-r from-indigo-600 via-purple-600 to-red-600 text-white font-bold text-xs shadow-lg shadow-purple-600/30 hover:shadow-xl hover:shadow-purple-600/40 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer border border-white/20 select-none"
+      title="Buka AI Advisor"
     >
       <div class="relative flex items-center justify-center">
         <span class="absolute inline-flex h-full w-full rounded-full bg-white opacity-40 animate-ping"></span>
@@ -14,16 +14,13 @@
         </svg>
       </div>
       <span class="tracking-wide">AI Advisor</span>
-      <span class="hidden sm:inline-block px-1.5 py-0.5 rounded text-[10px] bg-white/20 font-mono text-purple-100">
-        {{ currentProviderLabel }}
-      </span>
     </button>
 
     <!-- Modal Dialog AI Advisor -->
     <Teleport to="body">
       <div
         v-if="isOpen"
-        class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity duration-200 animate-fade-in"
+        class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity duration-200 animate-fade-in"
       >
         <div
           class="relative w-full sm:max-w-2xl bg-white sm:rounded-2xl shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[85vh] h-[85vh] border border-slate-200 overflow-hidden"
