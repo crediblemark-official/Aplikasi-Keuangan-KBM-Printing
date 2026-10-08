@@ -375,20 +375,24 @@ async function sendMessage() {
       model: selectedModel.value,
     })
 
-    if (res.success && res.data?.message) {
+    const aiMessage = res.data?.message || (res as any).message
+    const aiModel = res.data?.model || (res as any).model || selectedModel.value
+    const isRotated = (res.data as any)?.rotated || (res as any).rotated
+
+    if (res.success && aiMessage) {
       messages.value.push({
         role: 'assistant',
-        content: res.data.message,
+        content: aiMessage,
         time: getNowTime(),
-        model: res.data.model || selectedModel.value,
-        rotated: (res.data as any).rotated,
+        model: aiModel,
+        rotated: isRotated,
       })
     } else {
       console.warn('AI Service error, menggunakan fallback lokal:', res.error)
       const fallbackMsg = generateLocalFallback(query, financeStore)
       messages.value.push({
         role: 'assistant',
-        content: `${fallbackMsg}\n\n*(Catatan: Mode analitik darurat lokal aktif karena: ${res.error || 'Timeout'})*`,
+        content: `${fallbackMsg}\n\n*(Catatan: Mode analitik darurat lokal aktif karena: ${res.error || 'Respon AI tidak valid'})*`,
         time: getNowTime(),
         model: 'Local Engine',
       })

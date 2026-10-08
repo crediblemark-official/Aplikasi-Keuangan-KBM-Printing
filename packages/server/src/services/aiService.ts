@@ -83,6 +83,12 @@ export async function handleGeminiWithAutoRotate(body: any, env?: any) {
           model: currentModel,
           provider: 'gemini',
           rotated: model && model !== 'auto' && currentModel !== model,
+          data: {
+            message: text,
+            model: currentModel,
+            provider: 'gemini',
+            rotated: model && model !== 'auto' && currentModel !== model,
+          },
         }
       }
     } catch (err: any) {
@@ -125,12 +131,19 @@ export async function handleOllamaChat(body: any, env?: any) {
   }
 
   const data: any = await resp.json()
+  const content = data.message?.content || ''
   return {
     success: true,
-    message: data.message?.content || '',
+    message: content,
     thinking: data.message?.thinking || '',
     model: data.model,
     provider: 'ollama',
+    data: {
+      message: content,
+      thinking: data.message?.thinking || '',
+      model: data.model,
+      provider: 'ollama',
+    },
   }
 }
 
