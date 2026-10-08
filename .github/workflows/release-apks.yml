@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Tag Rilis (contoh: v1.0.0)'
+        description: 'Tag Rilis (contoh: v1.1.16)'
         required: true
-        default: 'v1.0.0'
+        default: 'v1.1.16'
       release_name:
         description: 'Nama / Judul Rilis'
         required: false
