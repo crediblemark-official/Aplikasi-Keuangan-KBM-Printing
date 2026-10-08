@@ -470,6 +470,36 @@
               </SectionHeader>
 
               <div class="p-[8px] sm:p-[15px] lg:p-[20px] bg-white space-y-4">
+                <!-- Skema Tarif Selector -->
+                <div>
+                  <div class="flex items-center justify-between mb-1.5">
+                    <label class="form-label mb-0">Skema Tarif *</label>
+                    <span :class="form.skema_harga === 'LANGGANAN' ? 'text-amber-800 bg-amber-50 border-amber-300' : 'text-slate-600 bg-slate-100 border-slate-200'" class="text-[10px] font-bold px-1.5 py-0.5 rounded border">
+                      {{ form.skema_harga === 'LANGGANAN' ? '⭐ Tarif Khusus Langganan' : '🏷️ Tarif Reguler / Normal' }}
+                    </span>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-lg border border-slate-200">
+                    <button
+                      type="button"
+                      @click="setSkemaHarga('NORMAL')"
+                      :class="form.skema_harga === 'NORMAL' ? 'bg-white text-slate-800 shadow-xs font-bold border-slate-300' : 'text-slate-500 hover:text-slate-800 border-transparent'"
+                      class="py-1.5 px-3 rounded-md text-xs font-medium border transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <span>🏷️</span>
+                      <span>Harga Normal</span>
+                    </button>
+                    <button
+                      type="button"
+                      @click="setSkemaHarga('LANGGANAN')"
+                      :class="form.skema_harga === 'LANGGANAN' ? 'bg-amber-500 text-white shadow-xs font-bold border-amber-600' : 'text-slate-500 hover:text-slate-800 border-transparent'"
+                      class="py-1.5 px-3 rounded-md text-xs font-medium border transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <span>⭐</span>
+                      <span>Harga Langganan</span>
+                    </button>
+                  </div>
+                </div>
+
                 <!-- Harga Input -->
                 <div>
                   <div class="flex items-center justify-between mb-1.5">
@@ -617,7 +647,7 @@ import {
   getTarifFCPerHalaman,
 } from '@shared/utils/pricelist'
 import { api } from '@shared/api/gasClient'
-import type { UkuranBuku, JenisKertas, JenisFinishing } from '@shared/types'
+import type { UkuranBuku, JenisKertas, JenisFinishing, SkemaHarga } from '@shared/types'
 
 const orderStore = useOrderStore()
 const router = useIonRouter()
@@ -879,6 +909,7 @@ const finishingOptions = [
 // EXACT FIELDS WITH SEPARATE JUDUL BUKU & NAMA PENULIS
 const form = ref({
   tanggal: getTodayISO(),
+  skema_harga: 'NORMAL' as SkemaHarga,
   nama_penerbit: '',
   judul_buku: '',
   nama_penulis: '',
@@ -900,6 +931,11 @@ const form = ref({
   catatan: '',
 })
 
+function setSkemaHarga(skema: SkemaHarga) {
+  form.value.skema_harga = skema
+  recalculatePriceAuto()
+}
+
 // Real-time Breakdown Calculation
 const priceBreakdown = computed(() => {
   return calculateOrderPriceDetailed({
@@ -913,17 +949,18 @@ const priceBreakdown = computed(() => {
     finishing: form.value.finishing,
     packing_dus_tipe: form.value.packing_dus_tipe,
     packing_dus_qty: form.value.packing_dus_qty,
+    skema_harga: form.value.skema_harga,
   })
 })
 
 const tarifBW = computed(() => {
   const k = form.value.is_kertas_sama ? form.value.kertas : (form.value.kertas_bw || form.value.kertas)
-  return getTarifBWPerHalaman(form.value.ukuran, k)
+  return getTarifBWPerHalaman(form.value.ukuran, k, form.value.skema_harga)
 })
 
 const tarifFC = computed(() => {
   const k = form.value.is_kertas_sama ? form.value.kertas : (form.value.kertas_fc || form.value.kertas)
-  return getTarifFCPerHalaman(form.value.ukuran, k)
+  return getTarifFCPerHalaman(form.value.ukuran, k, form.value.skema_harga)
 })
 
 const isFormValid = computed(() =>
@@ -1054,6 +1091,7 @@ function recalculatePriceAuto() {
 function resetForm() {
   form.value = {
     tanggal: getTodayISO(),
+    skema_harga: 'NORMAL' as SkemaHarga,
     nama_penerbit: '',
     judul_buku: '',
     nama_penulis: '',
@@ -1111,6 +1149,7 @@ async function loadExistingOrder() {
 
     form.value = {
       tanggal: existing.tanggal ? String(existing.tanggal).split('T')[0] : getTodayISO(),
+      skema_harga: (existing.skema_harga as SkemaHarga) || 'NORMAL',
       nama_penerbit: existing.nama_penerbit || '',
       judul_buku: derivedJudul,
       nama_penulis: derivedPenulis,
@@ -1161,6 +1200,7 @@ async function submitOrder() {
     cetak_fc: Number(form.value.cetak_fc) || 0,
     finishing: form.value.finishing,
     total_harga: Number(form.value.total_harga) || 0,
+    skema_harga: form.value.skema_harga || 'NORMAL',
     catatan: form.value.catatan ? String(form.value.catatan).trim() : '',
     alamat_penerbit: form.value.alamat_penerbit ? String(form.value.alamat_penerbit).trim() : '',
     kontak_penerbit: form.value.kontak_penerbit != null ? String(form.value.kontak_penerbit).trim() : '',

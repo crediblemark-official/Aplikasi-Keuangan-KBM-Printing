@@ -214,13 +214,13 @@
                       {{ item.desc }}
                     </p>
                   </div>
-                  <span class="w-24 text-right font-mono font-medium text-slate-700">
+                  <span class="w-24 text-right font-mono font-medium text-slate-700 whitespace-nowrap">
                     {{ formatRupiah(item.rate) }}
                   </span>
-                  <span class="w-20 text-center font-mono font-medium text-slate-800">
+                  <span class="w-20 text-center font-mono font-medium text-slate-800 whitespace-nowrap">
                     {{ item.qty }} pcs
                   </span>
-                  <span class="w-28 text-right font-mono font-bold text-slate-900">
+                  <span class="w-28 text-right font-mono font-bold text-slate-900 whitespace-nowrap">
                     {{ formatRupiah(item.amount) }}
                   </span>
                   <!-- Action dots icon like reference -->
@@ -626,6 +626,7 @@ const invoiceItems = computed(() => {
     finishing: o.finishing || [],
     packing_dus_tipe: o.packing_dus_tipe,
     packing_dus_qty: o.packing_dus_qty,
+    skema_harga: o.skema_harga || 'NORMAL',
   })
 
   const paperLabel = formatKertasOrder(o)

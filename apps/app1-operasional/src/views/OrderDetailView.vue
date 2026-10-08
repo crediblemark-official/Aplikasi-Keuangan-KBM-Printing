@@ -522,6 +522,11 @@ async function restoreOrder() {
 
 async function handleConfirmDelete() {
   if (!order.value || isDeleting.value) return
+  if (totalMasuk.value > 0) {
+    showToast(`Tidak dapat menghapus order permanen karena memiliki catatan uang masuk sebesar ${formatRupiah(totalMasuk.value)}. Batalkan dulu transaksi kasnya di Buku Kas.`, 'danger')
+    showDeleteModal.value = false
+    return
+  }
   isDeleting.value = true
   const idToDelete = order.value.id_order
   try {

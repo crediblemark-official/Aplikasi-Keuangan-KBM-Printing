@@ -11,7 +11,7 @@ export function formatRupiah(nominal: number, withPrefix = true): string {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(nominal)
-  return withPrefix ? `Rp ${formatted}` : formatted
+  return withPrefix ? `Rp\u00A0${formatted}` : formatted
 }
 
 /**

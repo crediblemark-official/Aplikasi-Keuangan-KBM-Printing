@@ -37,9 +37,10 @@
 
       <div class="grid grid-cols-2 gap-3">
         <div>
-          <label class="form-label">Nominal (Rp) *</label>
+          <label class="form-label">Nominal *</label>
           <CurrencyInput
             v-model="form.nominal"
+            prefix="Rp"
             input-class="text-slate-900"
             required
           />

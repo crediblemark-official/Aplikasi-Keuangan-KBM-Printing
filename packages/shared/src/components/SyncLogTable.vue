@@ -103,6 +103,38 @@
     <!-- Summary Metrics Strip -->
     <MetricStrip :items="summaryMetrics" />
 
+    <!-- Google Sheets Manual Backup Banner -->
+    <div class="px-[8px] sm:px-[15px] lg:px-[20px] py-2.5 bg-emerald-50 border-b border-emerald-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+      <div class="flex items-center gap-2.5 text-emerald-950 min-w-0">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
+        <div class="min-w-0">
+          <p class="font-medium text-slate-800">
+            <strong>Cadangan Google Sheets (Backup Manual):</strong> Data operasional aktif di <strong>PostgreSQL</strong>.
+            <span v-if="lastBackupTime" class="text-emerald-800 font-semibold ml-1 font-mono">
+              (Terakhir cadangkan: {{ lastBackupTime }})
+            </span>
+          </p>
+          <p v-if="backupMessage" class="text-[11px] font-mono mt-0.5" :class="backupMessage.includes('Gagal') ? 'text-rose-600' : 'text-emerald-700'">
+            {{ backupMessage }}
+          </p>
+        </div>
+      </div>
+      <button
+        type="button"
+        @click="triggerBackupSheets"
+        :disabled="isBackingUpSheets"
+        class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white shadow-2xs transition-all cursor-pointer shrink-0 disabled:opacity-50"
+      >
+        <svg v-if="isBackingUpSheets" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        <svg v-else class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+        </svg>
+        <span>{{ isBackingUpSheets ? 'Sedang Cadangkan...' : 'Sync Backup ke Google Sheets' }}</span>
+      </button>
+    </div>
+
     <!-- Shared Filter Bar -->
     <div class="px-[8px] sm:px-[15px] lg:px-[20px] py-2 border-b border-slate-200 bg-white">
       <FilterTabs v-model="selectedFilter" :tabs="filterTabs" />
@@ -297,6 +329,7 @@ import StatusBadge from './StatusBadge.vue'
 import BaseButton from './BaseButton.vue'
 import BaseModal from './BaseModal.vue'
 import { useSyncStore } from '../stores/syncStore'
+import { api } from '../api/gasClient'
 import type { SyncLogItem, SyncStatus, SyncEntityType } from '../types/sync'
 import { formatRupiah } from '../utils/formatters'
 
@@ -317,6 +350,37 @@ const syncStore = useSyncStore()
 
 const selectedFilter = ref('all')
 const searchQuery = ref('')
+
+// State Backup Manual ke Google Sheets
+const isBackingUpSheets = ref(false)
+const backupMessage = ref('')
+const lastBackupTime = ref(typeof localStorage !== 'undefined' ? localStorage.getItem('kbm_last_sheets_backup') : null)
+
+async function triggerBackupSheets() {
+  if (isBackingUpSheets.value) return
+  isBackingUpSheets.value = true
+  backupMessage.value = ''
+  try {
+    const res = await api.syncBackupToSheets()
+    if (res.success) {
+      const nowStr = new Date().toLocaleString('id-ID', {
+        dateStyle: 'medium',
+        timeStyle: 'medium',
+      })
+      lastBackupTime.value = nowStr
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('kbm_last_sheets_backup', nowStr)
+      }
+      backupMessage.value = res.message || '✅ Berhasil mencadangkan seluruh data ke Google Sheets!'
+    } else {
+      backupMessage.value = '❌ ' + (res.error || 'Gagal mencadangkan data ke Google Sheets')
+    }
+  } catch (err: any) {
+    backupMessage.value = '❌ Terjadi kesalahan: ' + (err?.message || err)
+  } finally {
+    isBackingUpSheets.value = false
+  }
+}
 
 const filterTabs = computed<FilterTabItem[]>(() => [
   { id: 'all', label: 'Semua', count: syncStore.logs.length },

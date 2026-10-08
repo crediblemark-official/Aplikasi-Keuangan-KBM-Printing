@@ -222,7 +222,19 @@
           <tr class="whitespace-nowrap">
             <th class="bg-slate-50 text-slate-600">ID Order</th>
             <th class="bg-slate-50 text-slate-600">Penerbit</th>
-            <th class="bg-slate-50 text-slate-600">Judul</th>
+            <th class="bg-slate-50 text-slate-600">
+              <div class="inline-flex items-center gap-1.5">
+                <span>Judul</span>
+                <button
+                  type="button"
+                  @click="toggleAllJudul"
+                  class="text-[10px] font-normal text-slate-500 hover:text-red-700 bg-slate-100 hover:bg-slate-200/80 px-1.5 py-0.5 rounded transition-all cursor-pointer select-none"
+                  :title="isAllJudulExpanded ? 'Ciutkan semua judul' : 'Lihat semua judul lengkap'"
+                >
+                  {{ isAllJudulExpanded ? '▲ Ciutkan' : '▼ Lihat Semua' }}
+                </button>
+              </div>
+            </th>
             <th class="text-right bg-slate-50 text-slate-600">Qty</th>
             <th class="bg-slate-50 text-slate-600">Ukuran</th>
             <th class="bg-slate-50 text-slate-600">Kertas</th>
@@ -267,15 +279,51 @@
             </td>
 
             <!-- 2. Penerbit -->
-            <td class="font-bold text-slate-900 max-w-[150px] truncate align-top py-3" :title="row.order.nama_penerbit">
-              {{ row.order.nama_penerbit }}
+            <td
+              class="font-bold text-slate-900 align-top py-3 transition-all"
+              :class="expandedPenerbit[row.order.id_order] ? 'min-w-[180px] max-w-[280px]' : 'max-w-[150px]'"
+              :title="row.order.nama_penerbit"
+            >
+              <div
+                @click="togglePenerbit(row.order.id_order)"
+                class="cursor-pointer group select-text rounded p-1 -m-1 hover:bg-slate-100 transition-colors"
+                title="Klik untuk melihat / menciutkan penerbit"
+              >
+                <p :class="expandedPenerbit[row.order.id_order] ? 'whitespace-normal break-words leading-snug' : 'truncate'">
+                  {{ row.order.nama_penerbit }}
+                </p>
+              </div>
             </td>
 
             <!-- 3. Judul -->
-            <td class="max-w-[200px] align-top py-3">
-              <p class="font-semibold text-xs text-slate-800 truncate" :title="row.order.judul_penulis">
-                {{ row.order.judul_penulis }}
-              </p>
+            <td
+              class="align-top py-3 transition-all"
+              :class="expandedJudul[row.order.id_order] ? 'min-w-[260px] max-w-[420px]' : 'max-w-[200px]'"
+            >
+              <div
+                @click="toggleJudul(row.order.id_order)"
+                class="cursor-pointer group select-text rounded p-1.5 -m-1 transition-all hover:bg-red-50/70 border border-transparent hover:border-red-200"
+                :title="expandedJudul[row.order.id_order] ? 'Klik untuk menciutkan judul' : 'Klik untuk melihat teks judul lengkap'"
+              >
+                <div class="flex items-start justify-between gap-1">
+                  <p
+                    class="font-semibold text-xs text-slate-800 transition-colors group-hover:text-red-700"
+                    :class="expandedJudul[row.order.id_order] ? 'whitespace-normal break-words leading-relaxed' : 'truncate'"
+                  >
+                    {{ row.order.judul_penulis }}
+                  </p>
+                  <span
+                    class="text-[10px] text-slate-400 group-hover:text-red-600 shrink-0 font-mono transition-transform mt-0.5"
+                    :class="expandedJudul[row.order.id_order] ? 'rotate-180 text-red-600 font-bold' : ''"
+                  >
+                    ▼
+                  </span>
+                </div>
+                <div v-if="expandedJudul[row.order.id_order]" class="mt-1 flex items-center justify-between border-t border-red-100 pt-1">
+                  <span class="text-[9px] text-red-600 font-semibold">Teks Lengkap</span>
+                  <span class="text-[9px] text-slate-400 group-hover:text-red-600 font-medium">▲ Klik untuk Ciutkan</span>
+                </div>
+              </div>
             </td>
 
             <!-- 4. Qty -->
@@ -353,12 +401,13 @@
                   <button
                     @click.stop="openEditPaymentModal(tx, row.order)"
                     type="button"
-                    class="p-0.5 rounded text-slate-400 hover:text-amber-700 hover:bg-amber-100/70 transition-colors cursor-pointer"
-                    title="Edit Data DP"
+                    class="px-1.5 py-0.5 rounded text-[10px] font-bold text-amber-800 bg-amber-100 hover:bg-amber-200 border border-amber-300 transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                    title="Edit Data Transaksi DP"
                   >
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="w-3 h-3 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
+                    <span>Edit</span>
                   </button>
                 </div>
               </template>
@@ -420,12 +469,13 @@
                   <button
                     @click.stop="openEditPaymentModal(tx, row.order)"
                     type="button"
-                    class="p-0.5 rounded text-slate-400 hover:text-emerald-700 hover:bg-emerald-100/70 transition-colors cursor-pointer"
-                    title="Edit Data Pelunasan"
+                    class="px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                    title="Edit Data Transaksi Pelunasan"
                   >
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="w-3 h-3 text-emerald-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
+                    <span>Edit</span>
                   </button>
                 </div>
               </template>
@@ -465,21 +515,55 @@
             </td>
 
             <!-- 9. Aksi -->
-            <td class="text-center whitespace-nowrap align-top py-3 bg-sky-50/30 group-hover/row:bg-sky-100/60 transition-colors">
-              <button
-                v-if="row.sisa_tagihan > 0"
-                @click="openPaymentModalForOrder(row)"
-                type="button"
-                class="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-all cursor-pointer inline-flex items-center gap-1"
-              >
-                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-                <span>Bayar</span>
-              </button>
-              <span v-else class="text-xs text-emerald-600 font-bold inline-flex items-center gap-1">
-                <span>✓ Lunas</span>
-              </span>
+            <td class="text-center whitespace-nowrap align-middle py-3 px-3 bg-sky-50/30 group-hover/row:bg-sky-100/60 transition-colors">
+              <div class="inline-flex items-center justify-center gap-1.5 whitespace-nowrap">
+                <!-- Tombol Bayar jika ada sisa tagihan -->
+                <button
+                  v-if="row.sisa_tagihan > 0"
+                  @click.stop="openPaymentModalForOrder(row)"
+                  type="button"
+                  class="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs hover:shadow-xs whitespace-nowrap"
+                  title="Catat pembayaran piutang baru"
+                >
+                  <svg class="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span>+ Bayar</span>
+                </button>
+                <span
+                  v-else
+                  class="px-2 py-1 text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg font-bold inline-flex items-center gap-1 whitespace-nowrap"
+                >
+                  ✓ Lunas
+                </span>
+
+                <!-- Tombol Edit Order (Data Faktur & Spek) -->
+                <button
+                  @click.stop="openEditOrderModal(row.order)"
+                  type="button"
+                  class="px-2.5 py-1 text-xs font-bold rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs hover:shadow-xs whitespace-nowrap"
+                  title="Edit Data Order (Judul, Harga, Spek, Status)"
+                >
+                  <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  <span>Edit Order</span>
+                </button>
+
+                <!-- Tombol Edit Kas jika ada pembayaran -->
+                <button
+                  v-if="row.payments.length > 0"
+                  @click.stop="openSelectEditPayment(row)"
+                  type="button"
+                  class="px-2.5 py-1 text-xs font-bold rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs hover:shadow-xs whitespace-nowrap"
+                  :title="`Edit Data Pembayaran (${row.payments.length} transaksi)`"
+                >
+                  <svg class="w-3.5 h-3.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  <span>Edit Kas</span>
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -544,6 +628,60 @@
       @toast="showToast"
     />
 
+    <!-- ================================================================= -->
+    <!-- MODAL: EDIT DATA ORDER (Judul, Harga, Spek, Status)               -->
+    <!-- ================================================================= -->
+    <EditOrderModal
+      v-model="showEditOrderModal"
+      :order="selectedEditOrderData"
+      :kas-masuk-list="kasMasukList"
+      @success="() => loadData(true)"
+      @toast="showToast"
+    />
+
+    <!-- ================================================================= -->
+    <!-- MODAL: PILIH PEMBAYARAN UNTUK DIEDIT (Jika Ada > 1 Transaksi)    -->
+    <!-- ================================================================= -->
+    <BaseModal
+      v-model="showPaymentChooserModal"
+      title="Pilih Transaksi Pembayaran yang Ingin Diedit"
+    >
+      <div class="space-y-3">
+        <p class="text-xs text-slate-600">
+          Order <strong>{{ selectedChooserRow?.order.id_order }}</strong> memiliki <strong>{{ selectedChooserRow?.payments.length }}</strong> transaksi pembayaran tercatat. Silakan pilih transaksi yang ingin Anda ubah:
+        </p>
+        <div class="space-y-2">
+          <div
+            v-for="tx in selectedChooserRow?.payments"
+            :key="tx.id"
+            @click="choosePaymentToEdit(tx)"
+            class="p-3 rounded-xl border border-slate-200 hover:border-amber-400 hover:bg-amber-50/60 cursor-pointer transition-all flex items-center justify-between group"
+          >
+            <div>
+              <div class="flex items-center gap-2">
+                <span
+                  class="px-2 py-0.5 rounded text-[10px] font-bold"
+                  :class="tx.jenis_pembayaran === 'DP' ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'"
+                >
+                  {{ tx.jenis_pembayaran === 'DP' ? 'Uang Muka (DP)' : 'Pelunasan' }}
+                </span>
+                <span class="text-xs font-mono text-slate-500">{{ formatTanggal(tx.tanggal) }}</span>
+              </div>
+              <p class="text-xs text-slate-600 mt-1 font-medium">
+                ID: {{ tx.id }} • {{ formatMetode(tx.metode) }}
+              </p>
+            </div>
+            <div class="text-right">
+              <span class="font-mono font-bold text-sm text-slate-900 block">{{ formatRupiah(tx.nominal) }}</span>
+              <span class="text-[11px] text-amber-700 font-semibold group-hover:underline mt-0.5 inline-block">
+                Edit Transaksi →
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </BaseModal>
+
     <!-- Toast Notification (Shared Component) -->
     <ToastNotification
       :message="toastMessage"
@@ -565,6 +703,8 @@ import TableScrollWrapper from '@shared/components/TableScrollWrapper.vue'
 import ToastNotification from '@shared/components/ToastNotification.vue'
 import PaymentOrderModal from '../components/PaymentOrderModal.vue'
 import EditPaymentOrderModal from '../components/EditPaymentOrderModal.vue'
+import EditOrderModal from '../components/EditOrderModal.vue'
+import BaseModal from '@shared/components/BaseModal.vue'
 import SearchInput from '@shared/components/SearchInput.vue'
 import DateFilterBar from '@shared/components/DateFilterBar.vue'
 import { api } from '@shared/api/gasClient'
@@ -603,6 +743,15 @@ const selectedPaymentInitialData = ref<any>(null)
 const showEditPaymentModal = ref(false)
 const selectedEditTx = ref<OrderTxRow | null>(null)
 const selectedEditOrder = ref<Order | null>(null)
+const showEditOrderModal = ref(false)
+const selectedEditOrderData = ref<Order | null>(null)
+const showPaymentChooserModal = ref(false)
+const selectedChooserRow = ref<EnrichedPiutangRow | null>(null)
+
+// Expand / Collapse state for truncated cells
+const expandedJudul = ref<Record<string, boolean>>({})
+const expandedPenerbit = ref<Record<string, boolean>>({})
+const isAllJudulExpanded = ref(false)
 
 export interface OrderTxRow {
   id: string
@@ -925,6 +1074,41 @@ function openEditPaymentModal(tx: OrderTxRow, order: Order) {
   selectedEditTx.value = tx
   selectedEditOrder.value = order
   showEditPaymentModal.value = true
+}
+
+function openEditOrderModal(order: Order) {
+  selectedEditOrderData.value = order
+  showEditOrderModal.value = true
+}
+
+function openSelectEditPayment(row: EnrichedPiutangRow) {
+  if (row.payments.length === 1) {
+    openEditPaymentModal(row.payments[0], row.order)
+  } else if (row.payments.length > 1) {
+    selectedChooserRow.value = row
+    showPaymentChooserModal.value = true
+  }
+}
+
+function choosePaymentToEdit(tx: OrderTxRow) {
+  if (!selectedChooserRow.value) return
+  showPaymentChooserModal.value = false
+  openEditPaymentModal(tx, selectedChooserRow.value.order)
+}
+
+function toggleJudul(id: string) {
+  expandedJudul.value[id] = !expandedJudul.value[id]
+}
+
+function togglePenerbit(id: string) {
+  expandedPenerbit.value[id] = !expandedPenerbit.value[id]
+}
+
+function toggleAllJudul() {
+  isAllJudulExpanded.value = !isAllJudulExpanded.value
+  for (const row of displayedPiutangRows.value) {
+    expandedJudul.value[row.order.id_order] = isAllJudulExpanded.value
+  }
 }
 
 async function verifyTx(tx: OrderTxRow) {

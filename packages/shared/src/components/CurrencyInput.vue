@@ -1,8 +1,8 @@
 <template>
-  <div class="relative w-full">
+  <div class="relative w-full flex items-center">
     <span
       v-if="prefix"
-      class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 select-none pointer-events-none"
+      class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-mono font-bold text-slate-400 select-none pointer-events-none z-10 shrink-0"
     >
       {{ prefix }}
     </span>
@@ -14,9 +14,10 @@
       :placeholder="placeholder"
       :disabled="disabled"
       :required="required"
+      :style="prefix ? { paddingLeft: '2.75rem !important' } : {}"
       :class="[
         'form-input w-full font-mono font-bold bg-white transition-all',
-        prefix ? 'pl-8' : '',
+        prefix ? '!pl-11' : '',
         inputClass,
       ]"
       @input="handleInput"

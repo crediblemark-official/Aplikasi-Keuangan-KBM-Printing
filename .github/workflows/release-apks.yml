@@ -46,6 +46,14 @@ jobs:
       - name: 📦 Install Dependencies
         run: npm ci || npm install
 
+      - name: 🌐 Check API Environment
+        run: |
+          if [ -n "$VITE_GAS_URL" ]; then
+            echo "✅ Menggunakan VITE_GAS_URL dari GitHub Secret."
+          else
+            echo "⚠️ Secret VITE_GAS_URL belum diset, build akan menggunakan fallback URL."
+          fi
+
       - name: 🔨 Build Web Assets & Sync Capacitor
         run: |
           npm run cap:sync:all

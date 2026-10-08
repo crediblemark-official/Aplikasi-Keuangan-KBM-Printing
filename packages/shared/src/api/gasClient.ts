@@ -361,4 +361,8 @@ export const api = {
     reset_clients?: boolean
     reset_all?: boolean
   }) => gasPost<{ cleared: string[] }>('resetData', payload),
+
+  // Manual Backup PostgreSQL ke Google Sheets
+  syncBackupToSheets: () =>
+    gasPost<{ message: string; timestamp: number }>('syncBackup', {}),
 }

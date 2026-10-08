@@ -100,6 +100,7 @@ function doPost(e) {
       'savePDFtoDrive': () => handleSavePDFtoDrive(body),
       'uploadFile': () => handleUploadFile(body),
       'resetData': () => handleResetData(body),
+      'syncBackup': () => handleSyncBackup(body),
     };
 
     if (!handlers[action]) {
@@ -1372,8 +1373,9 @@ function setupDatabase() {
 function clearSheetData(sheetName) {
   const sheet = getSheet(sheetName);
   const lastRow = sheet.getLastRow();
-  if (lastRow > 1) {
-    sheet.deleteRows(2, lastRow - 1);
+  const lastCol = sheet.getLastColumn();
+  if (lastRow > 1 && lastCol > 0) {
+    sheet.getRange(2, 1, lastRow - 1, lastCol).clearContent();
   }
 }
 
@@ -1423,6 +1425,95 @@ function handleResetData(body) {
     };
   } catch (err) {
     return { success: false, error: 'Gagal mereset data: ' + err.toString() };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function handleSyncBackup(body) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const { orders = [], kas_masuk = [], kas_keluar = [], clients = [] } = body;
+    let synced = [];
+
+    // Helper untuk memastikan kapasitas baris cukup sebelum setValues
+    function ensureCapacityAndWrite(sheet, rows, numCols) {
+      if (!rows || rows.length === 0) return;
+      const maxRows = sheet.getMaxRows();
+      const neededRows = rows.length + 1; // baris 1 header + n baris data
+      if (maxRows < neededRows) {
+        sheet.insertRowsAfter(maxRows, neededRows - maxRows);
+      }
+      sheet.getRange(2, 1, rows.length, numCols).setValues(rows);
+    }
+
+    // 1. Sync Clients
+    if (Array.isArray(clients) && clients.length > 0) {
+      const sheet = getSheet(SHEET_CLIENTS);
+      clearSheetData(SHEET_CLIENTS);
+      const rows = clients.map(c => [c.nama_penerbit || '', c.kontak || '', c.alamat || '']);
+      ensureCapacityAndWrite(sheet, rows, 3);
+      synced.push(`Clients (${rows.length})`);
+    }
+
+    // 2. Sync Orders
+    if (Array.isArray(orders) && orders.length > 0) {
+      const sheet = getSheet(SHEET_ORDERS);
+      ensureOrderHeaders(sheet);
+      clearSheetData(SHEET_ORDERS);
+      const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+      const rows = orders.map(o => {
+        const finishingStr = typeof o.finishing === 'string' ? o.finishing : JSON.stringify(o.finishing || []);
+        return headers.map(h => {
+          switch(h) {
+            case 'finishing': return finishingStr;
+            default: return o[h] !== undefined ? o[h] : '';
+          }
+        });
+      });
+      ensureCapacityAndWrite(sheet, rows, headers.length);
+      synced.push(`Orders (${rows.length})`);
+    }
+
+    // 3. Sync Kas Masuk
+    if (Array.isArray(kas_masuk) && kas_masuk.length > 0) {
+      const sheet = getSheet(SHEET_KAS_MASUK);
+      clearSheetData(SHEET_KAS_MASUK);
+      const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+      const rows = kas_masuk.map(k => {
+        return headers.map(h => {
+          return k[h] !== undefined ? k[h] : '';
+        });
+      });
+      ensureCapacityAndWrite(sheet, rows, headers.length);
+      synced.push(`Kas Masuk (${rows.length})`);
+    }
+
+    // 4. Sync Kas Keluar
+    if (Array.isArray(kas_keluar) && kas_keluar.length > 0) {
+      const sheet = getSheet(SHEET_KAS_KELUAR);
+      clearSheetData(SHEET_KAS_KELUAR);
+      const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+      const rows = kas_keluar.map(k => {
+        return headers.map(h => {
+          return k[h] !== undefined ? k[h] : '';
+        });
+      });
+      ensureCapacityAndWrite(sheet, rows, headers.length);
+      synced.push(`Kas Keluar (${rows.length})`);
+    }
+
+    SpreadsheetApp.flush();
+    invalidateCache(['orders_all', 'kas_masuk_all', 'kas_keluar_all', 'clients_all', 'dashboard_summary']);
+
+    return {
+      success: true,
+      message: `Berhasil sinkronisasi backup ke Google Sheets: ${synced.join(', ')}`,
+      timestamp: Date.now()
+    };
+  } catch (err) {
+    return { success: false, error: 'Gagal sinkronisasi backup: ' + err.toString() };
   } finally {
     lock.releaseLock();
   }

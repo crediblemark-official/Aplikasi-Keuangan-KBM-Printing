@@ -39,11 +39,14 @@ export type JenisFinishing =
   | 'PACKING_DUS_KECIL'
   | 'PACKING_DUS_BESAR'
 
+export type SkemaHarga = 'NORMAL' | 'LANGGANAN'
+
 // ---- Entitas Utama ----
 
 export interface Order {
   id_order: string          // ORD-202609-001
   tanggal: string           // ISO date string
+  skema_harga?: SkemaHarga  // 'NORMAL' | 'LANGGANAN'
   nama_penerbit: string
   judul_penulis: string     // "Judul Buku / Nama Penulis"
   judul_buku?: string

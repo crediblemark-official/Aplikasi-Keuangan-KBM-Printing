@@ -43,6 +43,15 @@ jobs:
       - name: 📦 Install Dependencies
         run: bun install
 
+      - name: 🌐 Check API Environment
+        shell: bash
+        run: |
+          if [ -n "$VITE_GAS_URL" ]; then
+            echo "✅ Menggunakan VITE_GAS_URL dari GitHub Secret."
+          else
+            echo "⚠️ Secret VITE_GAS_URL belum diset, build akan menggunakan fallback URL."
+          fi
+
       - name: 🔨 Build App 1 - KBM Operasional (.exe Installer)
         run: |
           cd apps/app1-operasional

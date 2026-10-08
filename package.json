@@ -7,7 +7,9 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently -n \"OPS,OWNER\" -c \"cyan,magenta\" \"npm run dev:operasional\" \"npm run dev:owner\"",
+    "dev": "concurrently -n \"API,OPS,OWNER\" -c \"green,cyan,magenta\" \"npm run dev:server\" \"npm run dev:operasional\" \"npm run dev:owner\"",
+    "dev:server": "bun run --cwd packages/server dev",
+    "deploy:server": "bun run --cwd packages/server deploy",
     "dev:operasional": "npm run dev -w apps/app1-operasional",
     "dev:kasir": "npm run dev:operasional",
     "dev:owner": "npm run dev -w apps/app2-owner",
