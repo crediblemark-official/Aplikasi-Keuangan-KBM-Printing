@@ -30,9 +30,51 @@ export const quickChips = [
   { icon: '💡', label: 'Saran Strategi', prompt: 'Apa rekomendasi strategis terbaik untuk meningkatkan perputaran kas dan margin keuntungan KBM?' },
 ]
 
-export function formatInline(text: string): string {
+export function cleanLatex(text: string): string {
   if (!text) return ''
   let s = text
+
+  // Text formatting commands: \textbf{...}, \textit{...}, \text{...}
+  s = s.replace(/\\textbf\{([^}]+)\}/g, '**$1**')
+  s = s.replace(/\\textit\{([^}]+)\}/g, '*$1*')
+  s = s.replace(/\\text\{([^}]+)\}/g, '$1')
+
+  // LaTeX Arrows
+  s = s.replace(/(?:\$\s*\\rightarrow\s*\$|\\rightarrow)/g, ' → ')
+  s = s.replace(/(?:\$\s*\\to\s*\$|\\to)/g, ' → ')
+  s = s.replace(/(?:\$\s*\\Rightarrow\s*\$|\\Rightarrow)/g, ' ⇒ ')
+  s = s.replace(/(?:\$\s*\\leftarrow\s*\$|\\leftarrow)/g, ' ← ')
+  s = s.replace(/(?:\$\s*\\Leftarrow\s*\$|\\Leftarrow)/g, ' ⇐ ')
+  s = s.replace(/(?:\$\s*\\leftrightarrow\s*\$|\\leftrightarrow)/g, ' ↔ ')
+
+  // Math operators
+  s = s.replace(/(?:\$\s*\\times\s*\$|\\times)/g, ' × ')
+  s = s.replace(/(?:\$\s*\\div\s*\$|\\div)/g, ' ÷ ')
+  s = s.replace(/(?:\$\s*\\approx\s*\$|\\approx)/g, ' ≈ ')
+  s = s.replace(/(?:\$\s*\\le(?:q)?\s*\$|\\le(?:q)?)/g, ' ≤ ')
+  s = s.replace(/(?:\$\s*\\ge(?:q)?\s*\$|\\ge(?:q)?)/g, ' ≥ ')
+  s = s.replace(/(?:\$\s*\\neq\s*\$|\\neq)/g, ' ≠ ')
+  s = s.replace(/(?:\$\s*\\pm\s*\$|\\pm)/g, ' ± ')
+  s = s.replace(/(?:\$\s*\\cdot\s*\$|\\cdot)/g, ' · ')
+  s = s.replace(/(?:\$\s*\\dots\s*\$|\\dots)/g, '...')
+  s = s.replace(/(?:\$\s*\\sum\s*\$|\\sum)/g, '∑')
+  s = s.replace(/(?:\$\s*\\infty\s*\$|\\infty)/g, '∞')
+
+  // Clean fractions: \frac{a}{b} -> a/b
+  s = s.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '$1/$2')
+
+  // Clean generic $math$ wrappers
+  s = s.replace(/\$\s*\\?([a-zA-Z0-9_\-\+\*\/\s\.]+)\s*\$/g, '$1')
+
+  // Clean leftover dollar signs around words or math
+  s = s.replace(/\$(?!\d)/g, '')
+
+  return s
+}
+
+export function formatInline(text: string): string {
+  if (!text) return ''
+  let s = cleanLatex(text)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -64,7 +106,10 @@ export function formatInline(text: string): string {
 export function formatMarkdown(text: string): string {
   if (!text) return ''
 
-  const lines = text.replace(/\r\n/g, '\n').split('\n')
+  // Pre-process: split chained steps like "1. Step $\rightarrow$ 2. Step" into separate numbered lines
+  let normalized = text.replace(/(?:\$\s*\\rightarrow\s*\$|\\rightarrow|\s*→\s*)\s*(\d+)\s*[\.\)]/g, '\n$1. ')
+
+  const lines = normalized.replace(/\r\n/g, '\n').split('\n')
   const output: string[] = []
   let inList: 'ul' | 'ol' | null = null
   let inCodeBlock = false
@@ -255,8 +300,9 @@ Tugasmu: Memberikan analisis finansial, audit operasional, strategi bisnis perce
 
 ATURAN MUTLAK:
 1. Statusmu adalah READ-ONLY (Penasihat). Jangan pernah mengeksekusi perubahan data atau menjanjikan mutasi database.
-2. Jawab dengan format Markdown yang rapi (gunakan bolding untuk angka rupiah, bullet points, dan rekomendasi tindakan bernomor).
-3. Gunakan angka riil dari ringkasan data finansial perusahaan di bawah ini sebagai acuan:
+2. Jawab dengan format Markdown yang rapi (gunakan bolding untuk angka rupiah, bullet points, dan rekomendasi tindakan bernomor baris per baris).
+3. DILARANG KERAS menggunakan notasi LaTeX atau simbol matematika seperti $\rightarrow$, $\times$, \textbf, dll. Gunakan teks biasa atau simbol standar (→, ×) dan pisahkan setiap butir tindakan dalam baris baru.
+4. Gunakan angka riil dari ringkasan data finansial perusahaan di bawah ini sebagai acuan:
 
 === DATA FINANSIAL AKTUAL KBM PRINTING HARI INI ===
 - Total Omzet Pesanan: ${formatRupiah(totalOmzet)} (${ordersNonBatal.length} judul buku aktif)
