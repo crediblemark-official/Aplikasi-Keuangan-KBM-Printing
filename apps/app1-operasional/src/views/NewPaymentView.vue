@@ -1,8 +1,12 @@
 <template>
   <ion-page>
     <ion-header class="ion-no-border">
-      <PageHeader :title="targetOrderId ? `Catat Bayar • ${targetOrderId}` : 'Catat Pembayaran'" :show-back="true"
-        :back-label="targetOrderId ? 'Detail Order' : 'Daftar Order'" @back="handleBack" />
+      <PageHeader
+        :title="targetOrderId ? `Catat Bayar • ${targetOrderId}` : 'Catat Pembayaran'"
+        :show-back="true"
+        :back-label="targetOrderId ? 'Detail Order' : 'Daftar Order'"
+        @back="handleBack"
+      />
     </ion-header>
 
     <ion-content :fullscreen="true">
@@ -59,323 +63,42 @@
       <!-- MAIN DYNAMIC FORM (Bound directly to targetOrderId) -->
       <form v-else @submit.prevent="submitPayment" class="w-full min-h-full pb-32 lg:pb-12 bg-white">
         <div class="grid grid-cols-1 lg:grid-cols-12 border-b border-slate-200">
+          <!-- LEFT COLUMN: Order Context & Financial Summary -->
+          <PaymentOrderSummary
+            :order="selectedOrder"
+            :total-terbayar="totalTerbayar"
+            :sisa-tagihan="sisaTagihan"
+          />
 
-          <!-- LEFT COLUMN: Order Context & Financial Summary (lg:col-span-5) -->
-          <div class="lg:col-span-5 border-b lg:border-b-0 lg:border-r border-slate-200 bg-white lg:bg-slate-50/30">
-            <div class="lg:sticky lg:top-0 z-10">
-              <!-- Order Header Summary -->
-              <div class="p-3.5 sm:p-4 space-y-2 bg-white">
-                <div class="flex items-center gap-2 flex-wrap">
-                  <span
-                    class="px-2 py-0.5 rounded text-xs font-bold font-mono bg-slate-100 border border-slate-200 text-slate-700">
-                    {{ selectedOrder.id_order }}
-                  </span>
-                  <span
-                    class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
-                    :class="[
-                      sisaTagihan === 0
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-300'
-                        : totalTerbayar > 0
-                          ? 'bg-amber-50 text-amber-700 border border-amber-300'
-                          : 'bg-rose-50 text-rose-700 border border-rose-300'
-                    ]"
-                  >
-                    {{ sisaTagihan === 0 ? 'Lunas' : totalTerbayar > 0 ? 'DP Masuk' : 'Belum Bayar' }}
-                  </span>
-                </div>
-                <div>
-                  <h2 class="text-base sm:text-lg font-bold text-slate-900 tracking-tight leading-snug">
-                    {{ selectedOrder.nama_penerbit }}
-                  </h2>
-                  <p class="text-xs text-slate-500 font-medium mt-0.5">
-                    Buku: <strong class="text-slate-800">{{ selectedOrder.judul_buku || selectedOrder.judul_penulis }}</strong>
-                  </p>
-                </div>
-              </div>
-
-              <!-- Financial Metrics Tiles (Crisp 1px grid divider) -->
-              <div class="grid grid-cols-3 bg-slate-200 gap-px border-t border-b border-slate-200 text-center">
-                <div class="bg-white p-2.5">
-                  <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Total Nilai</p>
-                  <p class="text-xs sm:text-sm font-bold font-mono text-slate-900 mt-0.5">
-                    {{ formatRupiah(selectedOrder.total_harga) }}
-                  </p>
-                </div>
-                <div class="bg-white p-2.5">
-                  <p class="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">Sudah Masuk</p>
-                  <p class="text-xs sm:text-sm font-bold font-mono text-emerald-600 mt-0.5">
-                    {{ formatRupiah(totalTerbayar) }}
-                  </p>
-                </div>
-                <div class="bg-white p-2.5">
-                  <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Sisa Tagihan</p>
-                  <p
-                    class="text-xs sm:text-sm font-bold font-mono mt-0.5"
-                    :class="sisaTagihan === 0 ? 'text-emerald-600' : 'text-red-600'"
-                  >
-                    {{ formatRupiah(sisaTagihan) }}
-                  </p>
-                </div>
-              </div>
-
-              <!-- Desktop Guidance Note -->
-              <div class="hidden lg:block p-4 text-xs text-slate-500 leading-relaxed space-y-2">
-                <p class="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Petunjuk Pembayaran</p>
-                <ul class="list-disc list-inside space-y-1 text-slate-500 text-xs">
-                  <li>
-                    Pilih jenis pembayaran: <strong class="text-slate-700">Uang Muka (DP)</strong> atau
-                    <strong class="text-slate-700">Pelunasan</strong>.
-                  </li>
-                  <li>Gunakan pilihan cepat nominal (50%, 100%, sisa tagihan) untuk mengisi cepat.</li>
-                  <li>Pilih metode pembayaran (Saldo Deposit, Tunai, Bank, atau QRIS).</li>
-                  <li>
-                    <strong class="text-slate-700">Potong Deposit:</strong> Otomatis aktif jika penerbit memiliki
-                    saldo deposit dari Buku Kas.
-                  </li>
-                  <li>Unggah foto struk atau bukti transfer jika ada untuk verifikasi.</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          <!-- RIGHT COLUMN: Payment Form Steps & Submit (lg:col-span-7) -->
-          <div class="lg:col-span-7 bg-white flex flex-col justify-between">
-            <div>
-
-              <!-- STEP 1: JENIS PEMBAYARAN -->
-              <div class="border-b border-slate-200">
-                <SectionHeader title="1. Jenis Pembayaran" />
-
-                <div class="p-3.5 sm:p-4 space-y-3">
-                  <div class="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      v-for="jp in jenisPembayaranOptions"
-                      :key="jp.value"
-                      @click="selectJenisPembayaran(jp)"
-                      class="cursor-pointer p-2.5 rounded-lg transition-opacity flex items-center gap-3 select-none text-left bg-transparent hover:opacity-85"
-                    >
-                      <div
-                        class="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 transition-colors"
-                        :class="form.jenis_pembayaran === jp.value ? 'bg-red-600 text-white shadow-xs' : 'bg-slate-100 text-slate-400'"
-                      >
-                        {{ jp.badge }}
-                      </div>
-                      <div class="min-w-0 flex-1">
-                        <p
-                          class="text-xs font-bold truncate"
-                          :class="form.jenis_pembayaran === jp.value ? 'text-slate-900' : 'text-slate-600'"
-                        >
-                          {{ jp.label }}
-                        </p>
-                        <p
-                          class="text-[11px] truncate mt-0.5"
-                          :class="form.jenis_pembayaran === jp.value ? 'text-red-600 font-semibold' : 'text-slate-400'"
-                        >
-                          {{ jp.desc }}
-                        </p>
-                      </div>
-                    </button>
-                  </div>
-
-                  <!-- Lunas Notice if sisaTagihan is 0 -->
-                  <div
-                    v-if="sisaTagihan === 0"
-                    class="p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs flex items-start gap-2.5 shadow-2xs"
-                  >
-                    <svg
-                      class="w-5 h-5 text-emerald-600 shrink-0 mt-0.5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <div>
-                      <p class="font-bold text-emerald-900">Pesanan ini sudah Lunas!</p>
-                      <p class="text-[11px] text-emerald-700 mt-0.5">
-                        Seluruh tagihan pesanan telah selesai dibayar. Tidak diperlukan pencatatan pembayaran lagi.
-                      </p>
-                    </div>
-                  </div>
-
-                  <!-- Warning if existingPelunasanPayments > 0 and PELUNASAN chosen -->
-                  <div
-                    v-if="form.jenis_pembayaran === 'PELUNASAN' && existingPelunasanPayments.length > 0"
-                    class="p-3 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs space-y-1 shadow-2xs"
-                  >
-                    <div class="flex items-center gap-1.5 font-bold text-amber-800">
-                      <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                      </svg>
-                      <span>Perhatian: Order Ini Sudah Memiliki Riwayat Pelunasan!</span>
-                    </div>
-                    <p class="text-[11px] text-amber-700 leading-relaxed">
-                      Order ini sudah pernah dicatat pelunasan:
-                      <strong>{{ existingPelunasanSummary }}</strong>.
-                      Harap pastikan kembali agar tidak terjadi pencatatan pelunasan ganda.
-                    </p>
-                  </div>
-
-                  <!-- Info if DP already exists and DP chosen -->
-                  <div
-                    v-else-if="form.jenis_pembayaran === 'DP' && existingDpPayments.length > 0"
-                    class="p-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs space-y-0.5"
-                  >
-                    <div class="flex items-center gap-1.5 font-bold text-blue-800">
-                      <svg class="w-4 h-4 text-blue-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span>Info: Order ini sudah pernah membayar DP</span>
-                    </div>
-                    <p class="text-[11px] text-blue-700">
-                      Sudah ada DP tercatat sebesar <strong>{{ existingDpSummary }}</strong>. Disarankan memilih <strong>Pelunasan</strong> untuk menyelesaikan sisa tagihan.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <!-- STEP 2: NOMINAL & METODE PEMBAYARAN -->
-              <div class="border-b border-slate-200">
-                <SectionHeader title="2. Nominal & Metode Pembayaran" />
-
-                <div class="p-3.5 sm:p-4 space-y-3.5">
-                  <!-- Banner Saldo Deposit Penerbit -->
-                  <div v-if="publisherDepositBalance > 0"
-                    class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 flex items-center justify-between gap-2 shadow-2xs">
-                    <div class="flex items-center gap-2.5 min-w-0">
-                      <div
-                        class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-base shrink-0">
-                        💳
-                      </div>
-                      <div class="min-w-0">
-                        <p class="text-xs font-bold text-emerald-900 truncate">Penerbit memiliki Saldo Deposit</p>
-                        <p class="text-[11px] text-emerald-700 font-semibold font-mono">{{
-                          formatRupiah(publisherDepositBalance) }} tersedia</p>
-                      </div>
-                    </div>
-                    <button type="button" @click="useDepositQuick"
-                      class="px-2.5 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-lg transition-colors shrink-0 shadow-2xs cursor-pointer">
-                      Potong Deposit
-                    </button>
-                  </div>
-
-                  <!-- Nominal Input -->
-                  <div class="space-y-1">
-                    <div class="flex items-center justify-between">
-                      <label class="text-xs font-bold text-slate-700">Nominal Pembayaran *</label>
-                      <div class="flex items-center gap-2">
-                        <span v-if="sisaTagihan > 0" class="text-[11px] text-slate-500 font-mono">
-                          Maks: <strong class="text-slate-700">{{ formatRupiah(sisaTagihan) }}</strong>
-                        </span>
-                        <span
-                          class="text-[11px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                          {{ formatRupiah(form.nominal || 0) }}
-                        </span>
-                      </div>
-                    </div>
-                    <div
-                      class="flex rounded-lg border overflow-hidden focus-within:ring-2 bg-white shadow-2xs transition-all"
-                      :class="isNominalExceedsSisa ? 'border-rose-400 focus-within:border-rose-500 focus-within:ring-rose-100' : 'border-slate-300 focus-within:border-red-500 focus-within:ring-red-100'">
-                      <span
-                        class="inline-flex items-center px-3 bg-slate-100 border-r border-slate-200 text-xs font-mono font-bold text-slate-500 select-none">
-                        Rp
-                      </span>
-                      <input :value="form.nominal ? form.nominal.toLocaleString('id-ID') : ''" type="text"
-                        inputmode="numeric" placeholder="0"
-                        class="w-full px-3 py-2 text-sm sm:text-base font-bold font-mono text-slate-800 outline-none border-0 bg-transparent"
-                        required @input="onNominalInput" />
-                    </div>
-                    <p v-if="isNominalExceedsSisa"
-                      class="text-xs text-rose-600 font-semibold flex items-center gap-1 mt-1">
-                      <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                      </svg>
-                      <span>Nominal melebihi sisa tagihan! Maksimal: {{ formatRupiah(sisaTagihan) }}</span>
-                    </p>
-                  </div>
-
-                  <!-- Metode Bayar -->
-                  <div class="space-y-1.5 pt-1.5 border-t border-slate-100">
-                    <label class="text-xs font-bold text-slate-700">Metode Pembayaran</label>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      <label v-for="m in metodeOptions" :key="m.value"
-                        class="py-2 px-2 text-center rounded-lg border transition-all select-none flex flex-col justify-center"
-                        :class="[
-                          m.disabled
-                            ? 'opacity-50 cursor-not-allowed bg-slate-50 border-slate-200 text-slate-400'
-                            : 'cursor-pointer',
-                          !m.disabled && form.metode === m.value
-                            ? 'border-red-600 bg-red-50/40 ring-1 ring-red-600/30 text-red-900 font-bold'
-                            : (!m.disabled ? 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700' : '')
-                        ]">
-                        <input type="radio" v-model="form.metode" :value="m.value" :disabled="m.disabled"
-                          class="hidden" />
-                        <p class="text-xs font-bold truncate">{{ m.label }}</p>
-                        <p class="text-[10px] mt-0.5 truncate"
-                          :class="m.disabled ? 'text-slate-400 italic' : 'text-slate-400'">{{ m.desc }}</p>
-                      </label>
-                    </div>
-                  </div>
-
-                  <!-- Keterangan -->
-                  <div class="space-y-1.5 pt-1.5 border-t border-slate-100">
-                    <label class="text-xs font-semibold text-slate-600">
-                      Keterangan / Catatan Pembayaran (opsional)
-                    </label>
-                    <input v-model="form.keterangan" placeholder="Contoh: Transfer Bank a.n. Penerbit..."
-                      class="form-input text-xs py-2 rounded-lg border-slate-200 focus:border-red-500 focus:ring-red-100" />
-                  </div>
-                </div>
-              </div>
-
-              <!-- STEP 3: BUKTI PEMBAYARAN -->
-              <div class="border-b border-slate-200">
-                <SectionHeader title="3. Bukti Pembayaran (Opsional)" />
-                <div class="p-3.5 sm:p-4 space-y-2">
-                  <p class="text-slate-500 text-xs">Foto bukti transfer, nota fisik, atau struk pembayaran</p>
-                  <ImageUploader ref="proofUploaderRef" :compact="true" @change="handleProofChange" />
-                </div>
-              </div>
-
-            </div>
-
-            <!-- Desktop Submit Button -->
-            <div class="hidden lg:block p-3.5 sm:p-4 bg-slate-50/60 border-t border-slate-200">
-              <button
-                type="button"
-                @click="submitPayment"
-                :disabled="isSubmitting || !isFormValid || sisaTagihan <= 0 || isNominalExceedsSisa"
-                class="btn-primary w-full h-9.5 justify-center text-xs font-bold rounded-lg shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
-                <span v-if="isSubmitting" class="flex items-center justify-center gap-2">
-                  <ion-spinner name="crescent" class="w-4 h-4"></ion-spinner>
-                  <span>Menyimpan Pembayaran...</span>
-                </span>
-                <span v-else-if="sisaTagihan <= 0" class="flex items-center justify-center gap-2">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Pesanan Sudah Lunas</span>
-                </span>
-                <span v-else class="flex items-center justify-center gap-2">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Simpan & Catat Pembayaran ({{ formatRupiah(form.nominal || 0) }})</span>
-                </span>
-              </button>
-            </div>
-
-          </div>
-
+          <!-- RIGHT COLUMN: Payment Form Steps & Desktop Submit -->
+          <PaymentFormSteps
+            :form="form"
+            :sisa-tagihan="sisaTagihan"
+            :publisher-deposit-balance="publisherDepositBalance"
+            :existing-pelunasan-payments="existingPelunasanPayments"
+            :existing-dp-payments="existingDpPayments"
+            :existing-pelunasan-summary="existingPelunasanSummary"
+            :existing-dp-summary="existingDpSummary"
+            :is-nominal-exceeds-sisa="isNominalExceedsSisa"
+            :is-form-valid="isFormValid"
+            :is-submitting="isSubmitting"
+            :jenis-pembayaran-options="jenisPembayaranOptions"
+            :metode-options="metodeOptions"
+            @select-jenis="selectJenisPembayaran"
+            @use-deposit="useDepositQuick"
+            @nominal-input="onNominalInput"
+            @proof-change="handleProofChange"
+            @submit="submitPayment"
+          />
         </div>
       </form>
     </ion-content>
 
     <!-- Mobile Sticky Submit Button (Full edge bar) -->
-    <div v-if="selectedOrder"
-      class="lg:hidden fixed bottom-0 left-0 right-0 z-50 px-4 py-3 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-lg">
+    <div
+      v-if="selectedOrder"
+      class="lg:hidden fixed bottom-0 left-0 right-0 z-50 px-4 py-3 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-lg"
+    >
       <button
         type="button"
         @click="submitPayment"
@@ -401,213 +124,62 @@
     </div>
 
     <!-- Toast Notification -->
-    <ion-toast :is-open="toastOpen" :message="toastMsg" :duration="3000" position="top" :color="toastColor"
-      @didDismiss="toastOpen = false" />
+    <ion-toast
+      :is-open="toastOpen"
+      :message="toastMsg"
+      :duration="3000"
+      position="top"
+      :color="toastColor"
+      @didDismiss="toastOpen = false"
+    />
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   IonPage, IonHeader, IonContent, IonSpinner, IonToast, useIonRouter, onIonViewWillEnter,
 } from '@ionic/vue'
 import PageHeader from '@shared/components/PageHeader.vue'
-import SectionHeader from '@shared/components/SectionHeader.vue'
-import { useOrderStore } from '../stores/orders'
-import { useAuthStore } from '../stores/auth'
-import { api } from '@shared/api/gasClient'
-import ImageUploader from '@shared/components/ImageUploader.vue'
-import { formatRupiah, getTodayISO } from '@shared/utils/formatters'
-import type { JenisPembayaran, MetodeBayar, KasMasuk } from '@shared/types'
+import PaymentOrderSummary from '../components/payment/PaymentOrderSummary.vue'
+import PaymentFormSteps from '../components/payment/PaymentFormSteps.vue'
+import { useNewPaymentForm } from '../composables/useNewPaymentForm'
+import { formatRupiah } from '@shared/utils/formatters'
 
 const route = useRoute()
 const router = useIonRouter()
-const orderStore = useOrderStore()
-const authStore = useAuthStore()
 
 const targetOrderId = computed(() => {
   return ((route.params.orderId as string) || (route.query.orderId as string) || '').trim()
 })
 
-const selectedOrder = computed(() =>
-  orderStore.orders.find((o) => (o.id_order || '').trim() === targetOrderId.value),
-)
-
-const kasMasukList = ref<KasMasuk[]>([])
-const isLoading = ref(true)
-const isSubmitting = ref(false)
-const proofUploaderRef = ref<InstanceType<typeof ImageUploader>>()
-const photoBase64 = ref('')
-const photoFilename = ref('')
-const toastOpen = ref(false)
-const toastMsg = ref('')
-const toastColor = ref('success')
-
-const form = ref({
-  id_order: targetOrderId.value,
-  jenis_pembayaran: 'DP' as JenisPembayaran,
-  nominal: 0,
-  metode: 'KASIR_TUNAI' as MetodeBayar,
-  keterangan: '',
-})
-
-const publisherDepositBalance = computed(() => {
-  const penerbit = String(selectedOrder.value?.nama_penerbit || '').trim().toLowerCase()
-  if (!penerbit) return 0
-
-  // Selalu pakai daftar GLOBAL kas masuk dari store — jangan mencampur dengan list per-order
-  // (list per-order hanya berisi pembayaran order ini → deposit penerbit jadi understated).
-  const allKm = orderStore.kasMasukList
-
-  // Hanya deposit TERVERIFIKASI yang bisa dibelanjakan (uang sudah benar masuk rekening).
-  // Deposit PENDING belum diakui owner — kalau dipakai lalu deposit-nya dibatalkan, order
-  // jadi "lunas" pakai uang yang tak pernah ada (double-spend). Pemakaian SALDO_DEPOSIT pun
-  // hanya dari yang terverifikasi agar konsisten dengan ledger owner (BukuKas/Piutang).
-  const totalDeposit = allKm
-    .filter((k) => String(k.nama_penerbit || '').trim().toLowerCase() === penerbit && k.jenis_pembayaran === 'DEPOSIT' && (k.status_verifikasi as any) === 'VERIFIED')
-    .reduce((sum, k) => sum + (Number(k.nominal) || 0), 0)
-
-  // Total yang sudah terpakai untuk potong saldo deposit
-  const totalTerpakai = allKm
-    .filter((k) => String(k.nama_penerbit || '').trim().toLowerCase() === penerbit && k.metode === 'SALDO_DEPOSIT' && (k.status_verifikasi as any) === 'VERIFIED')
-    .reduce((sum, k) => sum + (Number(k.nominal) || 0), 0)
-
-  return Math.max(0, totalDeposit - totalTerpakai)
-})
-
-const metodeOptions = computed(() => {
-  const depositAvailable = publisherDepositBalance.value > 0
-  const list: Array<{ value: MetodeBayar; label: string; desc: string; disabled?: boolean }> = [
-    {
-      value: 'SALDO_DEPOSIT' as MetodeBayar,
-      label: '💳 Saldo Deposit',
-      desc: depositAvailable ? `Sisa: ${formatRupiah(publisherDepositBalance.value)}` : 'Saldo Rp 0 (Kosong)',
-      disabled: !depositAvailable,
-    },
-    { value: 'KASIR_TUNAI' as MetodeBayar, label: 'Tunai', desc: 'Pembayaran Tunai', disabled: false },
-    { value: 'BANK' as MetodeBayar, label: 'Bank', desc: 'Transfer Bank', disabled: false },
-    { value: 'QRIS' as MetodeBayar, label: 'QRIS', desc: 'Scan Statis / Dinamis', disabled: false },
-  ]
-  return list
-})
-
-function useDepositQuick() {
-  form.value.metode = 'SALDO_DEPOSIT'
-  const maxCanUse = Math.min(sisaTagihan.value, publisherDepositBalance.value)
-  form.value.nominal = maxCanUse
-}
-
-// Sum of all verified or recorded payments for this order
-const totalTerbayar = computed(() =>
-  kasMasukList.value
-    .filter((k) => k.status_verifikasi !== 'BATAL' as any)
-    .reduce((s, k) => s + k.nominal, 0),
-)
-
-const sisaTagihan = computed(() =>
-  Math.max(0, (selectedOrder.value?.total_harga ?? 0) - totalTerbayar.value),
-)
-
-const existingPelunasanPayments = computed(() =>
-  kasMasukList.value.filter(
-    (k) => k.jenis_pembayaran === 'PELUNASAN' && (k.status_verifikasi as any) !== 'BATAL'
-  )
-)
-
-const existingDpPayments = computed(() =>
-  kasMasukList.value.filter(
-    (k) => k.jenis_pembayaran === 'DP' && (k.status_verifikasi as any) !== 'BATAL'
-  )
-)
-
-const isNominalExceedsSisa = computed(() => {
-  return form.value.nominal > sisaTagihan.value
-})
-
-const existingPelunasanSummary = computed(() => {
-  return existingPelunasanPayments.value
-    .map((p) => `${formatRupiah(p.nominal)} (${p.tanggal ? p.tanggal.split('T')[0] : ''})`)
-    .join(', ')
-})
-
-const existingDpSummary = computed(() => {
-  return existingDpPayments.value
-    .map((p) => formatRupiah(p.nominal))
-    .join(', ')
-})
-
-const isFormValid = computed(() => {
-  return Boolean(
-    targetOrderId.value &&
-    form.value.nominal > 0 &&
-    sisaTagihan.value > 0 &&
-    form.value.nominal <= sisaTagihan.value
-  )
-})
-
-interface JenisOption {
-  value: JenisPembayaran
-  label: string
-  desc: string
-  nominal: number
-  badge: string
-}
-
-const jenisPembayaranOptions = computed<JenisOption[]>(() => {
-  const total = selectedOrder.value?.total_harga || 0
-  const sisa = sisaTagihan.value
-  const masuk = totalTerbayar.value
-
-  const dpNominal = Math.round(total * 0.5)
-
-  let dpDesc = 'Pembayaran termin 1'
-  if (total > 0) {
-    dpDesc = `DP 50% (${formatRupiah(dpNominal)})`
-  }
-
-  let pelunasanDesc = 'Pelunasan tagihan'
-  if (total > 0) {
-    pelunasanDesc = masuk > 0 ? `Sisa Tagihan (${formatRupiah(sisa)})` : `Langsung Lunas 100% (${formatRupiah(total)})`
-  }
-
-  return [
-    {
-      value: 'DP' as JenisPembayaran,
-      label: 'Uang Muka (DP)',
-      desc: dpDesc,
-      nominal: dpNominal,
-      badge: 'DP',
-    },
-    {
-      value: 'PELUNASAN' as JenisPembayaran,
-      label: 'Pelunasan',
-      desc: pelunasanDesc,
-      nominal: sisa,
-      badge: '✓',
-    },
-  ]
-})
-
-const activePreset = ref<string | null>(null)
-const userInteractedWithJenis = ref(false)
-
-function onNominalInput(e: Event) {
-  userInteractedWithJenis.value = true
-  const target = e.target as HTMLInputElement
-  const raw = target.value.replace(/\D/g, '')
-  const num = raw ? parseInt(raw, 10) : 0
-  form.value.nominal = num
-  target.value = num ? num.toLocaleString('id-ID') : ''
-  activePreset.value = null
-}
-
-function selectJenisPembayaran(option: JenisOption) {
-  userInteractedWithJenis.value = true
-  form.value.jenis_pembayaran = option.value
-  form.value.nominal = option.nominal
-  activePreset.value = option.value === 'DP' ? 'dp50' : (totalTerbayar.value > 0 ? 'sisa' : 'full')
-}
+const {
+  selectedOrder,
+  isLoading,
+  isSubmitting,
+  toastOpen,
+  toastMsg,
+  toastColor,
+  form,
+  publisherDepositBalance,
+  metodeOptions,
+  useDepositQuick,
+  totalTerbayar,
+  sisaTagihan,
+  existingPelunasanPayments,
+  existingDpPayments,
+  isNominalExceedsSisa,
+  existingPelunasanSummary,
+  existingDpSummary,
+  isFormValid,
+  jenisPembayaranOptions,
+  onNominalInput,
+  selectJenisPembayaran,
+  handleProofChange,
+  loadData,
+  submitPayment,
+} = useNewPaymentForm(targetOrderId)
 
 function handleBack() {
   if (targetOrderId.value) {
@@ -618,202 +190,6 @@ function handleBack() {
     router.push('/order/list')
   }
 }
-
-function handleProofChange(data: { base64: string; filename: string } | null) {
-  if (data) {
-    photoBase64.value = data.base64
-    photoFilename.value = data.filename
-  } else {
-    photoBase64.value = ''
-    photoFilename.value = ''
-  }
-}
-
-let loadPromise: Promise<void> | null = null
-
-async function doLoadData() {
-  if (!targetOrderId.value) {
-    isLoading.value = false
-    return
-  }
-
-  isLoading.value = true
-
-  try {
-    if (!selectedOrder.value) {
-      await orderStore.ensureOrderLoaded(targetOrderId.value)
-    }
-
-    form.value.id_order = targetOrderId.value
-
-    const [resOrderKm, _] = await Promise.all([
-      api.getKasMasuk({ id_order: targetOrderId.value }),
-      orderStore.fetchKasMasuk(true),
-    ])
-    if (resOrderKm.success && resOrderKm.data) {
-      kasMasukList.value = resOrderKm.data
-    }
-
-    // Smart default nominal & payment type HANYA jika pengguna belum memilih sendiri secara manual
-    if (selectedOrder.value && !userInteractedWithJenis.value) {
-      if (totalTerbayar.value > 0 && sisaTagihan.value > 0) {
-        form.value.jenis_pembayaran = 'PELUNASAN'
-        form.value.nominal = sisaTagihan.value
-        activePreset.value = 'sisa'
-      } else if (sisaTagihan.value > 0) {
-        form.value.jenis_pembayaran = 'DP'
-        form.value.nominal = Math.round(selectedOrder.value.total_harga * 0.5)
-        activePreset.value = 'dp50'
-      } else {
-        form.value.nominal = 0
-        activePreset.value = null
-      }
-    }
-  } catch (err) {
-    console.error('Failed to load order/payment details:', err)
-  } finally {
-    isLoading.value = false
-  }
-}
-
-function loadData() {
-  if (!loadPromise) {
-    loadPromise = doLoadData().finally(() => {
-      loadPromise = null
-    })
-  }
-  return loadPromise
-}
-
-import { useSyncStore } from '@shared/stores/syncStore'
-
-async function submitPayment() {
-  if (!isFormValid.value || isSubmitting.value) return
-
-  if (sisaTagihan.value <= 0) {
-    toastMsg.value = '⚠️ Pesanan ini sudah lunas terverifikasi.'
-    toastColor.value = 'warning'
-    toastOpen.value = true
-    return
-  }
-
-  if (form.value.nominal > sisaTagihan.value) {
-    toastMsg.value = `⚠️ Nominal melebihi sisa tagihan (${formatRupiah(sisaTagihan.value)})`
-    toastColor.value = 'warning'
-    toastOpen.value = true
-    return
-  }
-
-  // Validasi pemotongan deposit
-  if (form.value.metode === 'SALDO_DEPOSIT' && form.value.nominal > publisherDepositBalance.value) {
-    toastMsg.value = `⚠️ Nominal melebihi sisa saldo deposit penerbit (${formatRupiah(publisherDepositBalance.value)})`
-    toastColor.value = 'warning'
-    toastOpen.value = true
-    return
-  }
-
-  isSubmitting.value = true
-
-  try {
-    const isDepositMethod = form.value.metode === 'SALDO_DEPOSIT'
-    const statusVerifikasi = isDepositMethod ? 'VERIFIED' : 'PENDING'
-
-    const payload = {
-      id_order: targetOrderId.value,
-      jenis_pembayaran: form.value.jenis_pembayaran,
-      nominal: form.value.nominal,
-      metode: form.value.metode,
-      diinput_oleh: authStore.nama ?? 'OPERASIONAL',
-      status_verifikasi: statusVerifikasi,
-      nama_penerbit: selectedOrder.value?.nama_penerbit,
-      keterangan: form.value.keterangan || (isDepositMethod ? `Potong saldo deposit ${selectedOrder.value?.nama_penerbit || ''}` : undefined),
-      foto_base64: photoBase64.value || undefined,
-      foto_filename: photoFilename.value || undefined,
-    }
-    const res = await api.createKasMasuk(payload)
-
-    if (res.success) {
-      if (res.data?.id_kas_masuk) {
-        const newKm: KasMasuk = {
-          id_kas_masuk: res.data.id_kas_masuk,
-          tanggal: getTodayISO(),
-          id_order: targetOrderId.value,
-          jenis_pembayaran: form.value.jenis_pembayaran,
-          nominal: form.value.nominal,
-          metode: form.value.metode,
-          diinput_oleh: authStore.nama ?? 'OPERASIONAL',
-          status_verifikasi: statusVerifikasi,
-          keterangan: form.value.keterangan || '',
-          nama_penerbit: selectedOrder.value?.nama_penerbit || '',
-        }
-        orderStore.kasMasukList = [newKm, ...orderStore.kasMasukList]
-      }
-
-      toastMsg.value = `✅ Pembayaran ${formatRupiah(form.value.nominal)} berhasil dicatat!`
-      toastColor.value = 'success'
-      toastOpen.value = true
-
-      setTimeout(() => {
-        router.push(`/order/${targetOrderId.value}`)
-      }, 1200)
-    } else {
-      const isOffline = res.isOffline || (typeof navigator !== 'undefined' && !navigator.onLine)
-      if (isOffline) {
-        // MODE OFFLINE PEMBAYARAN
-        const tempSeq = Date.now().toString(36).slice(-4).toUpperCase()
-        const tempId = `KM-OFFLINE-${tempSeq}`
-
-        const offlineKm: KasMasuk = {
-          id_kas_masuk: tempId,
-          tanggal: getTodayISO(),
-          id_order: targetOrderId.value,
-          jenis_pembayaran: form.value.jenis_pembayaran,
-          nominal: form.value.nominal,
-          metode: form.value.metode,
-          diinput_oleh: authStore.nama ?? 'OPERASIONAL',
-          status_verifikasi: statusVerifikasi,
-          keterangan: form.value.keterangan || '',
-          nama_penerbit: selectedOrder.value?.nama_penerbit || '',
-        }
-        orderStore.kasMasukList = [offlineKm, ...orderStore.kasMasukList]
-
-        try {
-          const syncStore = useSyncStore()
-          syncStore.addLog({
-            entity_type: 'KAS_MASUK',
-            title: `Kas Masuk [Offline]: ${form.value.jenis_pembayaran} (${form.value.metode})`,
-            subtitle: `Order: ${targetOrderId.value} • ID: ${tempId}`,
-            nominal: form.value.nominal,
-            status: 'PENDING',
-            action: 'createKasMasuk',
-            payload: { ...payload, temp_id_kas_masuk: tempId },
-          })
-        } catch (syncErr) {
-          console.warn('Failed to queue offline kas masuk:', syncErr)
-        }
-
-        toastMsg.value = `✅ Pembayaran ${formatRupiah(form.value.nominal)} dicatat offline (akan tersinkron saat online)!`
-        toastColor.value = 'success'
-        toastOpen.value = true
-
-        setTimeout(() => {
-          router.push(`/order/${targetOrderId.value}`)
-        }, 1200)
-        return
-      }
-
-      toastMsg.value = res.error ?? 'Gagal menyimpan pembayaran'
-      toastColor.value = 'danger'
-      toastOpen.value = true
-    }
-  } finally {
-    isSubmitting.value = false
-  }
-}
-
-watch(targetOrderId, () => {
-  userInteractedWithJenis.value = false
-})
 
 onMounted(() => {
   loadData()
