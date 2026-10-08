@@ -20,13 +20,16 @@
     <Teleport to="body">
       <div
         v-if="isOpen"
-        class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity duration-200 animate-fade-in"
+        class="fixed inset-0 z-[60] flex items-center justify-center sm:p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity duration-200 animate-fade-in"
       >
         <div
-          class="relative w-full sm:max-w-2xl bg-white sm:rounded-2xl shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[85vh] h-[85vh] border border-slate-200 overflow-hidden"
+          class="relative w-full h-[100dvh] sm:h-[85vh] sm:max-w-2xl bg-white rounded-none sm:rounded-2xl shadow-2xl flex flex-col border-0 sm:border border-slate-200 overflow-hidden"
         >
           <!-- Header Modal (Single Sleek Bar) -->
-          <div class="px-3.5 py-2 bg-slate-950 text-white shrink-0 border-b border-white/10 flex items-center justify-between gap-3">
+          <div
+            class="px-3.5 py-2.5 sm:py-2 bg-slate-950 text-white shrink-0 border-b border-white/10 flex items-center justify-between gap-3"
+            style="padding-top: max(env(safe-area-inset-top, 0px), 10px);"
+          >
             <div class="flex items-center gap-2.5 min-w-0">
               <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-purple-500 to-indigo-600 flex items-center justify-center text-white shadow-xs shrink-0">
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -134,7 +137,10 @@
           </div>
 
           <!-- Footer Chat Input -->
-          <div class="p-2.5 bg-white border-t border-slate-200 shrink-0">
+          <div
+            class="p-2.5 sm:p-3 bg-white border-t border-slate-200 shrink-0"
+            style="padding-bottom: max(env(safe-area-inset-bottom, 0px), 10px);"
+          >
             <form @submit.prevent="sendMessage" class="flex items-center gap-2">
               <input
                 ref="inputRef"
