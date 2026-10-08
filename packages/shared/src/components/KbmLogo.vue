@@ -89,7 +89,7 @@ import { computed } from 'vue'
 
 const props = withDefaults(
   defineProps<{
-    size?: 'sm' | 'md' | 'lg' | 'xl'
+    size?: 'sm' | 'md' | 'lg' | 'xl' | number
     variant?: 'icon' | 'full' | 'stacked'
     subtitle?: string
   }>(),
@@ -101,6 +101,7 @@ const props = withDefaults(
 )
 
 const iconSize = computed(() => {
+  if (typeof props.size === 'number') return props.size
   switch (props.size) {
     case 'sm': return 30
     case 'md': return 38
