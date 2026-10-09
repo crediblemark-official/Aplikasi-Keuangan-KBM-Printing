@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { api } from '../api/gasClient'
 
 export interface CompanyProfile {
   nama: string
@@ -50,16 +51,9 @@ function loadProfileFromStorage(): CompanyProfile {
 
 export const useCompanyStore = defineStore('company', () => {
   const profile = ref<CompanyProfile>(loadProfileFromStorage())
-
-  function updateProfile(patch: Partial<CompanyProfile>) {
-    profile.value = { ...profile.value, ...patch }
-    saveToStorage()
-  }
-
-  function resetProfile() {
-    profile.value = { ...DEFAULT_COMPANY_PROFILE }
-    saveToStorage()
-  }
+  const isLoading = ref(false)
+  const isSaving = ref(false)
+  const isLoadedFromPg = ref(false)
 
   function saveToStorage() {
     if (typeof window === 'undefined') return
@@ -70,9 +64,75 @@ export const useCompanyStore = defineStore('company', () => {
     }
   }
 
+  async function loadCompanyProfile(force = false) {
+    if (isLoadedFromPg.value && !force) return
+    isLoading.value = true
+    try {
+      const res = await api.getCompanySettings()
+      if (res.success && res.data) {
+        profile.value = {
+          ...DEFAULT_COMPANY_PROFILE,
+          ...profile.value,
+          ...res.data,
+        }
+        saveToStorage()
+        isLoadedFromPg.value = true
+      }
+    } catch (err) {
+      console.warn('Gagal memuat company settings dari PostgreSQL, menggunakan cache lokal:', err)
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  async function updateProfile(patch: Partial<CompanyProfile>) {
+    profile.value = { ...profile.value, ...patch }
+    saveToStorage()
+    isSaving.value = true
+    try {
+      const res = await api.updateCompanySettings(profile.value)
+      if (res.success) {
+        isLoadedFromPg.value = true
+      }
+      return res
+    } catch (err) {
+      console.warn('Gagal menyimpan profil perusahaan ke PostgreSQL:', err)
+      return { success: false, error: err instanceof Error ? err.message : String(err) }
+    } finally {
+      isSaving.value = false
+    }
+  }
+
+  async function resetProfile() {
+    profile.value = { ...DEFAULT_COMPANY_PROFILE }
+    saveToStorage()
+    isSaving.value = true
+    try {
+      const res = await api.updateCompanySettings(DEFAULT_COMPANY_PROFILE)
+      return res
+    } catch (err) {
+      console.warn('Gagal reset profil perusahaan di PostgreSQL:', err)
+      return { success: false, error: err instanceof Error ? err.message : String(err) }
+    } finally {
+      isSaving.value = false
+    }
+  }
+
+  // Trigger background sync dari PostgreSQL jika di lingkungan browser
+  if (typeof window !== 'undefined') {
+    setTimeout(() => {
+      loadCompanyProfile()
+    }, 100)
+  }
+
   return {
     profile,
+    isLoading,
+    isSaving,
+    isLoadedFromPg,
+    loadCompanyProfile,
     updateProfile,
     resetProfile,
   }
 })
+

@@ -81,6 +81,7 @@ export async function handleUpdateKasMasuk(body: any) {
       metode = COALESCE(${body.metode}, metode),
       keterangan = COALESCE(${body.keterangan}, keterangan),
       nama_penerbit = COALESCE(${body.nama_penerbit}, nama_penerbit),
+      id_order = ${body.id_order !== undefined ? (body.id_order ? String(body.id_order) : null) : sql`id_order`},
       jenis_pembayaran = COALESCE(${body.jenis_pembayaran}, jenis_pembayaran),
       status_verifikasi = COALESCE(${body.status_verifikasi}, status_verifikasi),
       updated_at = NOW()

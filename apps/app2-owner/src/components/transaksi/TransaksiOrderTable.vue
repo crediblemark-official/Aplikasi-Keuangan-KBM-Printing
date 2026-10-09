@@ -133,7 +133,7 @@
           </td>
 
           <!-- 7. Total Tagihan -->
-          <td class="text-right font-mono font-bold text-slate-900 whitespace-nowrap align-top py-3">
+          <td class="text-right font-mono font-bold whitespace-nowrap align-top py-3" :class="row.order.status_order === 'BATAL' ? 'line-through text-slate-400' : 'text-slate-900'">
             {{ formatRupiah(row.order.total_harga) }}
           </td>
 
@@ -296,21 +296,21 @@
 
           <!-- Sisa Piutang -->
           <td class="text-right font-extrabold whitespace-nowrap align-top py-3 bg-sky-50/30 group-hover/row:bg-sky-100/60 transition-colors"
-              :class="row.sisa_tagihan > 0 ? 'text-rose-600' : 'text-emerald-600'">
-            {{ formatRupiah(row.sisa_tagihan) }}
+              :class="row.order.status_order === 'BATAL' ? 'text-slate-400 font-normal text-xs' : row.sisa_tagihan > 0 ? 'text-rose-600' : 'text-emerald-600'">
+            {{ row.order.status_order === 'BATAL' ? 'Rp 0 (Batal)' : formatRupiah(row.sisa_tagihan) }}
           </td>
 
           <!-- Status Bayar Badge -->
           <td class="text-center whitespace-nowrap align-top py-3 bg-sky-50/30 group-hover/row:bg-sky-100/60 transition-colors">
-            <StatusBadge :status="row.status_bayar" :verification="getVerificationStatus(row.payments)" />
+            <StatusBadge :status="row.status_bayar" :verification="row.order.status_order === 'BATAL' ? '' : getVerificationStatus(row.payments)" />
           </td>
 
           <!-- Aksi -->
           <td class="text-center whitespace-nowrap align-middle py-3 px-3 bg-sky-50/30 group-hover/row:bg-sky-100/60 transition-colors">
             <div class="inline-flex items-center justify-center gap-1.5 whitespace-nowrap">
-              <!-- Tombol Bayar jika ada sisa tagihan -->
+              <!-- Tombol Bayar jika ada sisa tagihan & bukan BATAL -->
               <button
-                v-if="row.sisa_tagihan > 0"
+                v-if="row.order.status_order !== 'BATAL' && row.sisa_tagihan > 0"
                 @click.stop="$emit('bayar-order', row)"
                 type="button"
                 class="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs hover:shadow-xs whitespace-nowrap"
@@ -321,6 +321,21 @@
                 </svg>
                 <span>+ Bayar</span>
               </button>
+              <button
+                v-else-if="row.order.status_order === 'BATAL' && (row.total_masuk ?? row.total_masuk_verified) > 0"
+                @click.stop="$emit('refund-order', row)"
+                type="button"
+                class="px-2.5 py-1 text-xs font-bold rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs hover:shadow-xs whitespace-nowrap"
+                title="Penyelesaian dana order batal: Catat Refund Kas Keluar atau Alihkan ke Saldo Deposit"
+              >
+                <span>🔄 Refund / Deposit</span>
+              </button>
+              <span
+                v-else-if="row.order.status_order === 'BATAL'"
+                class="px-2 py-1 text-[11px] rounded-lg font-bold inline-flex items-center gap-1 text-slate-500 bg-slate-100 border border-slate-200 whitespace-nowrap"
+              >
+                ✕ Batal
+              </span>
               <span
                 v-else
                 class="px-2 py-1 text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg font-bold inline-flex items-center gap-1 whitespace-nowrap"
@@ -388,6 +403,7 @@ defineEmits<{
   (e: 'edit-payment', tx: OrderTxRow, order: Order): void
   (e: 'edit-order', order: Order): void
   (e: 'bayar-order', row: PiutangRow): void
+  (e: 'refund-order', row: EnrichedPiutangRow): void
   (e: 'select-edit-payment', row: EnrichedPiutangRow): void
 }>()
 

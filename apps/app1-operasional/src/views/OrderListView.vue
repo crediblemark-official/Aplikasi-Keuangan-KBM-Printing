@@ -118,7 +118,7 @@
                       }}x Dus</span>
                   </div>
                 </td>
-                <td class="text-right font-extrabold font-mono text-xs text-red-600 whitespace-nowrap">
+                <td class="text-right font-extrabold font-mono text-xs whitespace-nowrap" :class="order.status_order === 'BATAL' ? 'line-through text-slate-400' : 'text-red-600'">
                   {{ formatRupiah(order.total_harga) }}
                 </td>
                 <td class="text-center whitespace-nowrap" @click.stop>
@@ -131,7 +131,7 @@
                 </td>
                 <td class="text-center whitespace-nowrap">
                   <StatusBadge :status="orderStore.getPaymentStatus(order.id_order, order.total_harga)"
-                      :verification="getVerificationStatus(orderStore.kasMasukList.filter(k => k.id_order === order.id_order))" size="xs" />
+                      :verification="order.status_order === 'BATAL' ? '' : getVerificationStatus(orderStore.kasMasukList.filter(k => k.id_order === order.id_order))" size="xs" />
                 </td>
                 <td class="text-center whitespace-nowrap" @click.stop>
                   <div class="inline-flex items-center gap-1.5">

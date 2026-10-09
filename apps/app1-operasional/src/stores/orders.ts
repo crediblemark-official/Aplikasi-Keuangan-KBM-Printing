@@ -60,7 +60,12 @@ export const useOrderStore = defineStore('orders', () => {
   watch(
     orders,
     (val) => {
-      setStorage(STORAGE_KEY, val)
+      try {
+        const plain = JSON.parse(JSON.stringify(val))
+        setStorage(STORAGE_KEY, plain)
+      } catch {
+        setStorage(STORAGE_KEY, val)
+      }
     },
     { deep: true },
   )
@@ -68,7 +73,12 @@ export const useOrderStore = defineStore('orders', () => {
   watch(
     kasMasukList,
     (val) => {
-      setStorage(KM_STORAGE_KEY, val)
+      try {
+        const plain = JSON.parse(JSON.stringify(val))
+        setStorage(KM_STORAGE_KEY, plain)
+      } catch {
+        setStorage(KM_STORAGE_KEY, val)
+      }
     },
     { deep: true },
   )
@@ -113,14 +123,16 @@ export const useOrderStore = defineStore('orders', () => {
     orders.value.filter((o) => o.status_order === 'PROSES'),
   )
 
-  function getPaymentStatus(orderId: string, totalHarga: number): 'LUNAS' | 'DP' | 'BELUM_BAYAR' {
+  function getPaymentStatus(orderId: string, totalHarga: number): 'LUNAS' | 'DP' | 'BELUM_BAYAR' | 'BATAL' | 'BATAL_ADA_DANA' {
     if (!orderId) return 'BELUM_BAYAR'
     const trimmedId = orderId.trim()
+    const order = orders.value.find((o) => o.id_order.trim() === trimmedId)
+
     const payments = kasMasukList.value.filter(
-      (k) => k.id_order && k.id_order.trim() === trimmedId && (k as any).status_verifikasi !== 'BATAL'
+      (k) => k.id_order && k.id_order.trim() === trimmedId && (k as any).status_verifikasi !== 'BATAL' && k.jenis_pembayaran !== 'DEPOSIT'
     )
     const totalMasuk = payments.reduce((s, k) => s + (k.nominal || 0), 0)
-    const status = hitungStatusBayar(totalMasuk, totalHarga)
+    const status = hitungStatusBayar(totalMasuk, totalHarga, order?.status_order)
     if (status === 'KURANG_BAYAR') return 'DP'
     return status
   }

@@ -17,13 +17,27 @@
           </template>
           Segarkan
         </BaseButton>
-        <BaseButton @click="exportExcelSummary" :loading="isExporting" size="sm">
+        <BaseButton @click="exportExcelSummary" :loading="isExporting" variant="secondary" size="sm">
           <template #icon>
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </template>
           Export (.xlsx)
+        </BaseButton>
+        <BaseButton
+          @click="isPdfModalOpen = true"
+          variant="primary"
+          size="sm"
+          class="shadow-xs font-bold"
+          title="Cetak & Ekspor Laporan Lengkap Resmi (PDF A4 Dokumen Kantor)"
+        >
+          <template #icon>
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+          </template>
+          Export PDF Resmi
         </BaseButton>
       </template>
     </PageHeader>
@@ -66,6 +80,22 @@
         Memuat dan merender laporan visual...
       </div>
     </div>
+
+    <!-- Official PDF Report Modal & Printable A4 Template -->
+    <LaporanOfficialPdfModal
+      v-model="isPdfModalOpen"
+      :period-label="dateFilter.label || selectedPeriode"
+      :total-masuk="totalMasuk"
+      :total-keluar="totalKeluar"
+      :laba-bersih="labaBersih"
+      :profit-margin="profitMargin"
+      :expense-ratio="expenseRatio"
+      :kategori-breakdown="kategoriBreakdown"
+      :sumber-breakdown="sumberBreakdown"
+      :jenis-breakdown="jenisBreakdown"
+      :kas-masuk-list="filteredKasMasukByPeriode"
+      :kas-keluar-list="filteredKasKeluarByPeriode"
+    />
   </div>
 </template>
 
@@ -79,6 +109,7 @@ import DateFilterBar from '@shared/components/DateFilterBar.vue'
 import LaporanTrendSection from '../components/laporan/LaporanTrendSection.vue'
 import LaporanDonutBreakdown from '../components/laporan/LaporanDonutBreakdown.vue'
 import LaporanInsightCards from '../components/laporan/LaporanInsightCards.vue'
+import LaporanOfficialPdfModal from '../components/laporan/LaporanOfficialPdfModal.vue'
 import { useLaporanAnalytics } from '../composables/useLaporanAnalytics'
 import { useFinanceStore } from '../stores/finance'
 import { formatRupiah, getCurrentPeriode, isDateInFilterRange } from '@shared/utils/formatters'
@@ -92,6 +123,7 @@ const { kasMasukList, kasKeluarList, isLoading: storeLoading, isRefreshing } = s
 
 const isLoading = computed(() => storeLoading.value && kasMasukList.value.length === 0 && kasKeluarList.value.length === 0)
 const isExporting = ref(false)
+const isPdfModalOpen = ref(false)
 const selectedPeriode = ref(getCurrentPeriode())
 const dateFilter = ref<DateFilterValue>({ mode: 'MONTH' })
 
@@ -103,6 +135,8 @@ let kategoriDonutInstance: Chart | null = null
 let sumberDonutInstance: Chart | null = null
 
 const {
+  filteredKasMasukByPeriode,
+  filteredKasKeluarByPeriode,
   totalMasuk,
   totalKeluar,
   labaBersih,

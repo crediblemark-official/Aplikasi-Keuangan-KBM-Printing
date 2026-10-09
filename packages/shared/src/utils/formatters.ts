@@ -143,6 +143,7 @@ export function formatKategori(kategori: string): string {
     OPERASIONAL: 'Operasional / Listrik',
     GAJI: 'Gaji & Lembur',
     KONSUMSI: 'Konsumsi',
+    REFUND: 'Refund / Pengembalian',
     LAIN_LAIN: 'Lain-lain',
   }
   return map[kategori] ?? kategori
@@ -243,7 +244,11 @@ export function hitungPersentaseDP(nominal: number, total: number): number {
 export function hitungStatusBayar(
   totalMasuk: number,
   totalHarga: number,
-): 'LUNAS' | 'DP' | 'KURANG_BAYAR' | 'BELUM_BAYAR' {
+  statusOrder?: string,
+): 'LUNAS' | 'DP' | 'KURANG_BAYAR' | 'BELUM_BAYAR' | 'BATAL' | 'BATAL_ADA_DANA' {
+  if (statusOrder === 'BATAL') {
+    return totalMasuk > 0 ? 'BATAL_ADA_DANA' : 'BATAL'
+  }
   if (totalMasuk <= 0) return 'BELUM_BAYAR'
   if (totalMasuk >= totalHarga) return 'LUNAS'
   return 'DP'

@@ -5,31 +5,7 @@
     title="Catat Pembayaran Order Cetak"
   >
     <form @submit.prevent="submitPayment" class="space-y-4">
-      <!-- Tanggal & Jenis Bayar -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label class="form-label">Tanggal Bayar *</label>
-          <input
-            v-model="paymentForm.tanggal"
-            type="date"
-            class="form-input bg-white"
-            required
-          />
-        </div>
-        <div>
-          <label class="form-label">Jenis Pembayaran *</label>
-          <select
-            v-model="paymentForm.jenis_pembayaran"
-            class="form-input bg-white font-medium"
-            required
-          >
-            <option value="DP">Uang Muka (DP)</option>
-            <option value="PELUNASAN">Pelunasan Tagihan</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Pilih Order Cetak (Wajib) -->
+      <!-- 1. Pilih Order Cetak (Wajib) -->
       <div>
         <label class="form-label">Pilih Transaksi / Order Cetak *</label>
         <select
@@ -48,38 +24,127 @@
         </select>
       </div>
 
-      <!-- Ringkasan Order Terpilih -->
+      <!-- 2. Ringkasan Order Terpilih (Ultra Compact & Sleek) -->
       <div
         v-if="selectedOrder"
-        class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 text-xs"
+        class="rounded-xl border border-slate-200 bg-white shadow-2xs overflow-hidden"
       >
-        <div class="flex justify-between items-start">
-          <div>
-            <span class="text-slate-500">Judul Buku:</span>
-            <span class="font-bold text-slate-900 ml-1.5">{{ selectedOrder.judul_penulis }}</span>
+        <!-- Header Kompak & Adaptif (Mendukung Judul Pendek & Panjang) -->
+        <div class="px-3 py-2 bg-slate-50/90 border-b border-slate-100 space-y-1">
+          <!-- Baris Meta: ID Order, Penerbit & Badge Status -->
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span class="font-mono text-[10px] sm:text-[11px] font-bold px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-700 shadow-2xs">
+                {{ selectedOrder.id_order }}
+              </span>
+              <span class="text-[11px] text-slate-500 font-medium truncate">
+                {{ selectedOrder.nama_penerbit }}
+              </span>
+            </div>
+            <span
+              v-if="orderStatusBadge"
+              class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border shadow-2xs shrink-0"
+              :class="orderStatusBadge.class"
+            >
+              {{ orderStatusBadge.label }}
+            </span>
           </div>
-          <span class="font-mono text-slate-500 font-semibold">{{ selectedOrder.id_order }}</span>
-        </div>
-        <div class="flex justify-between items-center text-slate-600">
-          <span>Total Tagihan: <strong class="text-slate-900">{{ formatRupiah(selectedOrder.total_harga) }}</strong></span>
-          <span>Sisa Tagihan: <strong class="text-rose-600 font-bold">{{ formatRupiah(selectedOrderSisa) }}</strong></span>
-        </div>
-        <div class="pt-1.5 flex gap-2 border-t border-slate-200/80">
-          <button
-            v-if="selectedOrderSisa > 0"
-            type="button"
-            @click="paymentForm.nominal = selectedOrderSisa"
-            class="px-2.5 py-1 rounded bg-emerald-50 text-emerald-700 font-bold hover:bg-emerald-100 transition-colors cursor-pointer border border-emerald-200"
+
+          <!-- Baris Judul Buku: Lebar Penuh 100%, line-clamp-2 (Maks 2 baris rapi) & Hover Full Title -->
+          <p
+            class="text-xs sm:text-sm font-bold text-slate-900 leading-snug line-clamp-2 break-words"
+            :title="selectedOrder.judul_buku || selectedOrder.judul_penulis"
           >
-            Isi Lunas ({{ formatRupiah(selectedOrderSisa) }})
-          </button>
-          <button
-            type="button"
-            @click="paymentForm.nominal = Math.round(selectedOrder.total_harga * 0.5)"
-            class="px-2.5 py-1 rounded bg-blue-50 text-blue-700 font-bold hover:bg-blue-100 transition-colors cursor-pointer border border-blue-200"
-          >
-            Isi DP 50% ({{ formatRupiah(Math.round(selectedOrder.total_harga * 0.5)) }})
-          </button>
+            <span class="mr-1 select-none text-xs">📖</span>{{ selectedOrder.judul_buku || selectedOrder.judul_penulis }}
+          </p>
+        </div>
+
+        <!-- Metric Strip Kompak: Total, Terbayar, Sisa Tagihan -->
+        <div class="grid grid-cols-3 divide-x divide-slate-100 bg-white py-1.5 text-center">
+          <div class="px-2 min-w-0">
+            <span class="block text-[9px] font-bold uppercase tracking-tight text-slate-400">Total</span>
+            <span
+              class="block font-sans font-bold text-xs sm:text-sm text-slate-900 truncate"
+              :title="formatRupiah(selectedOrder.total_harga)"
+            >
+              {{ formatRupiah(selectedOrder.total_harga) }}
+            </span>
+          </div>
+          <div class="px-2 min-w-0 bg-emerald-50/30">
+            <span class="block text-[9px] font-bold uppercase tracking-tight text-emerald-600">Terbayar</span>
+            <span
+              class="block font-sans font-bold text-xs sm:text-sm text-emerald-700 truncate"
+              :title="formatRupiah(selectedOrderTotalBayar)"
+            >
+              {{ formatRupiah(selectedOrderTotalBayar) }}
+            </span>
+          </div>
+          <div class="px-2 min-w-0 bg-rose-50/30">
+            <span class="block text-[9px] font-bold uppercase tracking-tight text-rose-600">Sisa Tagihan</span>
+            <span
+              class="block font-sans font-black text-xs sm:text-sm text-rose-700 truncate"
+              :title="formatRupiah(selectedOrderSisa)"
+            >
+              {{ formatRupiah(selectedOrderSisa) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Hairline Progress Bar di Bawah Kartu -->
+        <div
+          class="w-full bg-slate-100 h-1 overflow-hidden"
+          :title="`Progres: ${paymentProgressPct}%`"
+        >
+          <div
+            class="h-full transition-all duration-300"
+            :class="selectedOrderSisa === 0 ? 'bg-emerald-500' : selectedOrderTotalBayar > 0 ? 'bg-amber-500' : 'bg-slate-300'"
+            :style="{ width: `${paymentProgressPct}%` }"
+          ></div>
+        </div>
+      </div>
+
+      <!-- 3. Tanggal & Jenis Bayar (Mobile Friendly) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="form-label">Tanggal Bayar *</label>
+          <input
+            v-model="paymentForm.tanggal"
+            type="date"
+            class="form-input bg-white h-10"
+            required
+          />
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="form-label !mb-0">Jenis Pembayaran *</label>
+            <span class="text-[10px] text-slate-400 font-medium">Otomatis isi</span>
+          </div>
+          <div class="grid grid-cols-2 p-1 bg-slate-100 rounded-lg border border-slate-200/80 gap-1 h-10">
+            <button
+              type="button"
+              @click="setJenisPembayaran('DP')"
+              class="h-full px-2 rounded-md text-xs font-sans transition-all flex items-center justify-center gap-1.5 cursor-pointer outline-none focus:outline-none select-none active:scale-95"
+              :class="paymentForm.jenis_pembayaran === 'DP'
+                ? 'bg-white text-blue-700 shadow-2xs font-bold'
+                : 'text-slate-600 hover:text-slate-900 font-medium'"
+              title="Pembayaran Uang Muka (DP 50%)"
+            >
+              <span class="text-sm">🏷️</span>
+              <span class="truncate">Uang Muka (DP)</span>
+            </button>
+            <button
+              type="button"
+              @click="setJenisPembayaran('PELUNASAN')"
+              class="h-full px-2 rounded-md text-xs font-sans transition-all flex items-center justify-center gap-1.5 cursor-pointer outline-none focus:outline-none select-none active:scale-95"
+              :class="paymentForm.jenis_pembayaran === 'PELUNASAN'
+                ? 'bg-white text-emerald-700 shadow-2xs font-bold'
+                : 'text-slate-600 hover:text-slate-900 font-medium'"
+              title="Pelunasan Sisa Tagihan"
+            >
+              <span class="text-sm">💰</span>
+              <span class="truncate">Pelunasan</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -116,26 +181,6 @@
         </p>
       </div>
 
-      <!-- Nama Penerbit (Read-only / Locked) -->
-      <div>
-        <label class="form-label flex items-center justify-between">
-          <span>Nama Penerbit / Klien *</span>
-          <span class="text-[11px] text-slate-400 font-normal flex items-center gap-1">
-            <svg class="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-            Terkunci sesuai data order
-          </span>
-        </label>
-        <input
-          :value="paymentForm.nama_penerbit"
-          type="text"
-          readonly
-          placeholder="Pilih order di atas terlebih dahulu"
-          class="form-input bg-slate-100 text-slate-600 font-medium cursor-not-allowed select-none"
-          required
-        />
-      </div>
 
       <!-- Nominal & Metode -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -190,13 +235,13 @@
         />
       </div>
 
-      <!-- Action Buttons -->
-      <div class="flex gap-3 pt-2">
+      <!-- Action Buttons (Mobile-first Touch Targets) -->
+      <div class="flex gap-2.5 sm:gap-3 pt-3">
         <BaseButton
           variant="secondary"
           type="button"
           @click="emit('update:modelValue', false)"
-          class="flex-1"
+          class="flex-1 !py-2.5 sm:!py-2"
         >
           Batal
         </BaseButton>
@@ -204,9 +249,9 @@
           type="submit"
           :loading="isSubmittingPayment"
           :disabled="isSubmittingPayment || !paymentForm.id_order || paymentForm.nominal <= 0 || isNominalExceedsSisa"
-          class="flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="flex-1 !py-2.5 sm:!py-2 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {{ isSubmittingPayment ? 'Menyimpan Pembayaran...' : 'Simpan Pembayaran Order' }}
+          {{ isSubmittingPayment ? 'Menyimpan...' : 'Simpan Pembayaran' }}
         </BaseButton>
       </div>
     </form>
@@ -295,6 +340,7 @@ watch(
 
 const availableOrders = computed(() => {
   return props.ordersList
+    .filter((order) => order.status_order !== 'BATAL')
     .map((order) => {
       const orderPayments = props.kasMasukList.filter(
         (k) => k.id_order === order.id_order && (k as any).status_verifikasi !== 'BATAL'
@@ -310,6 +356,14 @@ const availableOrders = computed(() => {
 const selectedOrder = computed(() => {
   if (!paymentForm.value.id_order) return null
   return props.ordersList.find((o) => o.id_order === paymentForm.value.id_order) || null
+})
+
+const selectedOrderTotalBayar = computed(() => {
+  if (!selectedOrder.value) return 0
+  const orderPayments = props.kasMasukList.filter(
+    (k) => k.id_order === selectedOrder.value!.id_order && (k as any).status_verifikasi !== 'BATAL'
+  )
+  return orderPayments.reduce((s, k) => s + k.nominal, 0)
 })
 
 const selectedOrderSisa = computed(() => {
@@ -339,32 +393,60 @@ const existingDpPayments = computed(() => {
   )
 })
 
+const paymentProgressPct = computed(() => {
+  if (!selectedOrder.value || selectedOrder.value.total_harga <= 0) return 0
+  const pct = Math.round((selectedOrderTotalBayar.value / selectedOrder.value.total_harga) * 100)
+  return Math.min(100, Math.max(0, pct))
+})
+
+const orderStatusBadge = computed(() => {
+  if (!selectedOrder.value) return null
+  if (selectedOrderSisa.value === 0) {
+    return {
+      label: 'Lunas',
+      class: 'bg-emerald-50 text-emerald-700 border-emerald-300 font-bold',
+    }
+  }
+  if (selectedOrderTotalBayar.value > 0) {
+    return {
+      label: 'DP Masuk',
+      class: 'bg-amber-50 text-amber-700 border-amber-300 font-bold',
+    }
+  }
+  return {
+    label: 'Belum Bayar',
+    class: 'bg-rose-50 text-rose-700 border-rose-300 font-bold',
+  }
+})
+
 const isNominalExceedsSisa = computed(() => {
   if (!selectedOrder.value || !paymentForm.value.nominal) return false
   return paymentForm.value.nominal > selectedOrderSisa.value
 })
+
+function setJenisPembayaran(jenis: 'DP' | 'PELUNASAN') {
+  paymentForm.value.jenis_pembayaran = jenis
+  if (!selectedOrder.value) return
+
+  if (jenis === 'PELUNASAN') {
+    paymentForm.value.nominal = selectedOrderSisa.value
+  } else {
+    // DP 50% default
+    paymentForm.value.nominal = Math.round(selectedOrder.value.total_harga * 0.5)
+  }
+}
 
 watch(
   () => paymentForm.value.id_order,
   (newId) => {
     if (newId && selectedOrder.value) {
       paymentForm.value.nama_penerbit = selectedOrder.value.nama_penerbit
-      if (paymentForm.value.jenis_pembayaran === 'PELUNASAN' && selectedOrderSisa.value > 0) {
-        paymentForm.value.nominal = selectedOrderSisa.value
-      } else if (paymentForm.value.jenis_pembayaran === 'DP' && !paymentForm.value.nominal) {
-        paymentForm.value.nominal = Math.round(selectedOrder.value.total_harga * 0.5)
+      // Cerdas: Jika order sudah ada riwayat DP, otomatis arahkan ke Pelunasan
+      if (existingDpPayments.value.length > 0) {
+        setJenisPembayaran('PELUNASAN')
+      } else {
+        setJenisPembayaran('DP')
       }
-    }
-  }
-)
-
-watch(
-  () => paymentForm.value.jenis_pembayaran,
-  (newJenis) => {
-    if (newJenis === 'PELUNASAN' && selectedOrder.value && selectedOrderSisa.value > 0) {
-      paymentForm.value.nominal = selectedOrderSisa.value
-    } else if (newJenis === 'DP' && selectedOrder.value) {
-      paymentForm.value.nominal = Math.round(selectedOrder.value.total_harga * 0.5)
     }
   }
 )

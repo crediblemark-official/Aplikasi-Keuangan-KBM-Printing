@@ -103,52 +103,64 @@
     <!-- Summary Metrics Strip -->
     <MetricStrip :items="summaryMetrics" />
 
-    <!-- Google Sheets Manual Backup Banner -->
-    <div class="px-[8px] sm:px-[15px] lg:px-[20px] py-2.5 bg-emerald-50 border-b border-emerald-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
-      <div class="flex items-center gap-2.5 text-emerald-950 min-w-0">
-        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
+    <!-- Google Sheets Cloud Sync & Backup Banner (Modern & Harmonious) -->
+    <div class="px-3 sm:px-4 lg:px-5 py-2.5 bg-slate-50/80 border-b border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200/80 text-emerald-600 flex items-center justify-center shrink-0">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
         <div class="min-w-0">
-          <p class="font-medium text-slate-800">
-            <strong>Cadangan Google Sheets (Backup Manual):</strong> Data operasional aktif di <strong>PostgreSQL</strong>.
-            <span v-if="lastBackupTime" class="text-emerald-800 font-semibold ml-1 font-mono">
-              (Terakhir cadangkan: {{ lastBackupTime }})
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="font-bold text-slate-800">Sinkronisasi Google Sheets</span>
+            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              PostgreSQL Aktif
             </span>
+          </div>
+          <p class="text-[11px] text-slate-500 mt-0.5 truncate">
+            <span v-if="lastBackupTime">Terakhir cadangkan: <strong class="text-slate-700 font-mono">{{ lastBackupTime }}</strong></span>
+            <span v-else>Sinkronisasi otomatis harian setiap pukul 08:00 WIB oleh Cloudflare Cron</span>
           </p>
-          <p v-if="backupMessage" class="text-[11px] font-mono mt-0.5" :class="backupMessage.includes('Gagal') ? 'text-rose-600' : 'text-emerald-700'">
+          <p v-if="backupMessage" class="text-[11px] font-mono mt-0.5 font-medium" :class="backupMessage.includes('Gagal') ? 'text-rose-600' : 'text-emerald-700'">
             {{ backupMessage }}
           </p>
         </div>
       </div>
+
+      <!-- Action Buttons: Clean & Cohesive Secondary Toolbar -->
       <div class="flex items-center gap-2 shrink-0 flex-wrap">
         <button
           type="button"
           @click="triggerSyncFromSheets"
           :disabled="isSyncingFromSheets"
-          class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-700 active:scale-95 text-white shadow-2xs transition-all cursor-pointer shrink-0 disabled:opacity-50"
-          title="Tarik seluruh transaksi dari Google Sheets (versi lama) ke PostgreSQL"
+          class="btn-secondary h-8 text-xs font-semibold inline-flex items-center gap-1.5 px-3 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-50 transition-all cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50"
+          title="Tarik data transaksi dari Google Sheets (legacy) ke database PostgreSQL"
         >
-          <svg v-if="isSyncingFromSheets" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg v-if="isSyncingFromSheets" class="w-3.5 h-3.5 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          <svg v-else class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg v-else class="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
-          <span>{{ isSyncingFromSheets ? 'Menarik Data...' : 'Tarik dari Google Sheets' }}</span>
+          <span>{{ isSyncingFromSheets ? 'Menarik...' : 'Tarik dari Sheets' }}</span>
         </button>
 
         <button
           type="button"
           @click="triggerBackupSheets"
           :disabled="isBackingUpSheets"
-          class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white shadow-2xs transition-all cursor-pointer shrink-0 disabled:opacity-50"
+          class="btn-secondary h-8 text-xs font-semibold inline-flex items-center gap-1.5 px-3 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-50 transition-all cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50"
+          title="Cadangkan data PostgreSQL ke Google Sheets sekarang"
         >
-          <svg v-if="isBackingUpSheets" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg v-if="isBackingUpSheets" class="w-3.5 h-3.5 animate-spin text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          <svg v-else class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+          <svg v-else class="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
           </svg>
-          <span>{{ isBackingUpSheets ? 'Sedang Cadangkan...' : 'Cadangkan ke Sheets' }}</span>
+          <span>{{ isBackingUpSheets ? 'Mencadangkan...' : 'Cadangkan ke Sheets' }}</span>
         </button>
       </div>
     </div>

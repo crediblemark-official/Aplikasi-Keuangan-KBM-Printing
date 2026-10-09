@@ -136,6 +136,8 @@ const displayLabel = computed(() => {
   if (s === 'KURANG' || s === 'KURANG_BAYAR') return 'DP Masuk'
   if (s === 'DP') return 'DP Masuk'
   if (s === 'LUNAS') return 'Lunas'
+  if (s === 'BATAL_ADA_DANA' || s === 'BATAL_DANA') return 'Ada Dana'
+  if (s === 'BATAL') return 'Batal'
   if (s === 'SYNCED') return 'Tersinkron'
   if (s === 'SYNCING') return 'Sinkronisasi'
   if (s === 'FAILED') return 'Gagal'
@@ -150,6 +152,11 @@ const badgeClasses = computed(() => {
       : props.size === 'sm'
       ? 'text-xs px-2.5 py-0.5'
       : 'text-xs px-3 py-1'
+
+  // Batal tapi ada uang masuk (Perlu perhatian: refund / alihkan deposit)
+  if (['BATAL_ADA_DANA', 'BATAL_DANA'].includes(s)) {
+    return `${sizeCls} bg-amber-50 text-amber-800 border border-amber-300 font-bold`
+  }
 
   // Success / Lunas / Selesai / Verified / Synced
   if (['SELESAI', 'LUNAS', 'VERIFIED', 'SYNCED'].includes(s)) {
@@ -182,6 +189,7 @@ const dotClass = computed(() => {
   if (['PENDING', 'MENUNGGU_VERIFIKASI'].includes(v)) return 'bg-amber-500'
   if (v === 'VERIFIED') return 'bg-emerald-500'
   if (v === 'BATAL') return 'bg-rose-500'
+  if (['BATAL_ADA_DANA', 'BATAL_DANA'].includes(s)) return 'bg-amber-500'
   if (['SELESAI', 'LUNAS', 'VERIFIED', 'SYNCED'].includes(s)) return 'bg-emerald-500'
   if (['SYNCING'].includes(s)) return 'bg-blue-500'
   if (['PROSES', 'DP', 'KURANG', 'MENUNGGU_VERIFIKASI', 'PENDING'].includes(s)) return 'bg-amber-500'

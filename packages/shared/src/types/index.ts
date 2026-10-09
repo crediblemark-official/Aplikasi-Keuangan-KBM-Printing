@@ -11,6 +11,7 @@ export type KategoriKasKeluar =
   | 'OPERASIONAL'
   | 'GAJI'
   | 'KONSUMSI'
+  | 'REFUND'
   | 'LAIN_LAIN'
 export type SumberKas = 'KASIR_TUNAI' | 'BANK' | 'QRIS'
 export type UkuranBuku = 'A6' | 'A5' | 'B5' | 'A4' | 'CUSTOM'
@@ -147,7 +148,7 @@ export interface PiutangRow {
   total_masuk?: number
   has_pending?: boolean
   sisa_tagihan: number
-  status_bayar: 'LUNAS' | 'DP' | 'KURANG_BAYAR' | 'BELUM_BAYAR'
+  status_bayar: 'LUNAS' | 'DP' | 'KURANG_BAYAR' | 'BELUM_BAYAR' | 'BATAL' | 'BATAL_ADA_DANA'
 }
 
 // ---- Invoice ----

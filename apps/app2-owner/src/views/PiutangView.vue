@@ -118,7 +118,7 @@
               <td class="text-xs text-slate-500 max-w-[160px] truncate" :title="formatFinishing(row.order.finishing)">
                 {{ formatFinishing(row.order.finishing) }}
               </td>
-              <td class="text-right font-mono font-semibold text-slate-900 whitespace-nowrap">
+              <td class="text-right font-mono font-semibold whitespace-nowrap" :class="row.order.status_order === 'BATAL' ? 'line-through text-slate-400' : 'text-slate-900'">
                 {{ formatRupiah(row.order.total_harga) }}
               </td>
               <td class="text-right font-mono font-semibold text-emerald-600 whitespace-nowrap">
@@ -132,12 +132,12 @@
                 </div>
               </td>
               <td class="text-right font-extrabold whitespace-nowrap"
-                  :class="row.sisa_tagihan > 0 ? 'text-rose-600' : 'text-emerald-600'">
-                {{ formatRupiah(row.sisa_tagihan) }}
+                  :class="row.order.status_order === 'BATAL' ? 'text-slate-400 font-normal text-xs' : row.sisa_tagihan > 0 ? 'text-rose-600' : 'text-emerald-600'">
+                {{ row.order.status_order === 'BATAL' ? 'Rp 0 (Batal)' : formatRupiah(row.sisa_tagihan) }}
               </td>
               <td class="text-center whitespace-nowrap">
                 <StatusBadge :status="row.status_bayar"
-                  :verification="getVerificationStatus(rawKasMasukList.filter(k => k.id_order === row.order.id_order))" />
+                  :verification="row.order.status_order === 'BATAL' ? '' : getVerificationStatus(rawKasMasukList.filter(k => k.id_order === row.order.id_order))" />
               </td>
             </tr>
           </tbody>
@@ -361,10 +361,11 @@ const search = ref('')
 const statusFilter = ref('ALL')
 
 const statusFilters = [
-  { value: 'ALL', label: 'Semua' },
+  { value: 'ALL', label: 'Semua Aktif' },
   { value: 'BELUM_BAYAR', label: 'Belum Bayar' },
   { value: 'DP', label: 'DP' },
   { value: 'LUNAS', label: 'Lunas' },
+  { value: 'BATAL', label: 'Batal' },
 ]
 
 // Tab 2 state
@@ -491,7 +492,11 @@ const filteredDepositLedger = computed(() => {
 
 const filteredRows = computed(() => {
   return rows.value.filter((r) => {
-    if (statusFilter.value !== 'ALL' && r.status_bayar !== statusFilter.value) {
+    if (statusFilter.value === 'ALL') {
+      if (r.order.status_order === 'BATAL' && !search.value.trim()) return false
+    } else if (statusFilter.value === 'BATAL') {
+      if (r.order.status_order !== 'BATAL') return false
+    } else if (r.status_bayar !== statusFilter.value) {
       return false
     }
     if (search.value.trim()) {
@@ -506,7 +511,11 @@ const filteredRows = computed(() => {
   })
 })
 
-const totalTagihan = computed(() => rows.value.reduce((s, r) => s + r.order.total_harga, 0))
+const totalTagihan = computed(() =>
+  rows.value
+    .filter((r) => r.order.status_order !== 'BATAL')
+    .reduce((s, r) => s + r.order.total_harga, 0)
+)
 const totalMasuk = computed(() => rows.value.reduce((s, r) => s + (r.total_masuk ?? r.total_masuk_verified), 0))
 const totalPiutang = computed(() => rows.value.reduce((s, r) => s + r.sisa_tagihan, 0))
 const totalDepositMengendap = computed(() =>
@@ -587,8 +596,9 @@ const rows = computed<PiutangRow[]>(() => {
       .reduce((s, k) => s + k.nominal, 0)
     const has_pending = payments.some((k) => k.status_verifikasi === 'PENDING')
     // Sudut pandang owner: sisa tagihan & status bayar dihitung dari pembayaran TERVERIFIKASI saja
-    const sisa_tagihan = Math.max(0, order.total_harga - total_masuk_verified)
-    const status_bayar = hitungStatusBayar(total_masuk_verified, order.total_harga)
+    const isBatal = order.status_order === 'BATAL'
+    const sisa_tagihan = isBatal ? 0 : Math.max(0, order.total_harga - total_masuk_verified)
+    const status_bayar = hitungStatusBayar(total_masuk_verified, order.total_harga, order.status_order)
     return {
       order,
       total_masuk,

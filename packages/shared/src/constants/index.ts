@@ -11,6 +11,7 @@ export const KATEGORI_KAS_KELUAR_OPTIONS: KategoriOption[] = [
   { value: 'OPERASIONAL', label: 'Operasional / Listrik', shortLabel: 'Operasional' },
   { value: 'GAJI', label: 'Gaji & Lembur', shortLabel: 'Gaji' },
   { value: 'KONSUMSI', label: 'Konsumsi', shortLabel: 'Konsumsi' },
+  { value: 'REFUND', label: 'Refund / Pengembalian Dana', shortLabel: 'Refund' },
   { value: 'LAIN_LAIN', label: 'Lain-lain', shortLabel: 'Lain-lain' },
 ]
 

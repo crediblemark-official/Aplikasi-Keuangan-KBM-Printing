@@ -31,6 +31,10 @@ import {
 
 import { handleSyncBackupToSheets, handleSyncFromSheets } from './services/backupService'
 import { handleAiChat } from './services/aiService'
+import {
+  handleGetCompanySettings,
+  handleUpdateCompanySettings,
+} from './services/settingsService'
 
 const app = new Hono()
 
@@ -105,6 +109,10 @@ async function dispatchAction(action: string, params: any, body: any, env?: any)
       return handleDeleteKasKeluar(body)
     case 'getClients':
       return handleGetClients()
+    case 'getCompanySettings':
+      return handleGetCompanySettings()
+    case 'updateCompanySettings':
+      return handleUpdateCompanySettings(body)
     default:
       return { success: false, error: `Action '${action}' tidak dikenal` }
   }
@@ -152,6 +160,8 @@ app.post('/api/ai/chat', async (c) => {
   } catch {}
   return c.json(await handleAiChat(body, c.env))
 })
+app.get('/api/settings/company', async (c) => c.json(await handleGetCompanySettings()))
+app.post('/api/settings/company', async (c) => c.json(await handleUpdateCompanySettings(await c.req.json())))
 
 const PORT = Number(process.env.PORT) || 3001
 

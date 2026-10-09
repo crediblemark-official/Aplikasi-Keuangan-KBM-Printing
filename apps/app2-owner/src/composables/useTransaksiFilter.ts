@@ -32,7 +32,7 @@ export function useTransaksiFilter(
   ordersList: Ref<Order[]>,
   kasMasukList: Ref<KasMasuk[]>,
   searchQuery: Ref<string>,
-  statusFilter: Ref<'ALL' | 'PIUTANG' | 'LUNAS' | 'PENDING_VERIF' | 'UNLINKED'>,
+  statusFilter: Ref<'ALL' | 'PIUTANG' | 'LUNAS' | 'PENDING_VERIF' | 'UNLINKED' | 'BATAL'>,
   dateFilter: Ref<DateFilterValue>
 ) {
   // All payments linked to orders
@@ -83,8 +83,9 @@ export function useTransaksiFilter(
         .filter((k) => k.status_verifikasi === 'VERIFIED')
         .reduce((s, k) => s + k.nominal, 0)
       const has_pending = payments.some((k) => k.status_verifikasi === 'PENDING')
-      const sisa_tagihan = Math.max(0, order.total_harga - total_masuk_verified)
-      const status_bayar = hitungStatusBayar(total_masuk_verified, order.total_harga)
+      const isBatal = order.status_order === 'BATAL'
+      const sisa_tagihan = isBatal ? 0 : Math.max(0, order.total_harga - total_masuk_verified)
+      const status_bayar = hitungStatusBayar(total_masuk_verified, order.total_harga, order.status_order)
 
       return {
         order,
@@ -170,14 +171,20 @@ export function useTransaksiFilter(
     {
       value: 'PIUTANG' as const,
       label: 'Ada Piutang',
-      count: dateFilteredPiutangRows.value.filter((r) => r.sisa_tagihan > 0).length,
+      count: dateFilteredPiutangRows.value.filter((r) => r.order.status_order !== 'BATAL' && r.sisa_tagihan > 0).length,
       badgeClass: 'bg-rose-50 text-rose-600 font-bold',
     },
     {
       value: 'LUNAS' as const,
       label: 'Lunas',
-      count: dateFilteredPiutangRows.value.filter((r) => r.sisa_tagihan <= 0).length,
+      count: dateFilteredPiutangRows.value.filter((r) => r.order.status_order !== 'BATAL' && r.sisa_tagihan <= 0).length,
       badgeClass: 'bg-emerald-50 text-emerald-700 font-bold',
+    },
+    {
+      value: 'BATAL' as const,
+      label: 'Batal',
+      count: dateFilteredPiutangRows.value.filter((r) => r.order.status_order === 'BATAL').length,
+      badgeClass: 'bg-rose-100 text-rose-700 font-bold',
     },
     {
       value: 'PENDING_VERIF' as const,
@@ -201,8 +208,9 @@ export function useTransaksiFilter(
 
   const filteredPiutangRows = computed(() => {
     return dateFilteredPiutangRows.value.filter((r) => {
-      if (statusFilter.value === 'PIUTANG' && r.sisa_tagihan <= 0) return false
-      if (statusFilter.value === 'LUNAS' && r.sisa_tagihan > 0) return false
+      if (statusFilter.value === 'PIUTANG' && (r.order.status_order === 'BATAL' || r.sisa_tagihan <= 0)) return false
+      if (statusFilter.value === 'LUNAS' && (r.order.status_order === 'BATAL' || r.sisa_tagihan > 0)) return false
+      if (statusFilter.value === 'BATAL' && r.order.status_order !== 'BATAL') return false
       if (statusFilter.value === 'PENDING_VERIF' && !r.has_pending) return false
 
       if (searchQuery.value.trim()) {
@@ -246,7 +254,9 @@ export function useTransaksiFilter(
   }
 
   const totalTagihanPiutang = computed(() =>
-    filteredPiutangRows.value.reduce((s, r) => s + r.order.total_harga, 0)
+    filteredPiutangRows.value
+      .filter((r) => r.order.status_order !== 'BATAL')
+      .reduce((s, r) => s + r.order.total_harga, 0)
   )
   const totalMasukPiutang = computed(() =>
     filteredPiutangRows.value.reduce((s, r) => s + r.total_masuk_verified, 0)

@@ -125,6 +125,7 @@
       @edit-payment="openEditPaymentModal"
       @edit-order="openEditOrderModal"
       @bayar-order="openPaymentModalForOrder"
+      @refund-order="openRefundModal"
       @select-edit-payment="openSelectEditPayment"
     />
 
@@ -189,6 +190,18 @@
       :kas-masuk-list="kasMasukList"
       @success="() => loadData(true)"
       @toast="showToast"
+    />
+
+    <!-- MODAL: REFUND / PENYELESAIAN DANA ORDER BATAL -->
+    <RefundOrderModal
+      v-if="selectedRefundRow"
+      v-model="showRefundModal"
+      :order="selectedRefundRow.order"
+      :total-masuk="selectedRefundRow.total_masuk ?? selectedRefundRow.total_masuk_verified"
+      :payments="kasMasukList.filter(k => k.id_order === selectedRefundRow?.order.id_order)"
+      :current-user="authStore.nama || 'OWNER'"
+      @success="() => loadData(true)"
+      @toast="(msg: string, type?: string) => showToast(msg, type === 'warning' ? 'info' : (type as any))"
     />
 
     <!-- MODAL: PILIH PEMBAYARAN UNTUK DIEDIT (Jika Ada > 1 Transaksi) -->
@@ -257,6 +270,7 @@ import EditPaymentOrderModal from '../components/EditPaymentOrderModal.vue'
 import EditOrderModal from '../components/EditOrderModal.vue'
 import TransaksiUnlinkedTable from '../components/transaksi/TransaksiUnlinkedTable.vue'
 import TransaksiOrderTable from '../components/transaksi/TransaksiOrderTable.vue'
+import RefundOrderModal from '@shared/components/RefundOrderModal.vue'
 import { useTransaksiFilter, type OrderTxRow, type EnrichedPiutangRow } from '../composables/useTransaksiFilter'
 import { api } from '@shared/api/gasClient'
 import { useAuthStore } from '../stores/auth'
@@ -272,8 +286,16 @@ const financeStore = useFinanceStore()
 const { kasMasukList, ordersList, isLoading, isRefreshing } = storeToRefs(financeStore)
 const verifyingId = ref<string | null>(null)
 const searchQuery = ref('')
-const statusFilter = ref<'ALL' | 'PIUTANG' | 'LUNAS' | 'PENDING_VERIF' | 'UNLINKED'>('ALL')
+const statusFilter = ref<'ALL' | 'PIUTANG' | 'LUNAS' | 'PENDING_VERIF' | 'UNLINKED' | 'BATAL'>('ALL')
 const dateFilter = ref<DateFilterValue>({ mode: 'ALL' })
+
+const showRefundModal = ref(false)
+const selectedRefundRow = ref<EnrichedPiutangRow | null>(null)
+
+function openRefundModal(row: EnrichedPiutangRow) {
+  selectedRefundRow.value = row
+  showRefundModal.value = true
+}
 
 const { toastMessage, toastType, showToast, clearToast } = useToast()
 

@@ -90,6 +90,62 @@
   background: #fee2e2;
 }
 
+.btn-warning {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  border: 1px solid #b45309;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(217, 119, 6, 0.25);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+  line-height: normal;
+  white-space: nowrap;
+}
+.btn-warning:hover {
+  background: linear-gradient(135deg, #b45309 0%, #92400e 100%);
+  box-shadow: 0 3px 8px rgba(217, 119, 6, 0.35);
+  color: #ffffff;
+}
+.btn-warning:active {
+  transform: scale(0.98);
+}
+
+.btn-warning-soft {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 13px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(217, 119, 6, 0.08);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+  line-height: normal;
+  white-space: nowrap;
+}
+.btn-warning-soft:hover {
+  background: #fde68a;
+  border-color: #f59e0b;
+  color: #78350f;
+}
+.btn-warning-soft:active {
+  transform: scale(0.98);
+}
+
 /* ---- Filter Capsule Pills (Airbnb / Google Maps style) ---- */
 .filter-pill {
   display: inline-flex;
@@ -476,7 +532,38 @@
 .btn-dropdown-add:hover {
   background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%) !important;
 }
-.btn-dropdown-add:active {
-  transform: scale(0.98) !important;
+/* ---- Period Month Input Typography Normalization ---- */
+.period-month-input,
+.period-month-input::-webkit-datetime-edit,
+.period-month-input::-webkit-datetime-edit-fields-wrapper,
+.period-month-input::-webkit-datetime-edit-text,
+.period-month-input::-webkit-datetime-edit-month-field,
+.period-month-input::-webkit-datetime-edit-year-field {
+  font-size: 0.75rem !important; /* 12px (text-xs) identical to tombol Semua */
+  font-family: inherit !important;
+  line-height: 1rem !important;
+}
+
+.period-month-input.font-active,
+.period-month-input.font-active::-webkit-datetime-edit,
+.period-month-input.font-active::-webkit-datetime-edit-fields-wrapper,
+.period-month-input.font-active::-webkit-datetime-edit-text,
+.period-month-input.font-active::-webkit-datetime-edit-month-field,
+.period-month-input.font-active::-webkit-datetime-edit-year-field {
+  color: #0f172a !important; /* Slate 900 - hitam pekat tegas */
+  -webkit-text-fill-color: #0f172a !important;
+  font-weight: 700 !important; /* Bold hitam tegas */
+  opacity: 1 !important;
+}
+
+.period-month-input.font-inactive,
+.period-month-input.font-inactive::-webkit-datetime-edit,
+.period-month-input.font-inactive::-webkit-datetime-edit-fields-wrapper,
+.period-month-input.font-inactive::-webkit-datetime-edit-text,
+.period-month-input.font-inactive::-webkit-datetime-edit-month-field,
+.period-month-input.font-inactive::-webkit-datetime-edit-year-field {
+  color: #64748b !important;
+  font-weight: 500 !important;
+  opacity: 0.8 !important;
 }
 

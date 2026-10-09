@@ -66,4 +66,12 @@ const router = createRouter({
   routes,
 })
 
+// Lepas focus dari elemen aktif sebelum transisi halaman
+// Mencegah warning Chromium: "Blocked aria-hidden on an element because its descendant retained focus"
+router.beforeEach(() => {
+  if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur()
+  }
+})
+
 export default router

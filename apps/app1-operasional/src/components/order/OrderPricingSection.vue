@@ -25,12 +25,14 @@
             {{ form.skema_harga === 'LANGGANAN' ? '⭐ Tarif Khusus Langganan' : '🏷️ Tarif Reguler / Normal' }}
           </span>
         </div>
-        <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-lg border border-slate-200">
+        <div class="grid grid-cols-2 p-1 bg-slate-100 rounded-lg border border-slate-200/80 gap-1">
           <button
             type="button"
             @click="emit('set-skema', 'NORMAL')"
-            :class="form.skema_harga === 'NORMAL' ? 'bg-white text-slate-800 shadow-xs font-bold border-slate-300' : 'text-slate-500 hover:text-slate-800 border-transparent'"
-            class="py-1.5 px-3 rounded-md text-xs font-medium border transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
+            :class="form.skema_harga === 'NORMAL'
+              ? 'bg-white text-slate-900 shadow-2xs font-bold'
+              : 'text-slate-500 hover:text-slate-900 font-medium'"
+            class="h-8.5 px-3 rounded-md text-xs font-sans transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer outline-none focus:outline-none focus:ring-0 active:outline-none select-none"
           >
             <span>🏷️</span>
             <span>Harga Normal</span>
@@ -38,8 +40,10 @@
           <button
             type="button"
             @click="emit('set-skema', 'LANGGANAN')"
-            :class="form.skema_harga === 'LANGGANAN' ? 'bg-amber-500 text-white shadow-xs font-bold border-amber-600' : 'text-slate-500 hover:text-slate-800 border-transparent'"
-            class="py-1.5 px-3 rounded-md text-xs font-medium border transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
+            :class="form.skema_harga === 'LANGGANAN'
+              ? 'bg-amber-500 text-white shadow-2xs font-bold'
+              : 'text-slate-500 hover:text-slate-900 font-medium'"
+            class="h-8.5 px-3 rounded-md text-xs font-sans transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer outline-none focus:outline-none focus:ring-0 active:outline-none select-none"
           >
             <span>⭐</span>
             <span>Harga Langganan</span>

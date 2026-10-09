@@ -6,24 +6,44 @@
         :show-back="false"
       >
         <template #leading>
-          <div class="flex items-center shrink-0">
+          <div class="flex items-center gap-2 shrink-0">
             <KbmLogo size="sm" variant="icon" />
+            <SyncIndicatorPill @click="router.push('/sync-log')" />
           </div>
         </template>
         <template #actions>
-          <SyncIndicatorPill @click="router.push('/sync-log')" />
-          <label class="text-xs font-semibold text-slate-500 hidden sm:inline">Periode:</label>
-          <div class="relative flex items-center">
-            <span class="absolute left-2.5 pointer-events-none text-slate-400">
-              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </span>
-            <input
-              type="month"
-              v-model="selectedPeriode"
-              class="pl-8 pr-2.5 py-1 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:border-slate-300 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 cursor-pointer shadow-2xs transition-colors"
-            />
+          <label class="text-xs font-semibold text-slate-500 hidden sm:inline shrink-0 whitespace-nowrap">Periode:</label>
+          <div class="inline-flex items-center h-8 p-0.5 bg-slate-100 rounded-lg border border-slate-200/80 shrink-0 gap-0.5">
+            <button
+              type="button"
+              @click="setPeriodeAll"
+              class="h-7 px-3.5 sm:px-4 min-w-[58px] flex items-center justify-center text-xs font-sans rounded-md transition-all cursor-pointer shrink-0 leading-none outline-none focus:outline-none focus:ring-0 active:outline-none"
+              :class="isAllPeriode
+                ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                : 'text-slate-500 hover:text-slate-900 font-medium'"
+              title="Tampilkan Semua Periode"
+            >
+              Semua
+            </button>
+            <div
+              class="relative h-7 flex items-center rounded-md transition-all shrink-0"
+              :class="!isAllPeriode ? 'bg-white shadow-2xs' : ''"
+            >
+              <span class="absolute left-2.5 flex items-center pointer-events-none text-slate-400">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </span>
+              <input
+                type="month"
+                :value="isAllPeriode ? '' : selectedPeriode"
+                @input="onMonthInput($event)"
+                @change="onMonthInput($event)"
+                class="period-month-input h-7 pl-8 pr-2.5 w-[168px] min-w-[168px] text-xs font-sans bg-transparent border-0 outline-none focus:outline-none focus:ring-0 cursor-pointer leading-none m-0 py-0"
+                :class="!isAllPeriode ? 'font-active !text-slate-900 text-slate-900 font-bold' : 'font-inactive text-slate-500 font-medium'"
+                title="Pilih Bulan Spesifik"
+              />
+            </div>
           </div>
           <button
             type="button"
@@ -132,7 +152,7 @@
                       <span v-if="order.packing_dus_tipe" class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 font-semibold">{{ order.packing_dus_qty || 1 }}x Dus</span>
                     </div>
                   </td>
-                  <td class="text-right font-extrabold font-mono text-xs text-red-600 whitespace-nowrap">
+                  <td class="text-right font-extrabold font-mono text-xs whitespace-nowrap" :class="order.status_order === 'BATAL' ? 'line-through text-slate-400' : 'text-red-600'">
                     {{ formatRupiah(order.total_harga) }}
                   </td>
                   <td class="text-center whitespace-nowrap" @click.stop>
@@ -153,7 +173,7 @@
                   </td>
                   <td class="text-center whitespace-nowrap">
                     <StatusBadge :status="orderStore.getPaymentStatus(order.id_order, order.total_harga)"
-                      :verification="getVerificationStatus(orderStore.kasMasukList.filter(k => k.id_order === order.id_order))" size="xs" />
+                      :verification="order.status_order === 'BATAL' ? '' : getVerificationStatus(orderStore.kasMasukList.filter(k => k.id_order === order.id_order))" size="xs" />
                   </td>
                   <td class="text-center whitespace-nowrap">
                     <button
@@ -213,27 +233,44 @@ const syncStore = useSyncStore()
 const router = useIonRouter()
 
 const selectedPeriode = ref(getCurrentPeriode())
+const isAllPeriode = computed(() => !selectedPeriode.value || selectedPeriode.value === 'ALL')
+
+function setPeriodeAll() {
+  selectedPeriode.value = 'ALL'
+}
+
+function onMonthInput(e: Event) {
+  const val = (e.target as HTMLInputElement).value
+  if (val) {
+    selectedPeriode.value = val
+  }
+}
+
 const currentDate = computed(() => formatTanggal(getTodayISO()))
 const updatingOrderId = ref<string | null>(null)
 
 const filteredOrdersByPeriode = computed(() => {
-  if (!selectedPeriode.value) return orderStore.orders
+  if (isAllPeriode.value) return orderStore.orders
   return orderStore.orders.filter((o) =>
     String(o.tanggal || '').startsWith(selectedPeriode.value)
   )
 })
 
 const todayOrders = computed(() =>
-  orderStore.orders.filter((o) => o.tanggal === getTodayISO()).length
+  orderStore.orders.filter((o) => o.tanggal === getTodayISO() && o.status_order !== 'BATAL').length
 )
 const todayTotal = computed(() =>
   orderStore.orders
-    .filter((o) => o.tanggal === getTodayISO())
+    .filter((o) => o.tanggal === getTodayISO() && o.status_order !== 'BATAL')
     .reduce((sum, o) => sum + (o.total_harga || 0), 0)
 )
-const periodOrdersCount = computed(() => filteredOrdersByPeriode.value.length)
+const periodOrdersCount = computed(() =>
+  filteredOrdersByPeriode.value.filter((o) => o.status_order !== 'BATAL').length
+)
 const periodTotal = computed(() =>
-  filteredOrdersByPeriode.value.reduce((sum, o) => sum + (o.total_harga || 0), 0)
+  filteredOrdersByPeriode.value
+    .filter((o) => o.status_order !== 'BATAL')
+    .reduce((sum, o) => sum + (o.total_harga || 0), 0)
 )
 const prosesCount = computed(() =>
   filteredOrdersByPeriode.value.filter((o) => o.status_order === 'PROSES').length
@@ -253,14 +290,14 @@ const shiftMetrics = computed(() => [
     label: 'Order Masuk',
     value: periodOrdersCount.value,
     unit: 'order',
-    sub: selectedPeriode.value === getCurrentPeriode() ? `Hari ini: ${todayOrders.value}` : 'Bulan ini',
+    sub: isAllPeriode.value ? 'Semua waktu' : (selectedPeriode.value === getCurrentPeriode() ? `Hari ini: ${todayOrders.value}` : 'Bulan terpilih'),
     minWidth: 'min-w-[130px]',
   },
   {
     label: 'Total Nilai Pekerjaan',
     value: formatRupiah(periodTotal.value),
     valueClass: 'text-red-600',
-    sub: selectedPeriode.value === getCurrentPeriode() && todayTotal.value > 0 ? `Hari ini: ${formatRupiah(todayTotal.value)}` : 'Periode terpilih',
+    sub: isAllPeriode.value ? 'Semua waktu' : (selectedPeriode.value === getCurrentPeriode() && todayTotal.value > 0 ? `Hari ini: ${formatRupiah(todayTotal.value)}` : 'Periode terpilih'),
     minWidth: 'min-w-[160px]',
   },
   {

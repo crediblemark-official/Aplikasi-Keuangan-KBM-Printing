@@ -70,11 +70,22 @@ export async function getStorage<T>(key: string, defaultValue: T): Promise<T> {
 
 /**
  * Menyimpan data ke storage secara asynchronous.
+ * Data di-serialize/sanitasi terlebih dahulu agar bersih dari Vue Reactive Proxy yang tidak kompatibel dengan IndexedDB Structured Clone Algorithm.
  */
 export async function setStorage<T>(key: string, value: T): Promise<void> {
+  // Pastikan value adalah plain data yang aman untuk Structured Clone Algorithm
+  let safeValue: any = value
+  if (value !== null && typeof value === 'object') {
+    try {
+      safeValue = JSON.parse(JSON.stringify(value))
+    } catch {
+      safeValue = value
+    }
+  }
+
   if (checkIndexedDBSupport()) {
     try {
-      await set(key, value)
+      await set(key, safeValue)
       return
     } catch (err) {
       console.warn(`[persistentStorage] Gagal menulis ke IndexedDB untuk key "${key}", fallback ke localStorage:`, err)
@@ -84,7 +95,7 @@ export async function setStorage<T>(key: string, value: T): Promise<void> {
   // Fallback ke localStorage
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
-      localStorage.setItem(key, JSON.stringify(value))
+      localStorage.setItem(key, JSON.stringify(safeValue))
     } catch (err) {
       console.error(`[persistentStorage] Gagal menyimpan ke localStorage:`, err)
     }

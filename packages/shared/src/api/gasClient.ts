@@ -385,4 +385,11 @@ export const api = {
       thinking?: string
       model: string
     }>('aiChat', payload as any, 60000),
+
+  // Company & Invoice Settings (PostgreSQL backend)
+  getCompanySettings: () =>
+    gasGet<import('../stores/companyStore').CompanyProfile>('getCompanySettings'),
+
+  updateCompanySettings: (data: Partial<import('../stores/companyStore').CompanyProfile>) =>
+    gasPost<{ success: boolean; data?: any; message?: string }>('updateCompanySettings', data),
 }

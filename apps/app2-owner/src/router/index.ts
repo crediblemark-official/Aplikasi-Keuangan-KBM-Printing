@@ -37,4 +37,10 @@ const router = createRouter({
   routes,
 })
 
+router.beforeEach(() => {
+  if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur()
+  }
+})
+
 export default router
