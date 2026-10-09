@@ -797,11 +797,15 @@ function handleCreateKasMasuk(body) {
 
     // Get nama_penerbit dari body atau dari order
     let nama_penerbit = body.nama_penerbit || '';
-    if (body.id_order && !nama_penerbit) {
+    if (body.id_order && String(body.id_order).trim()) {
+      const targetOrderId = String(body.id_order).trim();
       const orderSheet = getSheet(SHEET_ORDERS);
       const orders = sheetToObjects(orderSheet);
-      const order = orders.find(o => o.id_order === body.id_order);
-      if (order) nama_penerbit = order.nama_penerbit;
+      const order = orders.find(o => o.id_order === targetOrderId);
+      if (!order) {
+        return { success: false, error: 'Order tujuan tidak ditemukan: ' + targetOrderId };
+      }
+      if (!nama_penerbit) nama_penerbit = order.nama_penerbit;
     }
 
     const status_verifikasi = body.status_verifikasi || (body.diinput_oleh === 'OWNER' ? 'VERIFIED' : 'PENDING');
@@ -919,6 +923,18 @@ function handleUpdateKasMasuk(body) {
   if (!body.id_kas_masuk) {
     return { success: false, error: 'id_kas_masuk wajib disertakan' };
   }
+
+  // Validasi order baru jika id_order diperbarui dan tidak kosong
+  if (body.id_order !== undefined && body.id_order !== null && String(body.id_order).trim() !== '') {
+    const targetOrderId = String(body.id_order).trim();
+    const orderSheet = getSheet(SHEET_ORDERS);
+    const orders = sheetToObjects(orderSheet);
+    const order = orders.find(o => o.id_order === targetOrderId);
+    if (!order) {
+      return { success: false, error: 'Order tujuan tidak ditemukan: ' + targetOrderId };
+    }
+  }
+
   const lock = LockService.getScriptLock();
   lock.waitLock(15000);
   try {

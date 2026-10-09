@@ -81,9 +81,12 @@ export async function syncFromSheetsToPgsql(customGasUrl?: string, customDbUrl?:
           ${o.kontak_penerbit || ''}, ${o.link_bukti || ''}, ${o.skema_harga || 'reguler'}
         )
         ON CONFLICT (id_order) DO UPDATE SET
-          status_order = EXCLUDED.status_order,
-          total_harga = EXCLUDED.total_harga,
-          catatan = EXCLUDED.catatan,
+          status_order = CASE
+            WHEN orders.status_order = 'BATAL' AND EXCLUDED.status_order != 'BATAL' THEN orders.status_order
+            ELSE COALESCE(NULLIF(EXCLUDED.status_order, ''), orders.status_order)
+          END,
+          total_harga = CASE WHEN EXCLUDED.total_harga > 0 THEN EXCLUDED.total_harga ELSE orders.total_harga END,
+          catatan = COALESCE(NULLIF(EXCLUDED.catatan, ''), orders.catatan),
           link_bukti = COALESCE(NULLIF(EXCLUDED.link_bukti, ''), orders.link_bukti),
           updated_at = NOW();
       `
@@ -94,6 +97,11 @@ export async function syncFromSheetsToPgsql(customGasUrl?: string, customDbUrl?:
     for (const km of kasMasuk) {
       if (!km.id_kas_masuk) continue
       const tanggal = km.tanggal ? String(km.tanggal).substring(0, 10) : new Date().toISOString().substring(0, 10)
+      let orderRef = km.id_order && String(km.id_order).trim() ? String(km.id_order).trim() : null
+      if (orderRef) {
+        const [ord] = await sql`SELECT 1 FROM orders WHERE id_order = ${orderRef} LIMIT 1;`
+        if (!ord) orderRef = null
+      }
 
       await sql`
         INSERT INTO kas_masuk (
@@ -101,13 +109,16 @@ export async function syncFromSheetsToPgsql(customGasUrl?: string, customDbUrl?:
           nominal, metode, keterangan, diinput_oleh, link_bukti, file_id_bukti, status_verifikasi
         ) VALUES (
           ${km.id_kas_masuk}, ${tanggal}, ${km.jenis_pembayaran || ''}, ${km.nama_penerbit || ''},
-          ${km.id_order || ''}, ${Number(km.nominal) || 0}, ${km.metode || 'Transfer'},
+          ${orderRef}, ${Number(km.nominal) || 0}, ${km.metode || 'Transfer'},
           ${km.keterangan || ''}, ${km.diinput_oleh || 'Kasir'}, ${km.link_bukti || ''},
           ${km.file_id_bukti || ''}, ${km.status_verifikasi || 'Belum Verifikasi'}
         )
         ON CONFLICT (id_kas_masuk) DO UPDATE SET
-          nominal = EXCLUDED.nominal,
-          status_verifikasi = EXCLUDED.status_verifikasi,
+          nominal = CASE WHEN EXCLUDED.nominal > 0 THEN EXCLUDED.nominal ELSE kas_masuk.nominal END,
+          status_verifikasi = CASE
+            WHEN kas_masuk.status_verifikasi IN ('VERIFIED', 'BATAL') AND EXCLUDED.status_verifikasi NOT IN ('VERIFIED', 'BATAL') THEN kas_masuk.status_verifikasi
+            ELSE COALESCE(NULLIF(EXCLUDED.status_verifikasi, ''), kas_masuk.status_verifikasi)
+          END,
           link_bukti = COALESCE(NULLIF(EXCLUDED.link_bukti, ''), kas_masuk.link_bukti),
           updated_at = NOW();
       `
@@ -129,9 +140,9 @@ export async function syncFromSheetsToPgsql(customGasUrl?: string, customDbUrl?:
           ${kk.diinput_oleh || 'Kasir'}, ${kk.link_nota || ''}, ${kk.file_id_nota || ''}
         )
         ON CONFLICT (id_kas_keluar) DO UPDATE SET
-          nominal = EXCLUDED.nominal,
-          kategori = EXCLUDED.kategori,
-          rincian = EXCLUDED.rincian,
+          nominal = CASE WHEN EXCLUDED.nominal > 0 THEN EXCLUDED.nominal ELSE kas_keluar.nominal END,
+          kategori = COALESCE(NULLIF(EXCLUDED.kategori, ''), kas_keluar.kategori),
+          rincian = COALESCE(NULLIF(EXCLUDED.rincian, ''), kas_keluar.rincian),
           updated_at = NOW();
       `
       kkUpserted++
