@@ -116,36 +116,7 @@ export const useSyncStore = defineStore('sync', () => {
       console.warn('Failed to load sync logs from localStorage:', e)
     }
 
-    // Default initial seed records so user sees realistic data right away
-    const now = new Date()
-    return [
-      {
-        id: 'sync_init_002',
-        entity_type: 'ORDER',
-        title: 'Order: BUKU KAKU — Rasyiqi',
-        subtitle: 'Oplah 100 pcs • A5 Bookpaper 55g',
-        nominal: 150000,
-        status: 'SYNCED',
-        action: 'createOrder',
-        payload: { id_order: 'ORD-202609-002', nama_penerbit: 'BUKU KAKU' },
-        created_at: now.toISOString(),
-        synced_at: now.toISOString(),
-        attempts: 1,
-      },
-      {
-        id: 'sync_init_001',
-        entity_type: 'ORDER',
-        title: 'Order: dsdsds — dsdsds',
-        subtitle: 'Oplah 100 pcs • A5 Bookpaper 57.5g',
-        nominal: 150000,
-        status: 'SYNCED',
-        action: 'createOrder',
-        payload: { id_order: 'ORD-202609-001' },
-        created_at: new Date(now.getTime() - 1000 * 60 * 30).toISOString(),
-        synced_at: new Date(now.getTime() - 1000 * 60 * 29).toISOString(),
-        attempts: 1,
-      },
-    ]
+    return []
   }
 
   function loadLastSyncedAt(): string | null {
