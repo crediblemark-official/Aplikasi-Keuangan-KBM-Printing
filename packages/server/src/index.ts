@@ -29,7 +29,7 @@ import {
   handleGetFinanceBundle,
 } from './services/financeService'
 
-import { handleSyncBackupToSheets } from './services/backupService'
+import { handleSyncBackupToSheets, handleSyncFromSheets } from './services/backupService'
 import { handleAiChat } from './services/aiService'
 
 const app = new Hono()
@@ -71,6 +71,8 @@ async function dispatchAction(action: string, params: any, body: any, env?: any)
     case 'syncBackup':
     case 'syncBackupToSheets':
       return handleSyncBackupToSheets(env?.VITE_BACKUP_GAS_URL)
+    case 'syncFromSheets':
+      return handleSyncFromSheets(env?.VITE_BACKUP_GAS_URL)
     case 'getFinanceBundle':
       return handleGetFinanceBundle(params)
     case 'getOrders':
@@ -142,6 +144,7 @@ app.post('/api/kas-masuk', async (c) => c.json(await handleCreateKasMasuk(await 
 app.get('/api/kas-keluar', async (c) => c.json(await handleGetKasKeluar()))
 app.post('/api/kas-keluar', async (c) => c.json(await handleCreateKasKeluar(await c.req.json())))
 app.post('/api/backup/sheets', async (c) => c.json(await handleSyncBackupToSheets((c.env as any)?.VITE_BACKUP_GAS_URL)))
+app.post('/api/sync/sheets', async (c) => c.json(await handleSyncFromSheets((c.env as any)?.VITE_BACKUP_GAS_URL)))
 app.post('/api/ai/chat', async (c) => {
   let body: any = {}
   try {

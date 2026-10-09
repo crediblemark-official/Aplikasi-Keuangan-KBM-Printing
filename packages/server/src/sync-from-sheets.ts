@@ -1,56 +1,29 @@
-import { handleGetOrders } from './orderService'
-import { handleGetKasMasuk, handleGetKasKeluar } from './kasService'
-import { handleGetClients } from './financeService'
+import postgres from 'postgres'
 
-export async function handleSyncBackupToSheets(customGasUrl?: string) {
-  try {
-    const [ordersRes, kmRes, kkRes, clientsRes] = await Promise.all([
-      handleGetOrders(),
-      handleGetKasMasuk(),
-      handleGetKasKeluar(),
-      handleGetClients(),
-    ])
+const DATABASE_URL =
+  process.env.DATABASE_URL ||
+  'postgresql://uljXeZ7ydt6kZE7jI.jkt1_006:780907edbcbbf3e4992f6a87@pgsql-dbas-jkt1-006.sumobase.my.id:6432/db6bf622c3d786cef0'
 
-    const gasUrl = customGasUrl || process.env.VITE_BACKUP_GAS_URL
-    if (!gasUrl) {
-      return { success: false, error: 'Variabel lingkungan VITE_BACKUP_GAS_URL belum dikonfigurasi' }
-    }
+const GAS_URL =
+  process.env.VITE_BACKUP_GAS_URL ||
+  'https://script.google.com/macros/s/AKfycbwGVC-HCtsQygsRgrAUSlF4V-IpU5pCHEojxO02tUWLMGq-Dz1CQHtVmV4MnNPzJYcFOA/exec'
 
-    const payload = {
-      action: 'syncBackup',
-      orders: ordersRes.data || [],
-      kas_masuk: kmRes.data || [],
-      kas_keluar: kkRes.data || [],
-      clients: clientsRes.data || [],
-    }
+export async function syncFromSheetsToPgsql(customGasUrl?: string, customDbUrl?: string) {
+  const gasUrl = customGasUrl || GAS_URL
+  const dbUrl = customDbUrl || DATABASE_URL
 
-    const res = await fetch(gasUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload),
-      redirect: 'follow',
-    })
+  console.log('🔄 Memulai sinkronisasi Google Sheets -> PostgreSQL...')
+  console.log(`📡 GAS Endpoint: ${gasUrl}`)
 
-    const json = await res.json()
-    if (!json.success && json.error?.includes('syncBackup')) {
-      return {
-        success: false,
-        error: 'Google Apps Script belum di-deploy ulang. Silakan buka script.google.com, salin isi file gas/Code.gs terbaru, dan Deploy versi baru.',
-      }
-    }
-    return json
-  } catch (err: any) {
-    return { success: false, error: 'Gagal menghubungi Google Apps Script: ' + (err?.message || err) }
-  }
-}
-
-export async function handleSyncFromSheets(customGasUrl?: string) {
-  const gasUrl = customGasUrl || process.env.VITE_BACKUP_GAS_URL
-  if (!gasUrl) {
-    return { success: false, error: 'Variabel lingkungan VITE_BACKUP_GAS_URL belum dikonfigurasi' }
-  }
+  const sql = postgres(dbUrl, {
+    prepare: false,
+    max: 5,
+    idle_timeout: 10,
+  })
 
   try {
+    // 1. Tarik seluruh data dari Google Apps Script
+    console.log('📥 Menarik data dari Google Sheets...')
     const [ordersRes, kmRes, kkRes, clientsRes] = await Promise.all([
       fetch(`${gasUrl}?action=getOrders`).then((r) => r.json()),
       fetch(`${gasUrl}?action=getKasMasuk`).then((r) => r.json()),
@@ -63,14 +36,14 @@ export async function handleSyncFromSheets(customGasUrl?: string) {
     const kasKeluar = kkRes.data || []
     const clients = clientsRes.data || []
 
-    const { sql } = await import('../db')
+    console.log(`📊 Diterima dari Sheets: ${orders.length} orders, ${kasMasuk.length} kas masuk, ${kasKeluar.length} kas keluar, ${clients.length} clients.`)
 
     let ordersUpserted = 0
     let kmUpserted = 0
     let kkUpserted = 0
     let clientsUpserted = 0
 
-    // Upsert Clients
+    // 2. Upsert Clients
     for (const c of clients) {
       if (!c.nama_penerbit) continue
       await sql`
@@ -84,7 +57,7 @@ export async function handleSyncFromSheets(customGasUrl?: string) {
       clientsUpserted++
     }
 
-    // Upsert Orders
+    // 3. Upsert Orders
     for (const o of orders) {
       if (!o.id_order) continue
       const tanggal = o.tanggal ? String(o.tanggal).substring(0, 10) : new Date().toISOString().substring(0, 10)
@@ -117,7 +90,7 @@ export async function handleSyncFromSheets(customGasUrl?: string) {
       ordersUpserted++
     }
 
-    // Upsert Kas Masuk
+    // 4. Upsert Kas Masuk
     for (const km of kasMasuk) {
       if (!km.id_kas_masuk) continue
       const tanggal = km.tanggal ? String(km.tanggal).substring(0, 10) : new Date().toISOString().substring(0, 10)
@@ -141,7 +114,7 @@ export async function handleSyncFromSheets(customGasUrl?: string) {
       kmUpserted++
     }
 
-    // Upsert Kas Keluar
+    // 5. Upsert Kas Keluar
     for (const kk of kasKeluar) {
       if (!kk.id_kas_keluar) continue
       const tanggal = kk.tanggal ? String(kk.tanggal).substring(0, 10) : new Date().toISOString().substring(0, 10)
@@ -164,9 +137,14 @@ export async function handleSyncFromSheets(customGasUrl?: string) {
       kkUpserted++
     }
 
+    console.log(`✅ Sukses sinkronisasi ke PostgreSQL:`)
+    console.log(`   - ${ordersUpserted} Orders`)
+    console.log(`   - ${kmUpserted} Kas Masuk`)
+    console.log(`   - ${kkUpserted} Kas Keluar`)
+    console.log(`   - ${clientsUpserted} Clients`)
+
     return {
       success: true,
-      message: 'Sukses sinkronisasi data dari Google Sheets ke PostgreSQL',
       data: {
         orders: ordersUpserted,
         kas_masuk: kmUpserted,
@@ -175,6 +153,21 @@ export async function handleSyncFromSheets(customGasUrl?: string) {
       },
     }
   } catch (err: any) {
-    return { success: false, error: 'Gagal sinkronisasi data dari Google Sheets: ' + (err?.message || err) }
+    console.error('❌ Gagal sinkronisasi:', err)
+    return { success: false, error: err?.message || String(err) }
+  } finally {
+    await sql.end()
   }
+}
+
+// Jika dijalankan langsung via CLI:
+if (import.meta.main) {
+  syncFromSheetsToPgsql()
+    .then((res) => {
+      if (!res.success) process.exit(1)
+    })
+    .catch((err) => {
+      console.error(err)
+      process.exit(1)
+    })
 }
