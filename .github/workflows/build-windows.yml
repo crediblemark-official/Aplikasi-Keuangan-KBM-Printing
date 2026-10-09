@@ -86,10 +86,15 @@ jobs:
             TITLE="${{ github.event.inputs.release_name }} - $TAG"
           else
             TAG="${{ github.ref_name }}"
-            TITLE="KBM Percetakan Windows Desktop - $TAG"
+            TITLE="KBM Printing Enterprise Suite — $TAG"
+          fi
+          NOTES_FILE="RELEASE_NOTES_${TAG}.md"
+          if [ ! -f "$NOTES_FILE" ]; then
+            NOTES_FILE=""
           fi
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "title=$TITLE" >> $GITHUB_OUTPUT
+          echo "notes_file=$NOTES_FILE" >> $GITHUB_OUTPUT
 
       - name: 🚀 Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
@@ -102,19 +107,4 @@ jobs:
           files: |
             build-windows/KBM-Operasional-Setup.exe
             build-windows/KBM-Owner-Dashboard-Setup.exe
-          body: |
-            ## 🖥️ Aplikasi Desktop Windows KBM Percetakan Buku
-
-            Berikut adalah installer Windows (`.exe`) resmi untuk PC Kasir dan PC Manajemen:
-
-            ### 📦 Download Installer Windows:
-            1. 📑 **[KBM-Operasional-Setup.exe](https://github.com/${{ github.repository }}/releases/download/${{ steps.release_vars.outputs.tag }}/KBM-Operasional-Setup.exe)**
-               - Aplikasi Operasional & Kasir Toko/Percetakan.
-               - Cocok untuk PC Kasir Windows (cetak nota, input SPK order, kwitansi).
-            
-            2. 📊 **[KBM-Owner-Dashboard-Setup.exe](https://github.com/${{ github.repository }}/releases/download/${{ steps.release_vars.outputs.tag }}/KBM-Owner-Dashboard-Setup.exe)**
-               - Aplikasi Dashboard Keuangan & Laporan Owner KBM.
-               - Monitoring omset, laba rugi, buku kas, dan laporan keuangan.
-
-            ---
-            *Cukup unduh file `.exe` dan jalankan setup untuk memasang aplikasi di Windows.*
+          body_path: ${{ steps.release_vars.outputs.notes_file }}

@@ -114,10 +114,15 @@ jobs:
             TITLE="${{ github.event.inputs.release_name }} - $TAG"
           else
             TAG="${{ github.ref_name }}"
-            TITLE="KBM Percetakan Android Apps - $TAG"
+            TITLE="KBM Printing Enterprise Suite — $TAG"
+          fi
+          NOTES_FILE="RELEASE_NOTES_${TAG}.md"
+          if [ ! -f "$NOTES_FILE" ]; then
+            NOTES_FILE=""
           fi
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "title=$TITLE" >> $GITHUB_OUTPUT
+          echo "notes_file=$NOTES_FILE" >> $GITHUB_OUTPUT
 
       - name: 🚀 Create GitHub Release & Upload APKs
         uses: softprops/action-gh-release@v2
@@ -130,23 +135,4 @@ jobs:
           files: |
             build-artifacts/KBM-Operasional.apk
             build-artifacts/KBM-Owner-Dashboard.apk
-          body: |
-            ## 📱 Rilis APK Android KBM Percetakan Buku
-
-            Berikut adalah file APK Android terbaru yang siap di-download dan di-install langsung di HP/Tablet Android:
-
-            ### 📦 Unduhan APK:
-            1. 📑 **[KBM-Operasional.apk](https://github.com/${{ github.repository }}/releases/download/${{ steps.release_vars.outputs.tag }}/KBM-Operasional.apk)**
-               - Aplikasi Operasional & Produksi Percetakan.
-               - Fitur: Input Order Cetak Buku, Kalkulator Spesifikasi Buku, Catat Pembayaran Masuk, Cetak Invoice PDF, WhatsApp Share.
-            
-            2. 📊 **[KBM-Owner-Dashboard.apk](https://github.com/${{ github.repository }}/releases/download/${{ steps.release_vars.outputs.tag }}/KBM-Owner-Dashboard.apk)**
-               - Aplikasi Owner & Tim Keuangan Percetakan.
-               - Fitur: Monitoring Omset & Laba, Verifikasi Pembayaran Masuk, Kas Keluar, Monitoring Piutang, Export Excel.
-
-            ---
-            ### ✨ Fitur Unggulan:
-            - **Kunci Layar Bawaan Android**: Buka cepat & aman dengan sidik jari, pola, atau PIN bawaan HP.
-            - **Keep Screen Awake**: Layar HP tetap menyala terus tanpa auto-sleep saat aplikasi dibuka untuk operasional percetakan.
-            - **Pilihan Unggah Struk Native**: Pilihan langsung Kamera (jepret foto nota), Galeri, atau File Manager.
-            - **Offline Queue**: Transaksi tetap tersimpan saat offline dan otomatis sinkron ke Google Sheets saat internet aktif.
+          body_path: ${{ steps.release_vars.outputs.notes_file }}
