@@ -40,6 +40,11 @@ const app = new Hono()
 
 app.use('*', cors())
 
+app.onError((err, c) => {
+  console.error('Unhandled Server Error:', err)
+  return c.json({ success: false, error: err.message || 'Internal Server Error' }, 500)
+})
+
 // Isolasi koneksi database per-request untuk Cloudflare Workers
 app.use('*', async (c, next) => {
   if (bunSql) {

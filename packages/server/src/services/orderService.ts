@@ -148,10 +148,29 @@ export async function handleDeleteOrder(body: any) {
       }
     }
 
-    await sql`DELETE FROM orders WHERE id_order = ${id_order};`
-    return { success: true, data: { id_order, permanent: true } }
+    try {
+      // 1. Jika ada pembayaran yang dialihkan ke DEPOSIT penerbit, lepaskan relasi id_order agar saldo deposit tetap tersimpan
+      await sql`UPDATE kas_masuk SET id_order = NULL WHERE id_order = ${id_order} AND jenis_pembayaran = 'DEPOSIT';`
+
+      // 2. Hapus transaksi kas masuk terkait order ini (yang berstatus BATAL / non-deposit)
+      await sql`DELETE FROM kas_masuk WHERE id_order = ${id_order};`
+
+      // 3. Hapus transaksi kas keluar refund terkait order ini (jika ada)
+      await sql`DELETE FROM kas_keluar WHERE kategori = 'REFUND' AND rincian LIKE ${`%${id_order}%`};`
+
+      // 4. Hapus data order secara permanen
+      await sql`DELETE FROM orders WHERE id_order = ${id_order};`
+      return { success: true, data: { id_order, permanent: true } }
+    } catch (err: any) {
+      console.error(`Gagal menghapus order permanen ${id_order}:`, err)
+      return { success: false, error: err?.message || 'Gagal menghapus order permanen dari database' }
+    }
   } else {
-    await sql`UPDATE orders SET status_order = 'BATAL', updated_at = NOW() WHERE id_order = ${id_order};`
-    return { success: true, data: { id_order, permanent: false } }
+    try {
+      await sql`UPDATE orders SET status_order = 'BATAL', updated_at = NOW() WHERE id_order = ${id_order};`
+      return { success: true, data: { id_order, permanent: false } }
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Gagal membatalkan order' }
+    }
   }
 }

@@ -332,9 +332,9 @@
               </button>
               <span
                 v-else-if="row.order.status_order === 'BATAL'"
-                class="px-2 py-1 text-[11px] rounded-lg font-bold inline-flex items-center gap-1 text-slate-500 bg-slate-100 border border-slate-200 whitespace-nowrap"
+                class="text-xs text-slate-400 font-mono px-1 select-none"
               >
-                ✕ Batal
+                —
               </span>
               <span
                 v-else
@@ -343,8 +343,9 @@
                 ✓ Lunas
               </span>
 
-              <!-- Tombol Edit Order (Data Faktur & Spek) -->
+              <!-- Tombol Edit Order (Data Faktur & Spek) - Hanya untuk order aktif (bukan BATAL) -->
               <button
+                v-if="row.order.status_order !== 'BATAL'"
                 @click.stop="$emit('edit-order', row.order)"
                 type="button"
                 class="px-2.5 py-1 text-xs font-bold rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs hover:shadow-xs whitespace-nowrap"
