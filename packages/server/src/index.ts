@@ -160,4 +160,28 @@ console.log(`🚀 KBM PostgreSQL API Server running on http://localhost:${PORT}`
 export default {
   port: PORT,
   fetch: app.fetch,
+  async scheduled(event: any, env: any, ctx: any) {
+    const dbUrl = env?.DATABASE_URL || DATABASE_URL
+    if (!dbUrl) return
+    const db = postgres(dbUrl, {
+      prepare: false,
+      max: 5,
+      idle_timeout: 1,
+      connect_timeout: 15,
+    })
+    ctx.waitUntil(
+      sqlStorage.run(db, async () => {
+        try {
+          console.log('⏰ Running automatic Cloudflare cron sync from Google Sheets...')
+          await handleSyncFromSheets(env?.VITE_BACKUP_GAS_URL)
+        } catch (e) {
+          console.error('❌ Cron sync failed:', e)
+        } finally {
+          try {
+            await db.end({ timeout: 1 })
+          } catch {}
+        }
+      })
+    )
+  },
 }

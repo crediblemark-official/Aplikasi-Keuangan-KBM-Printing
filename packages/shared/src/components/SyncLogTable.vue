@@ -119,20 +119,38 @@
           </p>
         </div>
       </div>
-      <button
-        type="button"
-        @click="triggerBackupSheets"
-        :disabled="isBackingUpSheets"
-        class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white shadow-2xs transition-all cursor-pointer shrink-0 disabled:opacity-50"
-      >
-        <svg v-if="isBackingUpSheets" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-        </svg>
-        <svg v-else class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-        </svg>
-        <span>{{ isBackingUpSheets ? 'Sedang Cadangkan...' : 'Sync Backup ke Google Sheets' }}</span>
-      </button>
+      <div class="flex items-center gap-2 shrink-0 flex-wrap">
+        <button
+          type="button"
+          @click="triggerSyncFromSheets"
+          :disabled="isSyncingFromSheets"
+          class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-700 active:scale-95 text-white shadow-2xs transition-all cursor-pointer shrink-0 disabled:opacity-50"
+          title="Tarik seluruh transaksi dari Google Sheets (versi lama) ke PostgreSQL"
+        >
+          <svg v-if="isSyncingFromSheets" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <svg v-else class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          <span>{{ isSyncingFromSheets ? 'Menarik Data...' : 'Tarik dari Google Sheets' }}</span>
+        </button>
+
+        <button
+          type="button"
+          @click="triggerBackupSheets"
+          :disabled="isBackingUpSheets"
+          class="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white shadow-2xs transition-all cursor-pointer shrink-0 disabled:opacity-50"
+        >
+          <svg v-if="isBackingUpSheets" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <svg v-else class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+          </svg>
+          <span>{{ isBackingUpSheets ? 'Sedang Cadangkan...' : 'Cadangkan ke Sheets' }}</span>
+        </button>
+      </div>
     </div>
 
     <!-- Shared Filter Bar -->
@@ -379,6 +397,29 @@ async function triggerBackupSheets() {
     backupMessage.value = '❌ Terjadi kesalahan: ' + (err?.message || err)
   } finally {
     isBackingUpSheets.value = false
+  }
+}
+
+// State Tarik Data dari Google Sheets ke PostgreSQL
+const isSyncingFromSheets = ref(false)
+
+async function triggerSyncFromSheets() {
+  if (isSyncingFromSheets.value) return
+  isSyncingFromSheets.value = true
+  backupMessage.value = ''
+  try {
+    const res = await api.syncFromSheets()
+    if (res.success) {
+      const countOrders = (res.data as any)?.orders || 0
+      const countKm = (res.data as any)?.kas_masuk || 0
+      backupMessage.value = `✅ Berhasil menarik dari Google Sheets: ${countOrders} pesanan, ${countKm} kas masuk.`
+    } else {
+      backupMessage.value = '❌ ' + (res.error || 'Gagal menarik data dari Google Sheets')
+    }
+  } catch (err: any) {
+    backupMessage.value = '❌ Terjadi kesalahan: ' + (err?.message || err)
+  } finally {
+    isSyncingFromSheets.value = false
   }
 }
 

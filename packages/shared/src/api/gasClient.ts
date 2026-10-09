@@ -366,6 +366,15 @@ export const api = {
   syncBackupToSheets: () =>
     gasPost<{ message: string; timestamp: number }>('syncBackup', {}),
 
+  // Manual Pull / Import dari Google Sheets ke PostgreSQL
+  syncFromSheets: () =>
+    gasPost<{
+      orders: number
+      kas_masuk: number
+      kas_keluar: number
+      clients: number
+    }>('syncFromSheets', {}),
+
   // KBM Business AI Advisor via Ollama Cloud
   aiChat: (payload: {
     messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>
