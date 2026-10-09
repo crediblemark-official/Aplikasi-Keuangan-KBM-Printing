@@ -47,7 +47,7 @@
           Order <span class="font-mono font-semibold text-slate-700">{{ orderId }}</span> tidak ditemukan dalam sistem.
         </p>
         <div class="flex items-center gap-2 mt-4">
-          <button @click="loadData" class="btn-secondary h-8.5 px-3.5 text-xs font-bold cursor-pointer">
+          <button @click="() => loadData()" class="btn-secondary h-8.5 px-3.5 text-xs font-bold cursor-pointer">
             Muat Ulang
           </button>
           <button @click="router.push('/order/list')" class="btn-primary h-8.5 px-3.5 text-xs font-bold cursor-pointer">
@@ -649,20 +649,21 @@ async function handleRefundSuccess() {
   await loadData(true)
 }
 
-async function loadData(force = false) {
+async function loadData(force: boolean | unknown = false) {
   if (!orderId.value) {
     isLoading.value = false
     return
   }
 
+  const isForce = force === true
   isLoading.value = true
   try {
-    if (!order.value || force) {
+    if (!order.value || isForce) {
       await orderStore.ensureOrderLoaded(orderId.value)
     }
     const res = await api.getKasMasuk({
       id_order: orderId.value,
-      nocache: force ? 'true' : undefined,
+      nocache: isForce ? 'true' : undefined,
     })
     if (res.success && res.data) {
       kasMasukList.value = res.data
