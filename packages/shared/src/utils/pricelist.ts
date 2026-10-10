@@ -190,9 +190,9 @@ export function getDiskonFinishing(
       if (jmlPcs >= 500) return 0.50  // Diskon 50%
       if (jmlPcs >= 300) return 0.25  // Diskon 25%
     } else {
-      if (jmlPcs >= 1000) return 0.80 // Diskon 80%
-      if (jmlPcs >= 500) return 0.50  // Diskon 50%
-      if (jmlPcs >= 300) return 0.25  // Diskon 25%
+      if (jmlPcs >= 1000) return 0.50 // Diskon 50% untuk 1000-2500 pcs (diupdate sesuai Excel)
+      if (jmlPcs >= 500) return 0.25  // Diskon 25% (diupdate sesuai Excel)
+      if (jmlPcs >= 300) return 0.10  // Diskon 10% (diupdate sesuai Excel)
     }
   }
   return 0

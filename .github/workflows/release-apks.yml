@@ -9,7 +9,7 @@ on:
       release_tag:
         description: 'Tag Rilis (contoh: v1.1.16)'
         required: true
-        default: 'v1.1.20'
+        default: 'v1.1.21'
       release_name:
         description: 'Nama / Judul Rilis'
         required: false

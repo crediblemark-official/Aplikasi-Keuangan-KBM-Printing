@@ -15,7 +15,25 @@
             required
             @select="onClientSelect"
             @add="onClientAdd"
-          />
+          >
+            <template #label-extra>
+              <label
+                class="inline-flex items-center gap-1.5 cursor-pointer select-none text-[11px] px-2 py-0.5 rounded-full border transition-all"
+                :class="form.skema_harga === 'LANGGANAN'
+                  ? 'bg-amber-500 text-white border-amber-600 font-bold shadow-2xs'
+                  : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200 font-medium'"
+                title="Centang jika penerbit/klien ini mendapatkan tarif khusus Langganan"
+              >
+                <input
+                  type="checkbox"
+                  :checked="form.skema_harga === 'LANGGANAN'"
+                  @change="onToggleLangganan(($event.target as HTMLInputElement).checked)"
+                  class="w-3.5 h-3.5 rounded border-slate-300 text-amber-600 focus:ring-0 cursor-pointer accent-amber-600"
+                />
+                <span>⭐ Langganan</span>
+              </label>
+            </template>
+          </ComboboxInput>
         </div>
         <div class="sm:col-span-4">
           <div class="space-y-1">
@@ -104,6 +122,7 @@ const emit = defineEmits<{
   (e: 'author-add', val: string): void
   (e: 'address-add', val: string): void
   (e: 'contact-add', val: string): void
+  (e: 'toggle-langganan', isLangganan: boolean): void
 }>()
 
 function onClientSelect(opt: ComboboxOption) { emit('client-select', opt) }
@@ -113,4 +132,5 @@ function onBookAdd(val: string) { emit('book-add', val) }
 function onAuthorAdd(val: string) { emit('author-add', val) }
 function onAddressAdd(val: string) { emit('address-add', val) }
 function onContactAdd(val: string) { emit('contact-add', val) }
+function onToggleLangganan(isLangganan: boolean) { emit('toggle-langganan', isLangganan) }
 </script>

@@ -14,53 +14,24 @@
     </SectionHeader>
 
     <div class="p-[8px] sm:p-[15px] lg:p-[20px] bg-white space-y-4">
-      <!-- Skema Tarif Selector -->
-      <div>
-        <div class="flex items-center justify-between mb-1.5">
-          <label class="form-label mb-0">Skema Tarif *</label>
-          <span
-            :class="form.skema_harga === 'LANGGANAN' ? 'text-amber-800 bg-amber-50 border-amber-300' : 'text-slate-600 bg-slate-100 border-slate-200'"
-            class="text-[10px] font-bold px-1.5 py-0.5 rounded border"
-          >
-            {{ form.skema_harga === 'LANGGANAN' ? '⭐ Tarif Khusus Langganan' : '🏷️ Tarif Reguler / Normal' }}
-          </span>
-        </div>
-        <div class="grid grid-cols-2 p-1 bg-slate-100 rounded-lg border border-slate-200/80 gap-1">
-          <button
-            type="button"
-            @click="emit('set-skema', 'NORMAL')"
-            :class="form.skema_harga === 'NORMAL'
-              ? 'bg-white text-slate-900 shadow-2xs font-bold'
-              : 'text-slate-500 hover:text-slate-900 font-medium'"
-            class="h-8.5 px-3 rounded-md text-xs font-sans transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer outline-none focus:outline-none focus:ring-0 active:outline-none select-none"
-          >
-            <span>🏷️</span>
-            <span>Harga Normal</span>
-          </button>
-          <button
-            type="button"
-            @click="emit('set-skema', 'LANGGANAN')"
-            :class="form.skema_harga === 'LANGGANAN'
-              ? 'bg-amber-500 text-white shadow-2xs font-bold'
-              : 'text-slate-500 hover:text-slate-900 font-medium'"
-            class="h-8.5 px-3 rounded-md text-xs font-sans transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer outline-none focus:outline-none focus:ring-0 active:outline-none select-none"
-          >
-            <span>⭐</span>
-            <span>Harga Langganan</span>
-          </button>
-        </div>
-      </div>
-
       <!-- Harga Input -->
       <div>
         <div class="flex items-center justify-between mb-1.5">
           <label class="form-label mb-0">Harga (Total Tagihan Rp) *</label>
-          <span v-if="isCustomPrice" class="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 font-semibold">
-            Manual
-          </span>
-          <span v-else class="text-[10px] text-red-700 bg-red-50 px-1.5 py-0.5 rounded border border-red-200 font-semibold">
-            Otomatis (Pricelist)
-          </span>
+          <div class="flex items-center gap-1.5">
+            <span
+              v-if="form.skema_harga === 'LANGGANAN'"
+              class="text-[10px] text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-300 font-bold"
+            >
+              ⭐ Tarif Langganan
+            </span>
+            <span v-if="isCustomPrice" class="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 font-semibold">
+              Manual
+            </span>
+            <span v-else class="text-[10px] text-red-700 bg-red-50 px-1.5 py-0.5 rounded border border-red-200 font-semibold">
+              Otomatis (Pricelist)
+            </span>
+          </div>
         </div>
         <div class="flex rounded-lg border border-slate-300 overflow-hidden focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500 bg-white shadow-2xs">
           <span class="inline-flex items-center px-3 bg-slate-100 border-r border-slate-200 text-slate-600 font-mono font-bold text-sm sm:text-base select-none">

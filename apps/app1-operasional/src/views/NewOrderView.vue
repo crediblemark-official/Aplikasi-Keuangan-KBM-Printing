@@ -46,6 +46,7 @@
               @author-add="orderForm.onAuthorAdd"
               @address-add="orderForm.onAddressAdd"
               @contact-add="orderForm.onContactAdd"
+              @toggle-langganan="(isLangganan) => orderForm.setSkemaHarga(isLangganan ? 'LANGGANAN' : 'NORMAL')"
             />
 
             <OrderTechnicalSpecSection

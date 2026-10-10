@@ -96,6 +96,13 @@ export function useNewOrderForm() {
     const c = opt.extra
     if (c?.alamat && !form.value.alamat_penerbit) form.value.alamat_penerbit = String(c.alamat)
     if (c?.kontak && !form.value.kontak_penerbit) form.value.kontak_penerbit = String(c.kontak)
+
+    const prevOrder = orderStore.orders.find(
+      (o) => o.nama_penerbit?.trim().toLowerCase() === String(opt.value || '').trim().toLowerCase(),
+    )
+    if (prevOrder?.skema_harga === 'LANGGANAN') {
+      setSkemaHarga('LANGGANAN')
+    }
   }
 
   function onClientAdd(val: string) {

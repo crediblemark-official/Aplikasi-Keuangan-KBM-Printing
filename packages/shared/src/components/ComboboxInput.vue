@@ -1,7 +1,10 @@
 <template>
   <div ref="rootRef" class="relative w-full">
-    <div v-if="label || sublabel" class="flex items-center justify-between mb-1.5">
-      <label v-if="label" class="form-label mb-0">{{ label }}</label>
+    <div v-if="label || sublabel || $slots['label-extra']" class="flex items-center justify-between mb-1.5">
+      <div class="flex items-center gap-2">
+        <label v-if="label" class="form-label mb-0">{{ label }}</label>
+        <slot name="label-extra" />
+      </div>
       <span v-if="sublabel" class="text-[10px] text-slate-400 font-normal">{{ sublabel }}</span>
     </div>
 
