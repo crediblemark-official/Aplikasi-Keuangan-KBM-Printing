@@ -276,7 +276,7 @@ export const api = {
     })
     return res
   },
-  updateKasMasuk: (data: {
+  updateKasMasuk: async (data: {
     id_kas_masuk: string
     tanggal?: string
     nominal?: number
@@ -284,9 +284,36 @@ export const api = {
     keterangan?: string
     nama_penerbit?: string
     jenis_pembayaran?: string
-  }) => gasPost<{ success: boolean; message?: string }>('updateKasMasuk', data),
-  deleteKasMasuk: (id_kas_masuk: string) =>
-    gasPost<{ success: boolean; message?: string }>('deleteKasMasuk', { id_kas_masuk }),
+    status_verifikasi?: string
+    id_order?: string | null
+  }) => {
+    const res = await gasPost<{ success: boolean; message?: string }>('updateKasMasuk', data)
+    tryLogSync({
+      entity_type: 'KAS_MASUK',
+      title: `Update Kas Masuk: ${data.id_kas_masuk}`,
+      subtitle: data.keterangan || (data.nama_penerbit ? `Penerbit ${data.nama_penerbit}` : ''),
+      nominal: data.nominal || 0,
+      status: res.success ? 'SYNCED' : 'FAILED',
+      action: 'updateKasMasuk',
+      payload: data as any,
+      error_message: res.error,
+    })
+    return res
+  },
+  deleteKasMasuk: async (id_kas_masuk: string) => {
+    const res = await gasPost<{ success: boolean; message?: string }>('deleteKasMasuk', { id_kas_masuk })
+    tryLogSync({
+      entity_type: 'KAS_MASUK',
+      title: `Batalkan Kas Masuk: ${id_kas_masuk}`,
+      subtitle: `ID: ${id_kas_masuk}`,
+      nominal: 0,
+      status: res.success ? 'SYNCED' : 'FAILED',
+      action: 'deleteKasMasuk',
+      payload: { id_kas_masuk },
+      error_message: res.error,
+    })
+    return res
+  },
 
   // Kas Keluar
   getKasKeluar: (params?: { periode?: string; nocache?: boolean | string }) =>

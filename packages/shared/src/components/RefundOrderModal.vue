@@ -332,20 +332,33 @@ async function handleConvertDeposit() {
 
   isSubmitting.value = true
   try {
+    const publisherName = (props.order?.nama_penerbit || props.payments[0]?.nama_penerbit || '').trim()
+
     // Alihkan semua transaksi pembayaran kas masuk order ini menjadi jenis DEPOSIT
     for (const payment of props.payments) {
       if ((payment as any).status_verifikasi !== 'BATAL') {
-        await api.updateKasMasuk({
+        const res = await api.updateKasMasuk({
           id_kas_masuk: payment.id_kas_masuk,
+          id_order: null, // Lepaskan relasi id_order agar murni menjadi saldo deposit penerbit
+          nama_penerbit: publisherName,
           jenis_pembayaran: 'DEPOSIT',
+          status_verifikasi: 'VERIFIED',
           keterangan: `Saldo deposit dialihkan dari pembatalan order ${props.order?.id_order || ''}. ${payment.keterangan || ''}`.trim(),
         })
+
+        if (!res.success) {
+          throw new Error(res.error || `Gagal mengalihkan ${payment.id_kas_masuk} ke deposit`)
+        }
+
+        ;(payment as any).id_order = null
         ;(payment as any).jenis_pembayaran = 'DEPOSIT'
+        ;(payment as any).status_verifikasi = 'VERIFIED'
+        ;(payment as any).nama_penerbit = publisherName
       }
     }
 
     emit('update:modelValue', false)
-    emit('toast', `Dana sebesar ${formatRupiah(props.totalMasuk)} berhasil dialihkan ke Saldo Deposit Penerbit ${props.order?.nama_penerbit}.`, 'success')
+    emit('toast', `Dana sebesar ${formatRupiah(props.totalMasuk)} berhasil dialihkan ke Saldo Deposit Penerbit ${publisherName || props.order?.nama_penerbit}.`, 'success')
     emit('success', `Dialihkan ke deposit ${formatRupiah(props.totalMasuk)}`)
   } catch (err: any) {
     emit('toast', err?.message || 'Terjadi kesalahan saat mengalihkan deposit', 'error')

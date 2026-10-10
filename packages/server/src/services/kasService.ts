@@ -94,13 +94,13 @@ export async function handleUpdateKasMasuk(body: any) {
   await sql`
     UPDATE kas_masuk SET
       tanggal = COALESCE(${body.tanggal ? String(body.tanggal).substring(0, 10) : null}, tanggal),
-      nominal = COALESCE(${body.nominal ? Number(body.nominal) : null}, nominal),
-      metode = COALESCE(${body.metode}, metode),
-      keterangan = COALESCE(${body.keterangan}, keterangan),
-      nama_penerbit = COALESCE(${body.nama_penerbit}, nama_penerbit),
+      nominal = COALESCE(${body.nominal !== undefined && body.nominal !== null ? Number(body.nominal) : null}, nominal),
+      metode = COALESCE(${body.metode ?? null}, metode),
+      keterangan = COALESCE(${body.keterangan ?? null}, keterangan),
+      nama_penerbit = COALESCE(${body.nama_penerbit ?? null}, nama_penerbit),
       id_order = ${body.id_order !== undefined ? (body.id_order && String(body.id_order).trim() ? String(body.id_order).trim() : null) : sql`id_order`},
-      jenis_pembayaran = COALESCE(${body.jenis_pembayaran}, jenis_pembayaran),
-      status_verifikasi = COALESCE(${body.status_verifikasi}, status_verifikasi),
+      jenis_pembayaran = COALESCE(${body.jenis_pembayaran ?? null}, jenis_pembayaran),
+      status_verifikasi = COALESCE(${body.status_verifikasi ?? null}, status_verifikasi),
       updated_at = NOW()
     WHERE id_kas_masuk = ${id_kas_masuk};
   `
@@ -154,10 +154,10 @@ export async function handleUpdateKasKeluar(body: any) {
   await sql`
     UPDATE kas_keluar SET
       tanggal = COALESCE(${body.tanggal ? String(body.tanggal).substring(0, 10) : null}, tanggal),
-      kategori = COALESCE(${body.kategori}, kategori),
-      rincian = COALESCE(${body.rincian}, rincian),
-      nominal = COALESCE(${body.nominal ? Number(body.nominal) : null}, nominal),
-      sumber_kas = COALESCE(${body.sumber_kas}, sumber_kas),
+      kategori = COALESCE(${body.kategori ?? null}, kategori),
+      rincian = COALESCE(${body.rincian ?? null}, rincian),
+      nominal = COALESCE(${body.nominal !== undefined && body.nominal !== null ? Number(body.nominal) : null}, nominal),
+      sumber_kas = COALESCE(${body.sumber_kas ?? null}, sumber_kas),
       updated_at = NOW()
     WHERE id_kas_keluar = ${id_kas_keluar};
   `
