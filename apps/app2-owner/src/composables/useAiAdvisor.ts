@@ -319,25 +319,3 @@ ${piutangList.length ? piutangList.map((p, i) => `${i + 1}. ${p.pub}: ${formatRu
 
 Berikan jawaban yang taktis, tajam, dan langsung memberikan nilai tambah bagi Owner dalam mengelola arus kas dan pertumbuhan percetakan KBM.`
 }
-
-export function generateLocalFallback(query: string, financeStore: ReturnType<typeof useFinanceStore>): string {
-  const q = query.toLowerCase()
-  const orders = financeStore.ordersList || []
-  const kasMasuk = financeStore.kasMasukList || []
-  const kasKeluar = financeStore.kasKeluarList || []
-
-  const ordersNonBatal = orders.filter((o) => o.status_order !== 'BATAL')
-  const totalOmzet = ordersNonBatal.reduce((sum, o) => sum + (Number(o.total_harga) || 0), 0)
-  const totalMasukVerified = kasMasuk
-    .filter((k) => (k as any).status_verifikasi === 'VERIFIED')
-    .reduce((sum, k) => sum + (Number(k.nominal) || 0), 0)
-  const totalKeluar = kasKeluar.reduce((sum, k) => sum + (Number(k.nominal) || 0), 0)
-  const totalPiutang = Math.max(0, totalOmzet - totalMasukVerified)
-  const labaBersihKas = totalMasukVerified - totalKeluar
-
-  if (q.includes('piutang') || q.includes('tagih')) {
-    return `### ⚠️ Analisis Piutang (Fallback Lokal)\n\n* **Total Piutang Berjalan:** **${formatRupiah(totalPiutang)}**\n* **Total Omzet:** **${formatRupiah(totalOmzet)}**\n\nPrioritaskan penagihan piutang sebelum melanjutkan cetak volume besar berikutnya.`
-  }
-
-  return `### 📊 Ringkasan Finansial KBM Printing (Fallback Lokal)\n\n* **Total Omzet:** **${formatRupiah(totalOmzet)}**\n* **Kas Masuk Terverifikasi:** **${formatRupiah(totalMasukVerified)}**\n* **Kas Keluar:** **${formatRupiah(totalKeluar)}**\n* **Laba Bersih Kas:** **${formatRupiah(labaBersihKas)}**\n* **Sisa Piutang:** **${formatRupiah(totalPiutang)}**`
-}

@@ -152,7 +152,6 @@ import {
   quickChips,
   formatMarkdown,
   buildLiveSystemPrompt,
-  generateLocalFallback,
 } from '../composables/useAiAdvisor'
 
 const financeStore = useFinanceStore()
@@ -270,23 +269,37 @@ async function sendMessage() {
         rotated: isRotated,
       })
     } else {
-      console.warn('AI Service error, menggunakan fallback lokal:', res.error)
-      const fallbackMsg = generateLocalFallback(query, financeStore)
+      console.warn('AI Service error:', res.error)
+      const errStr = String(res.error || '').toLowerCase()
+      let notice = ''
+      if (errStr.includes('429') || errStr.includes('limit') || errStr.includes('quota') || errStr.includes('token')) {
+        notice = `⚠️ **Batas Pemakaian / Limit Token Tercapai**\n\nKapasitas kuota token layanan AI saat ini sedang penuh atau mencapai batas pemakaian. Mohon tunggu beberapa saat sebelum mencoba kembali.`
+      } else {
+        notice = `⚠️ **Gagal Memproses Respon AI**\n\n${res.error || 'Terjadi kendala saat memproses jawaban dari AI. Silakan coba kembali.'}`
+      }
+
       messages.value.push({
         role: 'assistant',
-        content: `${fallbackMsg}\n\n*(Catatan: Mode analitik darurat lokal aktif karena: ${res.error || 'Respon AI tidak valid'})*`,
+        content: notice,
         time: getNowTime(),
-        model: 'Local Engine',
+        model: 'Notice',
       })
     }
   } catch (err: any) {
     console.error('AI Advisor Exception:', err)
-    const fallbackMsg = generateLocalFallback(query, financeStore)
+    const errStr = String(err?.message || '').toLowerCase()
+    let notice = ''
+    if (errStr.includes('429') || errStr.includes('limit') || errStr.includes('quota') || errStr.includes('token')) {
+      notice = `⚠️ **Batas Pemakaian / Limit Token Tercapai**\n\nKapasitas kuota token layanan AI saat ini sedang penuh atau mencapai batas pemakaian. Mohon tunggu beberapa saat sebelum mencoba kembali.`
+    } else {
+      notice = `⚠️ **Gangguan Koneksi AI**\n\nTidak dapat terhubung ke server AI (${err?.message || 'Network Error'}). Silakan periksa koneksi internet Anda dan coba lagi.`
+    }
+
     messages.value.push({
       role: 'assistant',
-      content: `${fallbackMsg}\n\n*(Catatan: Mode analitik darurat lokal aktif)*`,
+      content: notice,
       time: getNowTime(),
-      model: 'Local Engine',
+      model: 'Notice',
     })
   } finally {
     isLoading.value = false

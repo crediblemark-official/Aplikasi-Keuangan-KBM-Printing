@@ -18,9 +18,10 @@ Pembaruan **v1.1.22** berfokus pada penguatan keandalan relasi data keuangan, ak
    - **Pencegahan Error Kasir Mobile**: Pada form pembayaran baru (`NewPaymentView.vue` & `useNewPaymentForm.ts`), sistem secara otomatis memvalidasi order target secara live. Jika data belum tersimpan di memori lokal, sistem langsung mengambil order spesifik tersebut tanpa perlu mendownload seluruh katalog pesanan yang berat.
    - **Tombol Muat Ulang Adaptif**: Tombol "Muat Ulang" kini memiliki parameter bypass cache paksa (`nocache: true`) untuk sinkronisasi seketika saat jaringan lambat.
 
-3. **Modernisasi KBM AI Advisor & Penghapusan Dependensi Gemini**:
+3. **Modernisasi KBM AI Advisor & Eliminasi Fallback Lokal**:
    - **Penghapusan Total Google Gemini**: Menghapus dependensi dan alur fallback lama Gemini yang rentan terhadap limit kuota dan jeda waktu request.
    - **Arsitektur Cepat & Mandiri**: AI Advisor kini berjalan langsung menggunakan **Ollama Cloud** (`gemma4:31b` berkemampuan reasoning tinggi) dengan fallback mulus ke **Cloudflare Workers AI**.
+   - **Eliminasi Fallback Lokal Darurat**: Menghapus mekanisme fallback kalkulasi lokal buatan. Jika terjadi keterbatasan kuota token atau kendala jaringan, AI Advisor secara transparan menampilkan notifikasi informasi limit token yang jelas tanpa mengaburkan konteks analitik.
    - **Antarmuka Header Bersih & Minimalis**: Menghapus dropdown pemilihan model manual dari header modal AI Advisor di Dashboard Owner. Routing provider ditangani secara otomatis di belakang layar.
 
 ---
