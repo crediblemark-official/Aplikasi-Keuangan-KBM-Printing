@@ -4,10 +4,13 @@ import { generateId } from './idGenerator'
 export async function handleGetOrders(params: Record<string, string> = {}) {
   const status = params.status && params.status !== 'all' ? params.status.trim() : ''
   const search = params.search ? params.search.trim().toLowerCase() : ''
+  const id_order = params.id_order ? params.id_order.trim() : ''
 
   let query = sql`SELECT * FROM orders`
 
-  if (status && search) {
+  if (id_order) {
+    query = sql`SELECT * FROM orders WHERE id_order = ${id_order} LIMIT 1;`
+  } else if (status && search) {
     const searchPattern = `%${search}%`
     query = sql`SELECT * FROM orders WHERE status_order = ${status} AND (LOWER(nama_penerbit) LIKE ${searchPattern} OR LOWER(judul_penulis) LIKE ${searchPattern} OR LOWER(id_order) LIKE ${searchPattern}) ORDER BY tanggal DESC, id_order DESC;`
   } else if (status) {

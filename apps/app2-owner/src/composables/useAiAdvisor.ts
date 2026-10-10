@@ -1,25 +1,20 @@
 import { formatRupiah } from '@shared/utils/formatters'
 import type { useFinanceStore } from '../stores/finance'
 
-export const geminiModels = [
-  { id: 'auto', name: 'Auto-Rotate (Rekomendasi)' },
-  { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash Lite' },
-  { id: 'gemini-3.5-flash-lite', name: 'Gemini 3.5 Flash Lite' },
-  { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite' },
-  { id: 'gemini-3.7-flash', name: 'Gemini 3.7 Flash' },
-  { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash' },
-  { id: 'gemini-3.5-flash', name: 'Gemini 3.5 Flash' },
-  { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash' },
-  { id: 'gemma-4-31b-it', name: 'Gemma 4 31B IT' },
+export const ollamaModels = [
+  { id: 'auto', name: 'Auto (Ollama Gemma 4 31B)' },
+  { id: 'gemma4:31b', name: 'Ollama: Gemma 4 31B' },
+  { id: 'gpt-oss:120b', name: 'Ollama: GPT-OSS 120B' },
+  { id: 'gpt-oss:20b', name: 'Ollama: GPT-OSS 20B' },
+  { id: 'nemotron-3-nano:30b', name: 'Ollama: Nemotron 3 Nano' },
+  { id: 'nemotron-3-super', name: 'Ollama: Nemotron 3 Super' },
+  { id: 'nemotron-3-ultra', name: 'Ollama: Nemotron 3 Ultra' },
 ]
 
-export const ollamaModels = [
-  { id: 'gemma4:31b', name: 'Ollama: gemma4:31b' },
-  { id: 'gpt-oss:120b', name: 'Ollama: gpt-oss:120b' },
-  { id: 'gpt-oss:20b', name: 'Ollama: gpt-oss:20b' },
-  { id: 'nemotron-3-nano:30b', name: 'Ollama: nemotron-3-nano:30b' },
-  { id: 'nemotron-3-super', name: 'Ollama: nemotron-3-super' },
-  { id: 'nemotron-3-ultra', name: 'Ollama: nemotron-3-ultra' },
+export const cfModels = [
+  { id: '@cf/meta/llama-3.1-8b-instruct', name: 'Workers AI: Llama 3.1 8B' },
+  { id: '@cf/meta/llama-3.3-70b-instruct', name: 'Workers AI: Llama 3.3 70B' },
+  { id: '@cf/qwen/qwen2.5-7b-instruct', name: 'Workers AI: Qwen 2.5 7B' },
 ]
 
 export const quickChips = [

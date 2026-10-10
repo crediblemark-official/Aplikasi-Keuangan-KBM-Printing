@@ -119,6 +119,7 @@ export function useTransaksiFilter(
     return kasMasukList.value
       .filter((k) => {
         if (k.status_verifikasi === 'BATAL') return false
+        if (k.jenis_pembayaran === 'DEPOSIT' || k.jenis_pembayaran === 'NON_ORDER') return false
         return !k.id_order || !orderIdSet.has(k.id_order)
       })
       .map((k) => ({

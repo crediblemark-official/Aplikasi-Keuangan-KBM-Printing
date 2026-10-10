@@ -214,9 +214,8 @@ export function useNewPaymentForm(targetOrderId: import('vue').Ref<string>) {
     isLoading.value = true
 
     try {
-      if (!selectedOrder.value) {
-        await orderStore.ensureOrderLoaded(targetOrderId.value)
-      }
+      // Pastikan data order selalu ter-load segar dari server (menggunakan targeted single-order lookup)
+      await orderStore.ensureOrderLoaded(targetOrderId.value, true)
 
       form.value.id_order = targetOrderId.value
 
@@ -249,7 +248,10 @@ export function useNewPaymentForm(targetOrderId: import('vue').Ref<string>) {
     }
   }
 
-  function loadData() {
+  function loadData(force = false) {
+    if (force) {
+      loadPromise = null
+    }
     if (!loadPromise) {
       loadPromise = doLoadData().finally(() => {
         loadPromise = null

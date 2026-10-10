@@ -316,10 +316,39 @@ export const useOrderStore = defineStore('orders', () => {
     }
   }
 
-  async function ensureOrderLoaded(id: string): Promise<Order | undefined> {
+  async function fetchOrderById(id: string): Promise<Order | undefined> {
     const trimmedId = id.trim()
+    if (!trimmedId) return undefined
+    try {
+      const res = await api.getOrders({ id_order: trimmedId, nocache: 'true' })
+      if (res.success && res.data && res.data.length > 0) {
+        const order = res.data[0]
+        const idx = orders.value.findIndex((o) => o.id_order.trim() === trimmedId)
+        if (idx !== -1) {
+          orders.value[idx] = order
+        } else {
+          orders.value.push(order)
+        }
+        return order
+      }
+    } catch (e) {
+      console.warn('[orderStore] Gagal fetch order by ID:', e)
+    }
+    return undefined
+  }
+
+  async function ensureOrderLoaded(id: string, force = false): Promise<Order | undefined> {
+    const trimmedId = id.trim()
+    if (!trimmedId) return undefined
     let found = orders.value.find((o) => o.id_order.trim() === trimmedId)
-    if (!found) {
+
+    // Jika belum ada di memori lokal atau force refresh diminta:
+    if (!found || force) {
+      // 1. Coba fetch targeted single order langsung (instan, ~20ms, hemat bandwidth)
+      const fetched = await fetchOrderById(trimmedId)
+      if (fetched) return fetched
+
+      // 2. Fallback: jika order belum ditemukan, lakukan full fetch orders
       await fetchOrders(undefined, true)
       found = orders.value.find((o) => o.id_order.trim() === trimmedId)
     }
@@ -459,6 +488,7 @@ export const useOrderStore = defineStore('orders', () => {
     updateOrderStatus,
     deleteOrder,
     ensureOrderLoaded,
+    fetchOrderById,
     setCurrentOrder,
   }
 })

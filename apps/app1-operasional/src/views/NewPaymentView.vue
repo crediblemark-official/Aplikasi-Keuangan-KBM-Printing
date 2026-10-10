@@ -51,7 +51,7 @@
           Order <span class="font-mono font-bold text-slate-700">{{ targetOrderId }}</span> tidak ditemukan.
         </p>
         <div class="mt-5 flex justify-center gap-2">
-          <button @click="loadData" class="btn-secondary h-8.5 px-3.5 text-xs font-bold">
+          <button @click="loadData(true)" class="btn-secondary h-8.5 px-3.5 text-xs font-bold">
             Muat Ulang
           </button>
           <button @click="router.push('/order/list')" class="btn-primary h-8.5 px-3.5 text-xs font-bold">

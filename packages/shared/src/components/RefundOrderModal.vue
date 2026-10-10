@@ -334,23 +334,26 @@ async function handleConvertDeposit() {
   try {
     const publisherName = (props.order?.nama_penerbit || props.payments[0]?.nama_penerbit || '').trim()
 
+    const targetOrderId = props.order?.id_order || props.payments[0]?.id_order || null
+
     // Alihkan semua transaksi pembayaran kas masuk order ini menjadi jenis DEPOSIT
     for (const payment of props.payments) {
       if ((payment as any).status_verifikasi !== 'BATAL') {
+        const orderIdToKeep = payment.id_order || targetOrderId
         const res = await api.updateKasMasuk({
           id_kas_masuk: payment.id_kas_masuk,
-          id_order: null, // Lepaskan relasi id_order agar murni menjadi saldo deposit penerbit
+          id_order: orderIdToKeep, // Tetap ikat dengan id_order agar tidak menjadi celah "Kas Tanpa Order"
           nama_penerbit: publisherName,
           jenis_pembayaran: 'DEPOSIT',
           status_verifikasi: 'VERIFIED',
-          keterangan: `Saldo deposit dialihkan dari pembatalan order ${props.order?.id_order || ''}. ${payment.keterangan || ''}`.trim(),
+          keterangan: `Saldo deposit dialihkan dari pembatalan order ${targetOrderId || ''}. ${payment.keterangan || ''}`.trim(),
         })
 
         if (!res.success) {
           throw new Error(res.error || `Gagal mengalihkan ${payment.id_kas_masuk} ke deposit`)
         }
 
-        ;(payment as any).id_order = null
+        ;(payment as any).id_order = orderIdToKeep
         ;(payment as any).jenis_pembayaran = 'DEPOSIT'
         ;(payment as any).status_verifikasi = 'VERIFIED'
         ;(payment as any).nama_penerbit = publisherName

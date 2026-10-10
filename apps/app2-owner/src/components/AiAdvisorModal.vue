@@ -28,22 +28,6 @@
             <div class="flex items-center gap-2 min-w-0">
               <KbmLogo :size="20" variant="icon" class="shrink-0" />
               <h3 class="font-bold text-xs sm:text-sm text-white shrink-0 tracking-tight">AI Advisor</h3>
-              <div class="h-3.5 w-px bg-white/20 shrink-0"></div>
-              <select
-                v-model="selectedModel"
-                class="bg-slate-800 text-slate-100 border border-slate-700 hover:border-red-500/70 focus:border-red-500 rounded-md px-2 py-0.5 text-[11px] font-medium outline-none cursor-pointer max-w-[200px] sm:max-w-[260px] truncate transition-colors"
-              >
-                <optgroup label="Google Gemini">
-                  <option v-for="m in geminiModels" :key="m.id" :value="m.id">
-                    {{ m.name }}
-                  </option>
-                </optgroup>
-                <optgroup label="Ollama Cloud">
-                  <option v-for="m in ollamaModels" :key="m.id" :value="m.id">
-                    {{ m.name }}
-                  </option>
-                </optgroup>
-              </select>
             </div>
 
             <div class="flex items-center gap-1 shrink-0">
@@ -165,8 +149,6 @@ import { useFinanceStore } from '../stores/finance'
 import { api } from '@shared/api/gasClient'
 import KbmLogo from '@shared/components/KbmLogo.vue'
 import {
-  geminiModels,
-  ollamaModels,
   quickChips,
   formatMarkdown,
   buildLiveSystemPrompt,
@@ -181,31 +163,7 @@ const inputQuery = ref('')
 const chatContainer = ref<HTMLElement | null>(null)
 const inputRef = ref<HTMLInputElement | null>(null)
 
-const selectedModel = ref(localStorage.getItem('kbm_ai_model') || 'auto')
-
-watch(selectedModel, (val) => {
-  localStorage.setItem('kbm_ai_model', val)
-})
-
-const isGeminiActive = computed(() => {
-  return (
-    selectedModel.value === 'auto' ||
-    selectedModel.value.startsWith('gemini') ||
-    selectedModel.value.startsWith('gemma-4')
-  )
-})
-
-const currentProviderLabel = computed(() => {
-  if (selectedModel.value === 'auto') return 'Gemini Auto'
-  if (isGeminiActive.value) return 'Gemini'
-  return 'Ollama Cloud'
-})
-
-const selectedModelLabel = computed(() => {
-  const all = [...geminiModels, ...ollamaModels]
-  const found = all.find((m) => m.id === selectedModel.value)
-  return found ? found.name : selectedModel.value
-})
+const selectedModel = ref('auto')
 
 interface ChatMessage {
   role: 'user' | 'assistant'
