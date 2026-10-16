@@ -1,7 +1,35 @@
 <template>
   <div class="bg-white">
     <SectionHeader title="2. Spesifikasi Teknis Cetak" />
-    <div class="p-[8px] sm:p-[15px] lg:p-[20px] bg-white space-y-4">
+
+    <!-- Lock Alert Banner if Order has payments/Lunas -->
+    <div
+      v-if="isLocked"
+      class="m-2 sm:m-4 p-2.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-950 text-xs flex items-center justify-between gap-3 shadow-2xs"
+    >
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="text-sm shrink-0">🔒</span>
+        <p class="text-xs font-semibold text-amber-950 truncate">
+          Spesifikasi teknis dikunci (sudah lunas / ada pembayaran).
+        </p>
+      </div>
+      <button
+        type="button"
+        @click="emit('request-unlock')"
+        class="px-2.5 py-1 rounded-lg bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs shrink-0 cursor-pointer shadow-2xs flex items-center gap-1.5 transition-all"
+        title="Buka kunci untuk revisi darurat spesifikasi order"
+      >
+        <svg class="w-3.5 h-3.5 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+        </svg>
+        <span>Buka Kunci</span>
+      </button>
+    </div>
+
+    <div
+      class="p-[8px] sm:p-[15px] lg:p-[20px] bg-white space-y-4 transition-opacity"
+      :class="{ 'opacity-60 pointer-events-none select-none': isLocked }"
+    >
       <!-- Jml (pcs) & Ukuran -->
       <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
         <div class="sm:col-span-5">
@@ -348,6 +376,7 @@ defineProps<{
   ukuranOptions: Array<{ value: string; label: string }>
   kertasOptions: Array<{ value: string; label: string; sub: string }>
   finishingOptions: Array<{ value: string; label: string; sub: string }>
+  isLocked?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -362,6 +391,7 @@ const emit = defineEmits<{
   (e: 'input-cetak-bw', event: Event): void
   (e: 'input-cetak-fc', event: Event): void
   (e: 'input-packing-qty', event: Event): void
+  (e: 'request-unlock'): void
 }>()
 
 function setUkuran(u: UkuranBuku) { emit('set-ukuran', u) }

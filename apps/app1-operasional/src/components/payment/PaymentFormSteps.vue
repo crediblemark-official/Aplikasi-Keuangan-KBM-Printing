@@ -12,27 +12,44 @@
               v-for="jp in jenisPembayaranOptions"
               :key="jp.value"
               @click="$emit('select-jenis', jp)"
-              class="cursor-pointer p-2.5 rounded-lg transition-opacity flex items-center gap-3 select-none text-left bg-transparent hover:opacity-85"
+              class="cursor-pointer p-3 rounded-xl transition-all flex items-center justify-between gap-2.5 select-none text-left"
+              :class="form.jenis_pembayaran === jp.value
+                ? 'bg-red-50/90 shadow-2xs'
+                : 'bg-slate-50 hover:bg-slate-100/80'"
             >
-              <div
-                class="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 transition-colors"
-                :class="form.jenis_pembayaran === jp.value ? 'bg-red-600 text-white shadow-xs' : 'bg-slate-100 text-slate-400'"
-              >
-                {{ jp.badge }}
+              <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                <div
+                  class="w-7.5 h-7.5 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 transition-colors"
+                  :class="form.jenis_pembayaran === jp.value
+                    ? 'bg-red-600 text-white shadow-xs'
+                    : 'bg-slate-200/70 text-slate-500'"
+                >
+                  {{ jp.badge }}
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p
+                    class="text-xs font-bold truncate"
+                    :class="form.jenis_pembayaran === jp.value ? 'text-slate-900 font-extrabold' : 'text-slate-600'"
+                  >
+                    {{ jp.label }}
+                  </p>
+                  <p
+                    class="text-[11px] truncate mt-0.5"
+                    :class="form.jenis_pembayaran === jp.value ? 'text-red-600 font-semibold' : 'text-slate-400 font-medium'"
+                  >
+                    {{ jp.desc }}
+                  </p>
+                </div>
               </div>
-              <div class="min-w-0 flex-1">
-                <p
-                  class="text-xs font-bold truncate"
-                  :class="form.jenis_pembayaran === jp.value ? 'text-slate-900' : 'text-slate-600'"
-                >
-                  {{ jp.label }}
-                </p>
-                <p
-                  class="text-[11px] truncate mt-0.5"
-                  :class="form.jenis_pembayaran === jp.value ? 'text-red-600 font-semibold' : 'text-slate-400'"
-                >
-                  {{ jp.desc }}
-                </p>
+
+              <!-- Radio Indicator Circle (No border) -->
+              <div
+                class="w-4.5 h-4.5 rounded-full flex items-center justify-center shrink-0 transition-all"
+                :class="form.jenis_pembayaran === jp.value
+                  ? 'bg-red-600 text-white shadow-xs'
+                  : 'bg-slate-200'"
+              >
+                <div v-if="form.jenis_pembayaran === jp.value" class="w-1.5 h-1.5 rounded-full bg-white"></div>
               </div>
             </button>
           </div>
@@ -58,18 +75,22 @@
             </div>
           </div>
 
-          <!-- Warning if existingPelunasanPayments > 0 and PELUNASAN chosen -->
+          <!-- Notice if existingPelunasanPayments > 0 and PELUNASAN chosen -->
           <div
             v-if="form.jenis_pembayaran === 'PELUNASAN' && existingPelunasanPayments.length > 0"
             class="p-3 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs space-y-1 shadow-2xs"
           >
-            <div class="flex items-center gap-1.5 font-bold text-amber-800">
+            <div class="flex items-center gap-1.5 font-bold text-amber-900">
               <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span>Perhatian: Order Ini Sudah Memiliki Riwayat Pelunasan!</span>
+              <span v-if="sisaTagihan > 0">Pelunasan Tambahan (Penyesuaian Nilai Order)</span>
+              <span v-else>Perhatian: Order Ini Sudah Pernah Dicatat Pelunasan</span>
             </div>
-            <p class="text-[11px] text-amber-700 leading-relaxed">
+            <p v-if="sisaTagihan > 0" class="text-[11px] text-amber-800 leading-relaxed">
+              Order ini sebelumnya sudah pernah dicatat pelunasan: <strong>{{ existingPelunasanSummary }}</strong>. Karena total nilai pesanan bertambah, silakan lanjutkan pencatatan sisa kekurangan sebesar <strong class="font-mono text-amber-950">{{ formatRupiah(sisaTagihan) }}</strong>.
+            </p>
+            <p v-else class="text-[11px] text-amber-800 leading-relaxed">
               Order ini sudah pernah dicatat pelunasan:
               <strong>{{ existingPelunasanSummary }}</strong>.
               Harap pastikan kembali agar tidak terjadi pencatatan pelunasan ganda.

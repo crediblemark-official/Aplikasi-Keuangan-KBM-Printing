@@ -187,10 +187,10 @@ export default {
     ctx.waitUntil(
       sqlStorage.run(db, async () => {
         try {
-          console.log('⏰ Running automatic Cloudflare cron sync from Google Sheets...')
-          await handleSyncFromSheets(env?.VITE_BACKUP_GAS_URL)
+          console.log('⏰ Running automatic Cloudflare cron backup to Google Sheets...')
+          await handleSyncBackupToSheets(env?.VITE_BACKUP_GAS_URL)
         } catch (e) {
-          console.error('❌ Cron sync failed:', e)
+          console.error('❌ Cron backup failed:', e)
         } finally {
           try {
             await db.end({ timeout: 1 })

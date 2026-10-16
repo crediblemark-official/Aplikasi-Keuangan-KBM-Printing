@@ -112,7 +112,17 @@ export async function handleSyncFromSheets(customGasUrl?: string) {
             WHEN orders.status_order = 'BATAL' AND EXCLUDED.status_order != 'BATAL' THEN orders.status_order
             ELSE COALESCE(NULLIF(EXCLUDED.status_order, ''), orders.status_order)
           END,
-          total_harga = CASE WHEN EXCLUDED.total_harga > 0 THEN EXCLUDED.total_harga ELSE orders.total_harga END,
+          total_harga = CASE
+            -- Proteksi: Jika order di database sudah lunas/memiliki pembayaran yang cocok dengan harga DB, jangan timpa dari Sheets jika ada selisih liar
+            WHEN EXISTS (
+              SELECT 1 FROM kas_masuk km 
+              WHERE km.id_order = orders.id_order 
+                AND km.status_verifikasi != 'BATAL' 
+                AND km.nominal >= orders.total_harga
+            ) AND EXCLUDED.total_harga != orders.total_harga THEN orders.total_harga
+            WHEN EXCLUDED.total_harga > 0 THEN EXCLUDED.total_harga
+            ELSE orders.total_harga
+          END,
           catatan = COALESCE(NULLIF(EXCLUDED.catatan, ''), orders.catatan),
           link_bukti = COALESCE(NULLIF(EXCLUDED.link_bukti, ''), orders.link_bukti),
           updated_at = NOW();

@@ -57,6 +57,7 @@
               :ukuran-options="ukuranOptions"
               :kertas-options="kertasOptions"
               :finishing-options="finishingOptions"
+              :is-locked="isFinancialLocked"
               @set-ukuran="orderForm.setUkuran"
               @set-kertas="orderForm.setKertas"
               @set-kertas-bw="orderForm.setKertasBW"
@@ -68,6 +69,7 @@
               @input-cetak-bw="orderForm.onCetakBWInput"
               @input-cetak-fc="orderForm.onCetakFCInput"
               @input-packing-qty="orderForm.onPackingDusQtyInput"
+              @request-unlock="handleRequestUnlock"
             />
           </div>
 
@@ -80,9 +82,11 @@
               :is-form-valid="orderForm.isFormValid.value"
               :is-submitting="orderStore.isLoading"
               :is-edit-mode="isEditMode"
+              :is-locked="isFinancialLocked"
               @set-skema="orderForm.setSkemaHarga"
               @apply-pricelist="orderForm.applyPricelistCalculation"
               @input-total-harga="orderForm.onTotalHargaInput"
+              @request-unlock="handleRequestUnlock"
             />
           </div>
 
@@ -117,6 +121,28 @@
       </button>
     </div>
 
+    <!-- Confirm Modal: Buka Kunci Edit Order Lunas -->
+    <ConfirmModal
+      v-model="showUnlockConfirmModal"
+      title="Buka Kunci Spesifikasi & Biaya?"
+      type="warning"
+      confirm-text="Ya, Buka Kunci"
+      cancel-text="Batal"
+      @confirm="handleConfirmUnlock"
+    >
+      <div class="space-y-2 text-left text-xs text-slate-600">
+        <p>
+          Pesanan ini sudah mencatat riwayat pembayaran riil di Buku Kas sebesar <strong class="text-slate-900 font-mono">{{ formatRupiah(totalMasukExisting) }}</strong>.
+        </p>
+        <div class="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-[11px] leading-relaxed">
+          <strong>Peringatan Risiko:</strong> Mengubah oplah (pcs), spesifikasi cetak, atau total harga dapat menyebabkan status pelunasan berubah menjadi <strong>Kurang Bayar / DP</strong> atau menimbulkan selisih kas.
+        </div>
+        <p class="text-[11px] text-slate-500">
+          Pastikan Anda memang perlu melakukan revisi darurat pada order ini.
+        </p>
+      </div>
+    </ConfirmModal>
+
     <!-- Error Toast -->
     <ion-toast
       :is-open="toastOpen"
@@ -136,6 +162,7 @@ import {
   IonPage, IonHeader, IonContent, IonSpinner, IonToast, useIonRouter, onIonViewWillEnter,
 } from '@ionic/vue'
 import PageHeader from '@shared/components/PageHeader.vue'
+import ConfirmModal from '@shared/components/ConfirmModal.vue'
 import OrderIdentitySection from '../components/order/OrderIdentitySection.vue'
 import OrderTechnicalSpecSection from '../components/order/OrderTechnicalSpecSection.vue'
 import OrderPricingSection from '../components/order/OrderPricingSection.vue'
@@ -161,9 +188,45 @@ const editOrderId = computed(() => String(route.params.id || route.query.edit ||
 const toastOpen = ref(false)
 const toastMsg = ref('')
 
+const isUnlockedByAdmin = ref(false)
+const showUnlockConfirmModal = ref(false)
+
+const existingPayments = computed(() => {
+  if (!editOrderId.value) return []
+  return orderStore.kasMasukList.filter(
+    (k) => k.id_order && k.id_order.trim() === editOrderId.value.trim() && (k as any).status_verifikasi !== 'BATAL' && k.jenis_pembayaran !== 'DEPOSIT'
+  )
+})
+
+const totalMasukExisting = computed(() => {
+  return existingPayments.value.reduce((s, k) => s + (k.nominal || 0), 0)
+})
+
+const isPaidOrder = computed(() => {
+  if (!isEditMode.value || !editOrderId.value) return false
+  return totalMasukExisting.value > 0
+})
+
+const isFinancialLocked = computed(() => {
+  return isPaidOrder.value && !isUnlockedByAdmin.value
+})
+
+function handleRequestUnlock() {
+  showUnlockConfirmModal.value = true
+}
+
+function handleConfirmUnlock() {
+  isUnlockedByAdmin.value = true
+  showUnlockConfirmModal.value = false
+}
+
 async function loadExistingOrder() {
   if (!editOrderId.value) return
-  await orderStore.ensureOrderLoaded(editOrderId.value)
+  isUnlockedByAdmin.value = false
+  await Promise.all([
+    orderStore.ensureOrderLoaded(editOrderId.value),
+    orderStore.kasMasukList.length === 0 ? orderStore.fetchKasMasuk(false) : Promise.resolve(),
+  ])
   const existing = orderStore.orders.find((o) => o.id_order.trim() === editOrderId.value.trim())
   if (existing) {
     const rawJudulPenulis = existing.judul_penulis || ''
@@ -214,7 +277,10 @@ async function loadExistingOrder() {
       total_harga: existing.total_harga || 0,
       catatan: existing.catatan || '',
     }
-    orderForm.isCustomPrice.value = true
+    // Cek apakah harga tersimpan cocok dengan hitungan spesifikasi
+    const calculatedTotal = orderForm.priceBreakdown.value?.total_harga || 0
+    const isMatchingPricelist = calculatedTotal > 0 && Math.abs((existing.total_harga || 0) - calculatedTotal) < 100
+    orderForm.isCustomPrice.value = !isMatchingPricelist
   }
 }
 

@@ -3,6 +3,7 @@
     <SectionHeader title="3. Biaya & Pembayaran">
       <template #actions>
         <button
+          v-if="!isLocked"
           type="button"
           @click="emit('apply-pricelist')"
           class="text-xs font-semibold text-red-600 hover:text-red-800 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-red-50 hover:bg-red-100 transition-colors cursor-pointer border border-red-200"
@@ -19,12 +20,6 @@
         <div class="flex items-center justify-between mb-1.5">
           <label class="form-label mb-0">Harga (Total Tagihan Rp) *</label>
           <div class="flex items-center gap-1.5">
-            <span
-              v-if="form.skema_harga === 'LANGGANAN'"
-              class="text-[10px] text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-300 font-bold"
-            >
-              ⭐ Tarif Langganan
-            </span>
             <span v-if="isCustomPrice" class="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 font-semibold">
               Manual
             </span>
@@ -33,7 +28,10 @@
             </span>
           </div>
         </div>
-        <div class="flex rounded-lg border border-slate-300 overflow-hidden focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500 bg-white shadow-2xs">
+        <div
+          class="flex rounded-lg border border-slate-300 overflow-hidden bg-white shadow-2xs"
+          :class="isLocked ? 'bg-slate-50/70 border-slate-200' : 'focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500'"
+        >
           <span class="inline-flex items-center px-3 bg-slate-100 border-r border-slate-200 text-slate-600 font-mono font-bold text-sm sm:text-base select-none">
             Rp
           </span>
@@ -43,6 +41,9 @@
             inputmode="numeric"
             placeholder="0"
             class="w-full px-3 py-2 text-xl sm:text-2xl font-black text-red-600 font-mono tracking-tight outline-none border-0 bg-transparent"
+            :class="{ 'opacity-60 cursor-not-allowed select-none': isLocked }"
+            :readonly="isLocked"
+            :disabled="isLocked"
             required
             @input="emit('input-total-harga', $event)"
           />
@@ -50,6 +51,56 @@
         <p class="font-mono font-bold text-emerald-700 text-xs mt-1">
           {{ formatRupiah(form.total_harga || 0) }}
         </p>
+
+        <!-- Unlock Button if Locked -->
+        <div
+          v-if="isLocked"
+          class="mt-2 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-950 text-xs flex items-center justify-between gap-2 shadow-2xs"
+        >
+          <span class="text-[11px] text-amber-800">Total harga dikunci karena sudah ada pembayaran riil.</span>
+          <button
+            type="button"
+            @click="emit('request-unlock')"
+            class="px-2.5 py-1 text-xs font-bold text-amber-900 bg-white hover:bg-amber-100 rounded border border-amber-300 cursor-pointer shadow-2xs shrink-0 flex items-center gap-1"
+          >
+            <span>Buka Kunci</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Discrepancy Alert Banner -->
+      <div
+        v-if="form.total_harga > 0 && priceBreakdown.total_harga > 0 && Math.abs(form.total_harga - priceBreakdown.total_harga) > 100"
+        class="p-3 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs space-y-2 shadow-2xs animate-fade-in"
+      >
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex items-start gap-2">
+            <span class="text-base leading-none">⚠️</span>
+            <div>
+              <p class="font-bold text-amber-900">Perhatian: Terdeteksi Selisih Harga!</p>
+              <p class="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
+                Harga terpasang (<strong>{{ formatRupiah(form.total_harga) }}</strong>) berbeda dari hitungan spesifikasi resmi (<strong>{{ formatRupiah(priceBreakdown.total_harga) }}</strong>).
+                Selisih: <span class="font-mono font-bold text-red-700">{{ form.total_harga > priceBreakdown.total_harga ? '+' : '-' }}{{ formatRupiah(Math.abs(form.total_harga - priceBreakdown.total_harga)) }}</span>.
+              </p>
+            </div>
+          </div>
+        </div>
+        <button
+          type="button"
+          @click="emit('apply-pricelist')"
+          class="w-full h-9 px-3.5 rounded-lg bg-white hover:bg-amber-100/60 active:bg-amber-100 border border-amber-300 hover:border-amber-400 text-amber-950 text-xs font-bold transition-all cursor-pointer flex items-center justify-between gap-2 shadow-2xs group"
+          title="Terapkan hitungan harga otomatis sesuai pricelist spesifikasi buku"
+        >
+          <span class="inline-flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-amber-600 group-hover:scale-110 transition-transform shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <span>Terapkan Hitungan Pricelist</span>
+          </span>
+          <span class="font-mono font-black text-amber-800 bg-amber-100 px-2 py-0.5 rounded border border-amber-200 text-[11px] shrink-0">
+            {{ formatRupiah(priceBreakdown.total_harga) }}
+          </span>
+        </button>
       </div>
 
       <!-- Rincian Biaya Box -->
@@ -124,11 +175,13 @@ defineProps<{
   isFormValid: boolean
   isSubmitting: boolean
   isEditMode: boolean
+  isLocked?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'set-skema', skema: SkemaHarga): void
   (e: 'apply-pricelist'): void
   (e: 'input-total-harga', event: Event): void
+  (e: 'request-unlock'): void
 }>()
 </script>
