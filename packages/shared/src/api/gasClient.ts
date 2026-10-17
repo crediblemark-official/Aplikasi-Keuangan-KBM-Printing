@@ -44,7 +44,7 @@ function notifyNetworkStatus(isOnline: boolean) {
 export const CONFIG = {
   GAS_URL:
     ((import.meta.env?.VITE_GAS_URL as string | undefined)?.trim()) ||
-    'https://script.google.com/macros/s/AKfycbwGVC-HCtsQygsRgrAUSlF4V-IpU5pCHEojxO02tUWLMGq-Dz1CQHtVmV4MnNPzJYcFOA/exec',
+    'https://kbm-api.karyabaktimakmur.workers.dev/api',
   APP_NAME:
     ((import.meta.env?.VITE_APP_NAME as string | undefined)?.trim()) ||
     'KBM Percetakan',

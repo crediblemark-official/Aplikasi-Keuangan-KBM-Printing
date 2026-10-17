@@ -29,7 +29,6 @@ import {
   handleGetFinanceBundle,
 } from './services/financeService'
 
-import { handleSyncBackupToSheets, handleSyncFromSheets } from './services/backupService'
 import { handleAiChat } from './services/aiService'
 import {
   handleGetCompanySettings,
@@ -77,11 +76,6 @@ async function dispatchAction(action: string, params: any, body: any, env?: any)
       return { success: true, message: 'pong', timestamp: Date.now() }
     case 'aiChat':
       return handleAiChat(body, env)
-    case 'syncBackup':
-    case 'syncBackupToSheets':
-      return handleSyncBackupToSheets(env?.VITE_BACKUP_GAS_URL)
-    case 'syncFromSheets':
-      return handleSyncFromSheets(env?.VITE_BACKUP_GAS_URL)
     case 'getFinanceBundle':
       return handleGetFinanceBundle(params)
     case 'getOrders':
@@ -175,28 +169,4 @@ console.log(`🚀 KBM PostgreSQL API Server running on http://localhost:${PORT}`
 export default {
   port: PORT,
   fetch: app.fetch,
-  async scheduled(event: any, env: any, ctx: any) {
-    const dbUrl = env?.DATABASE_URL || DATABASE_URL
-    if (!dbUrl) return
-    const db = postgres(dbUrl, {
-      prepare: false,
-      max: 5,
-      idle_timeout: 1,
-      connect_timeout: 15,
-    })
-    ctx.waitUntil(
-      sqlStorage.run(db, async () => {
-        try {
-          console.log('⏰ Running automatic Cloudflare cron backup to Google Sheets...')
-          await handleSyncBackupToSheets(env?.VITE_BACKUP_GAS_URL)
-        } catch (e) {
-          console.error('❌ Cron backup failed:', e)
-        } finally {
-          try {
-            await db.end({ timeout: 1 })
-          } catch {}
-        }
-      })
-    )
-  },
 }
