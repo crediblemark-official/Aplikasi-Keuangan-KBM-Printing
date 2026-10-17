@@ -150,8 +150,6 @@ app.get('/api/kas-masuk', async (c) => c.json(await handleGetKasMasuk(c.req.quer
 app.post('/api/kas-masuk', async (c) => c.json(await handleCreateKasMasuk(await c.req.json())))
 app.get('/api/kas-keluar', async (c) => c.json(await handleGetKasKeluar()))
 app.post('/api/kas-keluar', async (c) => c.json(await handleCreateKasKeluar(await c.req.json())))
-app.post('/api/backup/sheets', async (c) => c.json(await handleSyncBackupToSheets((c.env as any)?.VITE_BACKUP_GAS_URL)))
-app.post('/api/sync/sheets', async (c) => c.json(await handleSyncFromSheets((c.env as any)?.VITE_BACKUP_GAS_URL)))
 app.post('/api/ai/chat', async (c) => {
   let body: any = {}
   try {
