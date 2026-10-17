@@ -260,7 +260,7 @@ export function useTransaksiFilter(
       .reduce((s, r) => s + r.order.total_harga, 0)
   )
   const totalMasukPiutang = computed(() =>
-    filteredPiutangRows.value.reduce((s, r) => s + r.total_masuk, 0)
+    filteredPiutangRows.value.reduce((s, r) => s + (r.total_masuk || 0), 0)
   )
   const totalSisaPiutang = computed(() =>
     filteredPiutangRows.value.reduce((s, r) => s + r.sisa_tagihan, 0)

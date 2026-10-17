@@ -306,11 +306,11 @@
               </span>
             </div>
             <div
-              v-if="row.total_masuk > row.order.total_harga"
+              v-if="(row.total_masuk ?? 0) > row.order.total_harga"
               class="text-[10px] font-bold text-emerald-600 mt-0.5"
               title="Pembayaran melebihi total tagihan faktur"
             >
-              +{{ formatRupiah(row.total_masuk - row.order.total_harga) }} (Lebih)
+              +{{ formatRupiah((row.total_masuk ?? 0) - row.order.total_harga) }} (Lebih)
             </div>
           </td>
 

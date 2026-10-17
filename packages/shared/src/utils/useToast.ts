@@ -1,11 +1,13 @@
 import { ref } from 'vue'
 
+export type ToastType = 'success' | 'error' | 'info' | 'warning'
+
 export function useToast(defaultDuration = 4000) {
   const toastMessage = ref('')
-  const toastType = ref<'success' | 'error' | 'info'>('success')
+  const toastType = ref<ToastType>('success')
   let timer: ReturnType<typeof setTimeout> | null = null
 
-  function showToast(msg: string, type: 'success' | 'error' | 'info' = 'success', duration = defaultDuration) {
+  function showToast(msg: string, type: ToastType = 'success', duration = defaultDuration) {
     if (timer) clearTimeout(timer)
     toastMessage.value = msg
     toastType.value = type

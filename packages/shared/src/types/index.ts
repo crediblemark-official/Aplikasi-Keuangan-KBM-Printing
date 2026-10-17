@@ -145,7 +145,7 @@ export interface ChartDataPoint {
 export interface PiutangRow {
   order: Order
   total_masuk_verified: number
-  total_masuk?: number
+  total_masuk: number
   has_pending?: boolean
   sisa_tagihan: number
   status_bayar: 'LUNAS' | 'DP' | 'KURANG_BAYAR' | 'BELUM_BAYAR' | 'BATAL' | 'BATAL_ADA_DANA'
