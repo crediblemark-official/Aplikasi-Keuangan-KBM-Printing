@@ -2,7 +2,7 @@
   <BaseModal
     :model-value="modelValue"
     @update:model-value="$emit('update:modelValue', $event)"
-    :title="`Penyelesaian Dana Order Batal — ${order?.id_order || ''}`"
+    :title="isOrderBatal ? `Penyelesaian Dana Order Batal — ${order?.id_order || ''}` : `Pengembalian Kelebihan Bayar — ${order?.id_order || ''}`"
   >
     <div class="space-y-4">
       <!-- Order Summary Card -->
@@ -16,8 +16,11 @@
               {{ order?.nama_penerbit }}
             </span>
           </div>
-          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-200">
-            Order Batal
+          <span
+            class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold"
+            :class="isOrderBatal ? 'bg-rose-100 text-rose-700 border border-rose-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'"
+          >
+            {{ isOrderBatal ? 'Order Batal' : 'Kelebihan Bayar' }}
           </span>
         </div>
 
@@ -25,10 +28,24 @@
           Buku: <strong class="text-slate-800">{{ order?.judul_buku || order?.judul_penulis || '-' }}</strong>
         </p>
 
-        <div class="pt-2 border-t border-slate-200/80 flex items-center justify-between text-xs">
-          <span class="text-slate-500 font-medium">Total Uang Masuk yang Tercatat:</span>
-          <span class="font-mono font-black text-amber-600 text-sm">
+        <div v-if="!isOrderBatal" class="pt-2 border-t border-slate-200/80 flex items-center justify-between text-xs">
+          <span class="text-slate-500 font-medium">Nilai Tagihan Faktur:</span>
+          <span class="font-mono font-bold text-slate-800 text-xs">
+            {{ formatRupiah(order?.total_harga || 0) }}
+          </span>
+        </div>
+        <div class="pt-1 flex items-center justify-between text-xs">
+          <span class="text-slate-500 font-medium">Total Uang Masuk Tercatat:</span>
+          <span class="font-mono font-bold text-slate-800 text-xs">
             {{ formatRupiah(totalMasuk) }}
+          </span>
+        </div>
+        <div class="pt-2 border-t border-slate-200/80 flex items-center justify-between text-xs">
+          <span class="text-slate-600 font-bold">
+            {{ isOrderBatal ? 'Dana yang Dapat Dikembalikan:' : 'Nominal Kelebihan Bayar:' }}
+          </span>
+          <span class="font-mono font-black text-amber-600 text-sm">
+            {{ formatRupiah(maxRefundable) }}
           </span>
         </div>
       </div>
@@ -107,7 +124,7 @@
           <div class="flex items-center justify-between mb-1">
             <label class="form-label !mb-0">Nominal Pengembalian Dana *</label>
             <span class="text-[11px] font-mono text-slate-500">
-              Maks: <strong class="text-slate-700">{{ formatRupiah(totalMasuk) }}</strong>
+              Maks: <strong class="text-slate-700">{{ formatRupiah(maxRefundable) }}</strong>
             </span>
           </div>
           <CurrencyInput
@@ -124,7 +141,7 @@
             v-model="refundForm.rincian"
             rows="2"
             class="form-input resize-none bg-white"
-            placeholder="Contoh: Refund DP order ORD-xxx via transfer BCA penerbit"
+            placeholder="Contoh: Refund kelebihan bayar order ORD-xxx via transfer BCA"
             required
           ></textarea>
         </div>
@@ -168,7 +185,10 @@
             <span>Simpan Sebagai Saldo Deposit Penerbit</span>
           </p>
           <p class="text-[11px] text-emerald-700 leading-relaxed">
-            Uang sebesar <strong>{{ formatRupiah(totalMasuk) }}</strong> tidak ditarik dari kas, melainkan dialihkan menjadi <strong>Saldo Deposit</strong> atas nama penerbit <strong>{{ order?.nama_penerbit }}</strong> untuk memotong order buku berikutnya.
+            {{ isOrderBatal
+              ? `Uang sebesar ${formatRupiah(maxRefundable)} tidak ditarik dari kas, melainkan dialihkan menjadi Saldo Deposit atas nama penerbit ${order?.nama_penerbit} untuk memotong order buku berikutnya.`
+              : `Kelebihan pembayaran sebesar ${formatRupiah(maxRefundable)} akan dialihkan menjadi Saldo Deposit atas nama penerbit ${order?.nama_penerbit} untuk memotong order buku berikutnya.`
+            }}
           </p>
         </div>
 
@@ -179,7 +199,7 @@
           </div>
           <div class="flex justify-between items-center">
             <span class="text-slate-500">Nominal Deposit yang Dialihkan:</span>
-            <span class="font-mono font-bold text-emerald-700 text-sm">{{ formatRupiah(totalMasuk) }}</span>
+            <span class="font-mono font-bold text-emerald-700 text-sm">{{ formatRupiah(maxRefundable) }}</span>
           </div>
           <div class="flex justify-between items-center">
             <span class="text-slate-500">Status Pembukuan Kas:</span>
@@ -199,7 +219,7 @@
           <BaseButton
             type="button"
             :loading="isSubmitting"
-            :disabled="isSubmitting || totalMasuk <= 0"
+            :disabled="isSubmitting || maxRefundable <= 0"
             @click="handleConvertDeposit"
             class="flex-1 !bg-emerald-600 hover:!bg-emerald-700 text-white font-bold"
           >
@@ -212,7 +232,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import BaseModal from './BaseModal.vue'
 import BaseButton from './BaseButton.vue'
 import CurrencyInput from './CurrencyInput.vue'
@@ -240,6 +260,10 @@ const isSubmitting = ref(false)
 const photoBase64 = ref('')
 const photoFilename = ref('')
 
+const isOrderBatal = computed(() => props.order?.status_order === 'BATAL')
+const overpaymentNominal = computed(() => Math.max(0, props.totalMasuk - (props.order?.total_harga || 0)))
+const maxRefundable = computed(() => isOrderBatal.value ? props.totalMasuk : overpaymentNominal.value)
+
 const refundForm = ref({
   tanggal: getTodayISO(),
   sumber_kas: 'BANK' as SumberKas,
@@ -251,11 +275,14 @@ function initForm() {
   activeTab.value = 'REFUND'
   photoBase64.value = ''
   photoFilename.value = ''
+  const initialNom = isOrderBatal.value ? (props.totalMasuk || 0) : overpaymentNominal.value
   refundForm.value = {
     tanggal: getTodayISO(),
     sumber_kas: (props.payments?.[0]?.metode as SumberKas) || 'BANK',
-    nominal: props.totalMasuk || 0,
-    rincian: `Refund pengembalian dana pembatalan order ${props.order?.id_order || ''} (${props.order?.nama_penerbit || ''})`.trim(),
+    nominal: initialNom,
+    rincian: isOrderBatal.value
+      ? `Refund pengembalian dana pembatalan order ${props.order?.id_order || ''} (${props.order?.nama_penerbit || ''})`.trim()
+      : `Pengembalian kelebihan bayar order ${props.order?.id_order || ''} (${props.order?.nama_penerbit || ''})`.trim(),
   }
 }
 
@@ -303,12 +330,32 @@ async function handleRefundSubmit() {
       return
     }
 
-    // 2. Batalkan transaksi kas masuk terkait order ini agar tidak lagi menggantung pada order
-    if (props.payments && props.payments.length > 0) {
-      for (const payment of props.payments) {
-        if ((payment as any).status_verifikasi !== 'BATAL') {
-          await api.deleteKasMasuk(payment.id_kas_masuk)
-          ;(payment as any).status_verifikasi = 'BATAL'
+    if (isOrderBatal.value) {
+      // 2a. Order Batal: batalkan semua kas masuk
+      if (props.payments && props.payments.length > 0) {
+        for (const payment of props.payments) {
+          if ((payment as any).status_verifikasi !== 'BATAL') {
+            await api.deleteKasMasuk(payment.id_kas_masuk)
+            ;(payment as any).status_verifikasi = 'BATAL'
+          }
+        }
+      }
+    } else {
+      // 2b. Order Aktif Lebih Bayar: kurangi pembayaran kas masuk sebesar refund
+      let remainingToDeduct = refundForm.value.nominal
+      for (const payment of (props.payments || [])) {
+        if (remainingToDeduct <= 0) break
+        if ((payment as any).status_verifikasi !== 'BATAL' && payment.nominal > 0) {
+          const deduct = Math.min(payment.nominal, remainingToDeduct)
+          const newNominal = payment.nominal - deduct
+          const oldNominal = payment.nominal
+          await api.updateKasMasuk({
+            id_kas_masuk: payment.id_kas_masuk,
+            nominal: newNominal,
+            keterangan: `${payment.keterangan || ''} | [Disesuaikan dari ${formatRupiah(oldNominal)}, direfund ${formatRupiah(deduct)}]`.trim(),
+          })
+          ;(payment as any).nominal = newNominal
+          remainingToDeduct -= deduct
         }
       }
     }
@@ -333,36 +380,70 @@ async function handleConvertDeposit() {
   isSubmitting.value = true
   try {
     const publisherName = (props.order?.nama_penerbit || props.payments[0]?.nama_penerbit || '').trim()
-
     const targetOrderId = props.order?.id_order || props.payments[0]?.id_order || null
 
-    // Alihkan semua transaksi pembayaran kas masuk order ini menjadi jenis DEPOSIT
-    for (const payment of props.payments) {
-      if ((payment as any).status_verifikasi !== 'BATAL') {
-        const orderIdToKeep = payment.id_order || targetOrderId
-        const res = await api.updateKasMasuk({
-          id_kas_masuk: payment.id_kas_masuk,
-          id_order: orderIdToKeep, // Tetap ikat dengan id_order agar tidak menjadi celah "Kas Tanpa Order"
-          nama_penerbit: publisherName,
-          jenis_pembayaran: 'DEPOSIT',
-          status_verifikasi: 'VERIFIED',
-          keterangan: `Saldo deposit dialihkan dari pembatalan order ${targetOrderId || ''}. ${payment.keterangan || ''}`.trim(),
-        })
+    if (isOrderBatal.value) {
+      // Alihkan semua transaksi pembayaran kas masuk order ini menjadi jenis DEPOSIT
+      for (const payment of props.payments) {
+        if ((payment as any).status_verifikasi !== 'BATAL') {
+          const orderIdToKeep = payment.id_order || targetOrderId
+          const res = await api.updateKasMasuk({
+            id_kas_masuk: payment.id_kas_masuk,
+            id_order: orderIdToKeep,
+            nama_penerbit: publisherName,
+            jenis_pembayaran: 'DEPOSIT',
+            status_verifikasi: 'VERIFIED',
+            keterangan: `Saldo deposit dialihkan dari pembatalan order ${targetOrderId || ''}. ${payment.keterangan || ''}`.trim(),
+          })
 
-        if (!res.success) {
-          throw new Error(res.error || `Gagal mengalihkan ${payment.id_kas_masuk} ke deposit`)
+          if (!res.success) {
+            throw new Error(res.error || `Gagal mengalihkan ${payment.id_kas_masuk} ke deposit`)
+          }
+
+          ;(payment as any).id_order = orderIdToKeep
+          ;(payment as any).jenis_pembayaran = 'DEPOSIT'
+          ;(payment as any).status_verifikasi = 'VERIFIED'
+          ;(payment as any).nama_penerbit = publisherName
         }
+      }
+    } else {
+      // Kelebihan bayar: kurangi kas masuk order dan buat deposit baru
+      const depositNominal = maxRefundable.value
+      let remainingToDeduct = depositNominal
+      for (const payment of props.payments) {
+        if (remainingToDeduct <= 0) break
+        if ((payment as any).status_verifikasi !== 'BATAL' && payment.nominal > 0) {
+          const deduct = Math.min(payment.nominal, remainingToDeduct)
+          const newNominal = payment.nominal - deduct
+          const oldNominal = payment.nominal
+          await api.updateKasMasuk({
+            id_kas_masuk: payment.id_kas_masuk,
+            nominal: newNominal,
+            keterangan: `${payment.keterangan || ''} | [Disesuaikan dari ${formatRupiah(oldNominal)}, dialihkan ke deposit ${formatRupiah(deduct)}]`.trim(),
+          })
+          ;(payment as any).nominal = newNominal
+          remainingToDeduct -= deduct
+        }
+      }
 
-        ;(payment as any).id_order = orderIdToKeep
-        ;(payment as any).jenis_pembayaran = 'DEPOSIT'
-        ;(payment as any).status_verifikasi = 'VERIFIED'
-        ;(payment as any).nama_penerbit = publisherName
+      const createRes = await api.createKasMasuk({
+        tanggal: getTodayISO(),
+        nama_penerbit: publisherName,
+        id_order: targetOrderId,
+        nominal: depositNominal,
+        metode: (props.payments[0]?.metode as any) || 'BANK',
+        jenis_pembayaran: 'DEPOSIT',
+        status_verifikasi: 'VERIFIED',
+        keterangan: `Saldo deposit dari kelebihan bayar order ${targetOrderId || ''}`.trim(),
+      })
+      if (!createRes.success) {
+        throw new Error(createRes.error || 'Gagal membuat deposit')
       }
     }
 
     emit('update:modelValue', false)
-    emit('toast', `Dana sebesar ${formatRupiah(props.totalMasuk)} berhasil dialihkan ke Saldo Deposit Penerbit ${publisherName || props.order?.nama_penerbit}.`, 'success')
-    emit('success', `Dialihkan ke deposit ${formatRupiah(props.totalMasuk)}`)
+    emit('toast', `Dana sebesar ${formatRupiah(maxRefundable.value)} berhasil dialihkan ke Saldo Deposit Penerbit ${publisherName || props.order?.nama_penerbit}.`, 'success')
+    emit('success', `Dialihkan ke deposit ${formatRupiah(maxRefundable.value)}`)
   } catch (err: any) {
     emit('toast', err?.message || 'Terjadi kesalahan saat mengalihkan deposit', 'error')
   } finally {

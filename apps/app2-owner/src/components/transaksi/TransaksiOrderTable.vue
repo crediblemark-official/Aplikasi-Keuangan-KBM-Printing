@@ -350,6 +350,15 @@
               >
                 <span>🔄 Refund / Deposit</span>
               </button>
+              <button
+                v-else-if="row.order.status_order !== 'BATAL' && (row.total_masuk ?? 0) > row.order.total_harga"
+                @click.stop="$emit('refund-order', row)"
+                type="button"
+                class="px-2.5 py-1 text-xs font-bold rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs hover:shadow-xs whitespace-nowrap"
+                title="Penyelesaian kelebihan pembayaran: Catat Refund Kas Keluar atau Alihkan ke Saldo Deposit"
+              >
+                <span>🔄 Refund Lebih</span>
+              </button>
               <span
                 v-else-if="row.order.status_order === 'BATAL'"
                 class="text-xs text-slate-400 font-mono px-1 select-none"
