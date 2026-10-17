@@ -44,7 +44,7 @@
               :value="form.jml_pcs ? form.jml_pcs.toLocaleString('id-ID') : ''"
               type="text"
               inputmode="numeric"
-              placeholder="100"
+              placeholder="0"
               class="w-full px-3 py-1.5 font-mono font-bold text-base text-slate-800 outline-none border-0 bg-transparent"
               required
               @input="onJmlPcsInput"
@@ -209,7 +209,7 @@
           </div>
           <div class="flex rounded-lg border border-slate-300 overflow-hidden focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500 bg-white shadow-2xs">
             <input
-              :value="form.cetak_bw ? form.cetak_bw.toLocaleString('id-ID') : (form.cetak_bw === 0 ? '0' : '')"
+              :value="form.cetak_bw ? form.cetak_bw.toLocaleString('id-ID') : ''"
               type="text"
               inputmode="numeric"
               placeholder="0"
@@ -231,7 +231,7 @@
           </div>
           <div class="flex rounded-lg border border-slate-300 overflow-hidden focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500 bg-white shadow-2xs">
             <input
-              :value="form.cetak_fc ? form.cetak_fc.toLocaleString('id-ID') : (form.cetak_fc === 0 ? '0' : '')"
+              :value="form.cetak_fc ? form.cetak_fc.toLocaleString('id-ID') : ''"
               type="text"
               inputmode="numeric"
               placeholder="0"
