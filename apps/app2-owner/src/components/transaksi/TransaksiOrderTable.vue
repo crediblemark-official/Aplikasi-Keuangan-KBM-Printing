@@ -61,6 +61,16 @@
           <td class="font-mono text-xs font-semibold text-slate-700 whitespace-nowrap align-top py-3">
             <div class="inline-flex items-center gap-1.5">
               <span>{{ row.order.id_order }}</span>
+              <button
+                type="button"
+                @click.stop="openOrderLogs(row.order)"
+                class="inline-flex items-center text-slate-400 hover:text-blue-600 transition-colors p-0.5 rounded hover:bg-slate-100 cursor-pointer"
+                title="Lihat riwayat log perubahan order"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
               <span
                 v-if="row.has_pending"
                 class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"
@@ -405,6 +415,14 @@
       </tbody>
     </table>
   </TableScrollWrapper>
+
+  <!-- Modal Log Perubahan Order -->
+  <OrderLogsModal
+    v-model="showLogsModal"
+    :id-order="selectedLogOrder?.id_order || ''"
+    :order-title="selectedLogOrder?.judul_buku || selectedLogOrder?.judul_penulis"
+    :order-publisher="selectedLogOrder?.nama_penerbit"
+  />
 </template>
 
 <script setup lang="ts">
@@ -412,6 +430,7 @@ import { ref } from 'vue'
 import TableScrollWrapper from '@shared/components/TableScrollWrapper.vue'
 import TableStateRow from '@shared/components/TableStateRow.vue'
 import StatusBadge from '@shared/components/StatusBadge.vue'
+import OrderLogsModal from '@shared/components/OrderLogsModal.vue'
 import {
   formatRupiah,
   formatTanggal,
@@ -441,6 +460,14 @@ defineEmits<{
 const expandedJudul = ref<Record<string, boolean>>({})
 const expandedPenerbit = ref<Record<string, boolean>>({})
 const isAllJudulExpanded = ref(false)
+
+const showLogsModal = ref(false)
+const selectedLogOrder = ref<Order | null>(null)
+
+function openOrderLogs(order: Order) {
+  selectedLogOrder.value = order
+  showLogsModal.value = true
+}
 
 function toggleJudul(id: string) {
   expandedJudul.value[id] = !expandedJudul.value[id]

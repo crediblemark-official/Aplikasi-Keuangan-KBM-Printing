@@ -173,11 +173,13 @@ import {
   finishingOptions,
 } from '../composables/useNewOrderForm'
 import { useOrderStore } from '../stores/orders'
+import { useAuthStore } from '../stores/auth'
 import { formatRupiah, getTodayISO } from '@shared/utils/formatters'
 import { api } from '@shared/api/gasClient'
 import type { UkuranBuku, JenisKertas, JenisFinishing, SkemaHarga } from '@shared/types'
 
 const orderStore = useOrderStore()
+const authStore = useAuthStore()
 const router = useIonRouter()
 const route = useRoute()
 const orderForm = useNewOrderForm()
@@ -321,7 +323,7 @@ async function submitOrder() {
     const res = await orderStore.updateOrder({
       id_order: editOrderId.value,
       ...orderPayload,
-    })
+    }, authStore.nama || 'Tim Operasional')
 
     if (res && res.success) {
       router.push(`/order/${editOrderId.value}`)

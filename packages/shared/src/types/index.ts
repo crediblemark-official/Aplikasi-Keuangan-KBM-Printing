@@ -178,4 +178,21 @@ export interface DateFilterValue {
   label?: string     // Human-readable summary (e.g. "Bulan Ini", "20 Sep 2026", "1-20 Sep 2026")
 }
 
+export interface OrderLogChange {
+  field: string
+  field_label: string
+  old_val: string
+  new_val: string
+}
+
+export interface OrderLog {
+  id: number
+  id_order: string
+  action: 'CREATE' | 'UPDATE' | 'STATUS_CHANGE' | 'CANCEL' | 'RESTORE'
+  actor: string
+  keterangan: string
+  changes: OrderLogChange[]
+  created_at: string
+}
+
 export * from './sync'

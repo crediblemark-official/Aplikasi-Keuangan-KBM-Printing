@@ -355,7 +355,7 @@ export const useOrderStore = defineStore('orders', () => {
     return found
   }
 
-  async function updateOrderStatus(id_order: string, newStatus: 'PROSES' | 'SELESAI' | 'BATAL') {
+  async function updateOrderStatus(id_order: string, newStatus: 'PROSES' | 'SELESAI' | 'BATAL', actor?: string) {
     const trimmedId = id_order.trim()
     const target = orders.value.find((o) => o.id_order.trim() === trimmedId)
     const oldStatus = target?.status_order
@@ -378,7 +378,7 @@ export const useOrderStore = defineStore('orders', () => {
     }
 
     try {
-      const res = await api.updateOrderStatus(trimmedId, newStatus)
+      const res = await api.updateOrderStatus(trimmedId, newStatus, actor)
       if (!res.success && target && oldStatus && !res.isOffline) {
         target.status_order = oldStatus
       }
@@ -389,7 +389,7 @@ export const useOrderStore = defineStore('orders', () => {
     }
   }
 
-  async function updateOrder(orderData: Partial<Order> & { id_order: string }) {
+  async function updateOrder(orderData: Partial<Order> & { id_order: string }, actor?: string) {
     const trimmedId = orderData.id_order.trim()
     const targetIdx = orders.value.findIndex((o) => o.id_order.trim() === trimmedId)
     const oldOrder = targetIdx !== -1 ? { ...orders.value[targetIdx] } : null
@@ -403,7 +403,7 @@ export const useOrderStore = defineStore('orders', () => {
 
     isLoading.value = true
     try {
-      const res = await api.updateOrder(orderData)
+      const res = await api.updateOrder(orderData, actor)
       if (!res.success && oldOrder && targetIdx !== -1 && !res.isOffline) {
         orders.value[targetIdx] = oldOrder
       }

@@ -362,6 +362,118 @@
 
         </div>
 
+        <!-- 3. LOG AKTIVITAS & RIWAYAT PERUBAHAN ORDER -->
+        <div class="border-b border-slate-200 bg-white">
+          <SectionHeader title="Riwayat & Log Perubahan Order">
+            <template #actions>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-semibold text-slate-500">
+                  {{ orderLogs.length }} Aktivitas
+                </span>
+                <button
+                  type="button"
+                  @click="loadOrderLogs(true)"
+                  :disabled="isLoadingLogs"
+                  class="p-1 text-slate-400 hover:text-slate-600 rounded transition-colors disabled:opacity-50"
+                  title="Segarkan Log Perubahan"
+                >
+                  <svg class="w-3.5 h-3.5" :class="{ 'animate-spin': isLoadingLogs }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+              </div>
+            </template>
+          </SectionHeader>
+
+          <!-- Loading State -->
+          <div v-if="isLoadingLogs && orderLogs.length === 0" class="py-6 flex items-center justify-center gap-2 text-xs text-slate-400">
+            <ion-spinner name="crescent" class="w-4 h-4 text-slate-400"></ion-spinner>
+            <span>Memuat riwayat perubahan...</span>
+          </div>
+
+          <!-- Empty State -->
+          <div v-else-if="orderLogs.length === 0" class="py-6 text-center text-xs text-slate-400 font-medium">
+            Belum ada catatan perubahan pada order ini
+          </div>
+
+          <!-- Log Timeline List -->
+          <div v-else class="divide-y divide-slate-100 px-4 sm:px-6 py-2">
+            <div
+              v-for="log in orderLogs"
+              :key="log.id"
+              class="py-3 flex items-start gap-3 text-xs"
+            >
+              <!-- Icon Container based on action -->
+              <div
+                class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                :class="{
+                  'bg-emerald-50 text-emerald-600 border border-emerald-200': log.action === 'CREATE',
+                  'bg-blue-50 text-blue-600 border border-blue-200': log.action === 'UPDATE',
+                  'bg-amber-50 text-amber-600 border border-amber-200': log.action === 'STATUS_CHANGE',
+                  'bg-rose-50 text-rose-600 border border-rose-200': log.action === 'CANCEL',
+                  'bg-purple-50 text-purple-600 border border-purple-200': log.action === 'RESTORE',
+                }"
+              >
+                <!-- CREATE -->
+                <svg v-if="log.action === 'CREATE'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <!-- UPDATE -->
+                <svg v-else-if="log.action === 'UPDATE'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                <!-- CANCEL -->
+                <svg v-else-if="log.action === 'CANCEL'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <!-- RESTORE -->
+                <svg v-else-if="log.action === 'RESTORE'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <!-- STATUS_CHANGE -->
+                <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+
+              <!-- Content details -->
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2 flex-wrap">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="font-bold text-slate-800">{{ getLogActionLabel(log.action) }}</span>
+                    <span class="text-[11px] text-slate-600 font-medium bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">
+                      {{ log.actor }}
+                    </span>
+                  </div>
+                  <span class="text-[11px] text-slate-400 font-mono">
+                    {{ formatDatetime(log.created_at) }}
+                  </span>
+                </div>
+
+                <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                  {{ log.keterangan }}
+                </p>
+
+                <!-- Detailed Change Chips / Diff -->
+                <div v-if="log.changes && log.changes.length > 0" class="mt-2 space-y-1.5">
+                  <div
+                    v-for="(change, cIdx) in log.changes"
+                    :key="cIdx"
+                    class="text-[11px] bg-slate-50 border border-slate-200/80 rounded-lg p-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-slate-700"
+                  >
+                    <span class="font-semibold text-slate-600">{{ change.field_label }}:</span>
+                    <div class="flex items-center gap-1.5 flex-wrap font-mono">
+                      <span class="line-through text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200/60">{{ change.old_val }}</span>
+                      <span class="text-slate-400 font-bold">→</span>
+                      <span class="text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/60">{{ change.new_val }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </ion-content>
 
@@ -493,22 +605,52 @@ import PageHeader from '@shared/components/PageHeader.vue'
 import SectionHeader from '@shared/components/SectionHeader.vue'
 import ConfirmModal from '@shared/components/ConfirmModal.vue'
 import { useOrderStore } from '../stores/orders'
+import { useAuthStore } from '../stores/auth'
 import StatusBadge from '@shared/components/StatusBadge.vue'
 import BaseButton from '@shared/components/BaseButton.vue'
 import RefundOrderModal from '@shared/components/RefundOrderModal.vue'
 import { api } from '@shared/api/gasClient'
-import type { KasMasuk } from '@shared/types'
-import { formatRupiah, formatTanggal, formatMetode, formatFinishing, formatKertas, formatKertasOrder, getVerificationStatus } from '@shared/utils/formatters'
+import type { KasMasuk, OrderLog } from '@shared/types'
+import { formatRupiah, formatTanggal, formatDatetime, formatMetode, formatFinishing, formatKertas, formatKertasOrder, getVerificationStatus } from '@shared/utils/formatters'
 
 const route = useRoute()
 const router = useIonRouter()
 const orderStore = useOrderStore()
+const authStore = useAuthStore()
 
 const orderId = computed(() => ((route.params.id as string) || '').trim())
 const order = computed(() => orderStore.orders.find((o) => (o.id_order || '').trim() === orderId.value))
 const kasMasukList = ref<KasMasuk[]>([])
+const orderLogs = ref<OrderLog[]>([])
 const isLoading = ref(true)
+const isLoadingLogs = ref(false)
 const isUpdatingStatus = ref(false)
+
+function getLogActionLabel(action: string) {
+  switch (action) {
+    case 'CREATE': return 'Pesanan Dibuat'
+    case 'UPDATE': return 'Perubahan Order'
+    case 'STATUS_CHANGE': return 'Perubahan Status'
+    case 'CANCEL': return 'Pesanan Dibatalkan'
+    case 'RESTORE': return 'Pesanan Dipulihkan'
+    default: return 'Aktivitas Order'
+  }
+}
+
+async function loadOrderLogs(force = false) {
+  if (!orderId.value) return
+  isLoadingLogs.value = true
+  try {
+    const res = await api.getOrderLogs(orderId.value)
+    if (res.success && res.data) {
+      orderLogs.value = res.data
+    }
+  } catch (err) {
+    console.warn('Gagal memuat log order:', err)
+  } finally {
+    isLoadingLogs.value = false
+  }
+}
 
 const showCancelModal = ref(false)
 const showDeleteModal = ref(false)
@@ -530,10 +672,12 @@ async function handleConfirmCancel() {
   if (!order.value || isCanceling.value) return
   isCanceling.value = true
   try {
-    const res = await orderStore.updateOrderStatus(order.value.id_order, 'BATAL')
+    const actor = authStore.nama || 'Tim Operasional'
+    const res = await orderStore.updateOrderStatus(order.value.id_order, 'BATAL', actor)
     if (res?.success) {
       showCancelModal.value = false
       showToast(`Order ${order.value.id_order} berhasil dibatalkan.`, 'warning')
+      await loadOrderLogs(true)
     } else {
       showToast(res?.error || 'Gagal membatalkan order', 'danger')
     }
@@ -548,9 +692,11 @@ async function restoreOrder() {
   if (!order.value || isUpdatingStatus.value) return
   isUpdatingStatus.value = true
   try {
-    const res = await orderStore.updateOrderStatus(order.value.id_order, 'PROSES')
+    const actor = authStore.nama || 'Tim Operasional'
+    const res = await orderStore.updateOrderStatus(order.value.id_order, 'PROSES', actor)
     if (res?.success) {
       showToast(`Pembatalan order ${order.value.id_order} berhasil dibatalkan (kembali ke status PROSES).`, 'success')
+      await loadOrderLogs(true)
     } else {
       showToast(res?.error || 'Gagal memulihkan status order', 'danger')
     }
@@ -571,6 +717,7 @@ async function handleConfirmDelete() {
   isDeleting.value = true
   const idToDelete = order.value.id_order
   try {
+    const actor = authStore.nama || 'Tim Operasional'
     const res = await orderStore.deleteOrder(idToDelete, true)
     if (res?.success) {
       showDeleteModal.value = false
@@ -594,7 +741,11 @@ async function toggleOrderStatus() {
   const nextStatus = order.value.status_order === 'PROSES' ? 'SELESAI' : 'PROSES'
   isUpdatingStatus.value = true
   try {
-    await orderStore.updateOrderStatus(order.value.id_order, nextStatus)
+    const actor = authStore.nama || 'Tim Operasional'
+    const res = await orderStore.updateOrderStatus(order.value.id_order, nextStatus, actor)
+    if (res?.success) {
+      await loadOrderLogs(true)
+    }
   } finally {
     isUpdatingStatus.value = false
   }
@@ -667,14 +818,19 @@ async function loadData(force: boolean | unknown = false) {
     if (!order.value || isForce) {
       await orderStore.ensureOrderLoaded(orderId.value)
     }
-    const res = await api.getKasMasuk({
-      id_order: orderId.value,
-      nocache: isForce ? 'true' : undefined,
-    })
-    if (res.success && res.data) {
-      kasMasukList.value = res.data
-      orderStore.mergeKasMasuk(res.data)
-    }
+    await Promise.all([
+      (async () => {
+        const res = await api.getKasMasuk({
+          id_order: orderId.value,
+          nocache: isForce ? 'true' : undefined,
+        })
+        if (res.success && res.data) {
+          kasMasukList.value = res.data
+          orderStore.mergeKasMasuk(res.data)
+        }
+      })(),
+      loadOrderLogs(isForce),
+    ])
   } finally {
     isLoading.value = false
   }

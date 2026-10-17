@@ -10,6 +10,7 @@ import {
   handleUpdateOrder,
   handleUpdateOrderStatus,
   handleDeleteOrder,
+  handleGetOrderLogs,
 } from './services/orderService'
 
 import {
@@ -81,6 +82,8 @@ async function dispatchAction(action: string, params: any, body: any, env?: any)
       return handleGetFinanceBundle(params)
     case 'getOrders':
       return handleGetOrders(params)
+    case 'getOrderLogs':
+      return handleGetOrderLogs(params)
     case 'createOrder':
       return handleCreateOrder(body)
     case 'updateOrder':
@@ -146,6 +149,8 @@ app.get('/api/ping', (c) => c.json({ success: true, message: 'pong', timestamp: 
 app.get('/api/finance/bundle', async (c) => c.json(await handleGetFinanceBundle(c.req.query())))
 app.get('/api/clients', async (c) => c.json(await handleGetClients()))
 app.get('/api/orders', async (c) => c.json(await handleGetOrders(c.req.query())))
+app.get('/api/orders/:id/logs', async (c) => c.json(await handleGetOrderLogs({ id_order: c.req.param('id') })))
+app.get('/api/order-logs', async (c) => c.json(await handleGetOrderLogs(c.req.query())))
 app.post('/api/orders', async (c) => c.json(await handleCreateOrder(await c.req.json())))
 app.put('/api/orders', async (c) => c.json(await handleUpdateOrder(await c.req.json())))
 app.delete('/api/orders', async (c) => c.json(await handleDeleteOrder(await c.req.json())))

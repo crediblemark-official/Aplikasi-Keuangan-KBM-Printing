@@ -191,8 +191,8 @@ export const api = {
     })
     return res
   },
-  updateOrderStatus: async (id_order: string, status: string) => {
-    const res = await gasPost('updateOrderStatus', { id_order, status })
+  updateOrderStatus: async (id_order: string, status: string, actor?: string) => {
+    const res = await gasPost('updateOrderStatus', { id_order, status, actor })
     tryLogSync({
       entity_type: 'ORDER',
       title: `Update Status: ${id_order}`,
@@ -200,13 +200,13 @@ export const api = {
       nominal: 0,
       status: res.success ? 'SYNCED' : 'FAILED',
       action: 'updateOrderStatus',
-      payload: { id_order, status },
+      payload: { id_order, status, actor },
       error_message: res.error,
     })
     return res
   },
-  updateOrder: async (order: Partial<import('../types').Order> & { id_order: string }) => {
-    const res = await gasPost<{ id_order: string }>('updateOrder', { order })
+  updateOrder: async (order: Partial<import('../types').Order> & { id_order: string }, actor?: string) => {
+    const res = await gasPost<{ id_order: string }>('updateOrder', { order, actor })
     tryLogSync({
       entity_type: 'ORDER',
       title: `Update Order: ${order.nama_penerbit || order.id_order}`,
@@ -214,13 +214,15 @@ export const api = {
       nominal: order.total_harga || 0,
       status: res.success ? 'SYNCED' : 'FAILED',
       action: 'updateOrder',
-      payload: { order },
+      payload: { order, actor },
       error_message: res.error,
     })
     return res
   },
-  deleteOrder: async (id_order: string, permanent = false) => {
-    const res = await gasPost<{ id_order: string }>('deleteOrder', { id_order, permanent })
+  getOrderLogs: (id_order: string) =>
+    gasGet<import('../types').OrderLog[]>('getOrderLogs', { id_order }),
+  deleteOrder: async (id_order: string, permanent = false, actor?: string) => {
+    const res = await gasPost<{ id_order: string }>('deleteOrder', { id_order, permanent, actor })
     tryLogSync({
       entity_type: 'ORDER',
       title: permanent ? `Hapus Permanen Order: ${id_order}` : `Batalkan Order: ${id_order}`,
@@ -228,7 +230,7 @@ export const api = {
       nominal: 0,
       status: res.success ? 'SYNCED' : 'FAILED',
       action: 'deleteOrder',
-      payload: { id_order, permanent },
+      payload: { id_order, permanent, actor },
       error_message: res.error,
     })
     return res
