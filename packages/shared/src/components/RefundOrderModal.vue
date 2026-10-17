@@ -432,6 +432,7 @@ async function handleConvertDeposit() {
         id_order: targetOrderId,
         nominal: depositNominal,
         metode: (props.payments[0]?.metode as any) || 'BANK',
+        diinput_oleh: props.currentUser || 'OWNER',
         jenis_pembayaran: 'DEPOSIT',
         status_verifikasi: 'VERIFIED',
         keterangan: `Saldo deposit dari kelebihan bayar order ${targetOrderId || ''}`.trim(),
