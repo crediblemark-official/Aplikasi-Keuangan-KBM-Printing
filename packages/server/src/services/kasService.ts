@@ -78,6 +78,27 @@ export async function handleVerifyKasMasuk(body: any) {
   return { success: true, data: { id_kas_masuk } }
 }
 
+export async function handleRejectKasMasuk(body: any) {
+  const { id_kas_masuk, alasan, rejected_by } = body
+  if (!id_kas_masuk) return { success: false, error: 'id_kas_masuk wajib diisi' }
+
+  const note = alasan && String(alasan).trim() ? String(alasan).trim() : 'Mutasi tidak ada'
+  const actor = rejected_by ? ` (oleh ${rejected_by})` : ''
+  const rejectTag = `[GAGAL VERIFIKASI: ${note}${actor}]`
+
+  await sql`
+    UPDATE kas_masuk
+    SET status_verifikasi = 'BATAL',
+        keterangan = CASE
+          WHEN keterangan IS NULL OR TRIM(keterangan) = '' THEN ${rejectTag}
+          ELSE keterangan || ' | ' || ${rejectTag}
+        END,
+        updated_at = NOW()
+    WHERE id_kas_masuk = ${id_kas_masuk};
+  `
+  return { success: true, message: 'Verifikasi kas masuk ditolak', data: { id_kas_masuk } }
+}
+
 export async function handleUpdateKasMasuk(body: any) {
   const { id_kas_masuk } = body
   if (!id_kas_masuk) return { success: false, error: 'id_kas_masuk wajib diisi' }

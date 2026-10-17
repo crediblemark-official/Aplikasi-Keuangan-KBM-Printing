@@ -16,6 +16,7 @@ import {
   handleGetKasMasuk,
   handleCreateKasMasuk,
   handleVerifyKasMasuk,
+  handleRejectKasMasuk,
   handleUpdateKasMasuk,
   handleDeleteKasMasuk,
   handleGetKasKeluar,
@@ -94,6 +95,8 @@ async function dispatchAction(action: string, params: any, body: any, env?: any)
       return handleCreateKasMasuk(body)
     case 'verifyKasMasuk':
       return handleVerifyKasMasuk(body)
+    case 'rejectKasMasuk':
+      return handleRejectKasMasuk(body)
     case 'updateKasMasuk':
       return handleUpdateKasMasuk(body)
     case 'deleteKasMasuk':

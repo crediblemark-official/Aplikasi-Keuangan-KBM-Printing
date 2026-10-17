@@ -276,6 +276,19 @@ export const api = {
     })
     return res
   },
+  rejectKasMasuk: async (id_kas_masuk: string, alasan: string, rejected_by: string) => {
+    const res = await gasPost('rejectKasMasuk', { id_kas_masuk, alasan, rejected_by })
+    tryLogSync({
+      entity_type: 'VERIFIKASI',
+      title: `Tolak Verifikasi Kas Masuk: ${id_kas_masuk}`,
+      subtitle: `${alasan || 'Mutasi tidak ada'} (${rejected_by})`,
+      status: res.success ? 'SYNCED' : 'FAILED',
+      action: 'rejectKasMasuk',
+      payload: { id_kas_masuk, alasan, rejected_by },
+      error_message: res.error,
+    })
+    return res
+  },
   updateKasMasuk: async (data: {
     id_kas_masuk: string
     tanggal?: string

@@ -256,6 +256,7 @@
                 <div class="space-y-0.5">
                   <p class="text-slate-900 text-xs font-bold font-mono">{{ formatRupiah(km.nominal) }}</p>
                   <p class="text-slate-500 text-[11px]">{{ km.jenis_pembayaran }} • {{ formatMetode(km.metode) }}</p>
+                  <p v-if="km.keterangan" class="text-rose-600 text-[10px] font-semibold mt-0.5 max-w-xs break-words">{{ km.keterangan }}</p>
                 </div>
                 <div class="text-right flex flex-col items-end gap-1">
                   <div class="flex items-center gap-2">

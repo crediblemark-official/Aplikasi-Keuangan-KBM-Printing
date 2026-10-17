@@ -186,6 +186,16 @@
                 >
                   {{ verifyingId === tx.id ? '...' : 'Verif' }}
                 </button>
+                <button
+                  v-if="tx.status_verifikasi === 'PENDING'"
+                  @click.stop="$emit('reject-tx', tx)"
+                  :disabled="verifyingId === tx.id"
+                  type="button"
+                  class="px-1.5 py-0.5 font-bold rounded bg-rose-500 hover:bg-rose-600 text-white cursor-pointer transition-colors"
+                  title="Tolak / Gagal Verifikasi (Mutasi Tidak Ada)"
+                >
+                  Tolak
+                </button>
                 <span v-else class="text-emerald-600 font-bold" title="Terverifikasi">✓</span>
 
                 <!-- Tombol Edit Pembayaran DP -->
@@ -253,6 +263,16 @@
                   class="px-1.5 py-0.5 font-bold rounded bg-amber-500 hover:bg-amber-600 text-white cursor-pointer transition-colors"
                 >
                   {{ verifyingId === tx.id ? '...' : 'Verif' }}
+                </button>
+                <button
+                  v-if="tx.status_verifikasi === 'PENDING'"
+                  @click.stop="$emit('reject-tx', tx)"
+                  :disabled="verifyingId === tx.id"
+                  type="button"
+                  class="px-1.5 py-0.5 font-bold rounded bg-rose-500 hover:bg-rose-600 text-white cursor-pointer transition-colors"
+                  title="Tolak / Gagal Verifikasi (Mutasi Tidak Ada)"
+                >
+                  Tolak
                 </button>
                 <span v-else class="text-emerald-600 font-bold" title="Terverifikasi">✓</span>
 
@@ -401,6 +421,7 @@ const props = defineProps<{
 
 defineEmits<{
   (e: 'verify-tx', tx: OrderTxRow): void
+  (e: 'reject-tx', tx: OrderTxRow): void
   (e: 'edit-payment', tx: OrderTxRow, order: Order): void
   (e: 'edit-order', order: Order): void
   (e: 'bayar-order', row: PiutangRow): void

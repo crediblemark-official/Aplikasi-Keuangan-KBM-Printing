@@ -122,6 +122,7 @@
       :is-loading="isLoading"
       :verifying-id="verifyingId"
       @verify-tx="verifyTx"
+      @reject-tx="openRejectModal"
       @edit-payment="openEditPaymentModal"
       @edit-order="openEditOrderModal"
       @bayar-order="openPaymentModalForOrder"
@@ -241,6 +242,77 @@
               </span>
             </div>
           </div>
+        </div>
+      </div>
+    </BaseModal>
+
+    <!-- MODAL: GAGAL / TOLAK VERIFIKASI PEMBAYARAN -->
+    <BaseModal
+      v-model="showRejectModal"
+      title="Tolak / Gagal Verifikasi Pembayaran"
+    >
+      <div v-if="selectedRejectTx" class="space-y-4">
+        <div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-xs text-rose-800 space-y-1">
+          <p class="font-bold flex items-center gap-1.5 text-rose-900">
+            <span>⚠️</span> Konfirmasi Penolakan Verifikasi
+          </p>
+          <p>
+            Pembayaran ini akan ditandai <strong>Dibatalkan (BATAL)</strong> karena mutasi bank tidak ditemukan. Sisa piutang order akan otomatis dihitung ulang.
+          </p>
+        </div>
+
+        <div class="bg-slate-50 rounded-xl p-3 border border-slate-200 text-xs space-y-1.5">
+          <div class="flex justify-between">
+            <span class="text-slate-500">ID Pembayaran:</span>
+            <span class="font-mono font-bold text-slate-800">{{ selectedRejectTx.id }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-500">Order:</span>
+            <span class="font-bold text-slate-800">{{ selectedRejectTx.id_order }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-500">Penerbit:</span>
+            <span class="text-slate-800">{{ selectedRejectTx.nama_penerbit }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-500">Nominal:</span>
+            <span class="font-mono font-bold text-emerald-700 text-sm">{{ formatRupiah(selectedRejectTx.nominal) }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-500">Metode:</span>
+            <span class="text-slate-800">{{ formatMetode(selectedRejectTx.metode) }}</span>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">
+            Alasan / Catatan Penolakan:
+          </label>
+          <input
+            v-model="rejectReason"
+            type="text"
+            class="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-rose-500 font-medium"
+            placeholder="Contoh: Mutasi tidak ada / belum masuk rekening"
+          />
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button
+            type="button"
+            @click="showRejectModal = false"
+            class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            @click="confirmRejectTx"
+            :disabled="isRejecting"
+            class="px-3.5 py-1.5 text-xs font-bold rounded-lg bg-rose-600 hover:bg-rose-700 text-white transition-colors cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50"
+          >
+            <span v-if="isRejecting">Memproses...</span>
+            <span v-else>Konfirmasi Tolak Pembayaran</span>
+          </button>
         </div>
       </div>
     </BaseModal>
@@ -387,6 +459,46 @@ async function verifyTx(tx: OrderTxRow) {
     showToast(e?.message || 'Terjadi kesalahan jaringan saat verifikasi', 'error')
   } finally {
     verifyingId.value = null
+  }
+}
+
+// Reject / Gagal Verifikasi State & Methods
+const showRejectModal = ref(false)
+const selectedRejectTx = ref<OrderTxRow | null>(null)
+const rejectReason = ref('Mutasi tidak ada')
+const isRejecting = ref(false)
+
+function openRejectModal(tx: OrderTxRow) {
+  selectedRejectTx.value = tx
+  rejectReason.value = 'Mutasi tidak ada'
+  showRejectModal.value = true
+}
+
+async function confirmRejectTx() {
+  if (!selectedRejectTx.value) return
+  isRejecting.value = true
+  const tx = selectedRejectTx.value
+  const reason = rejectReason.value.trim() || 'Mutasi tidak ada'
+  try {
+    const res = await api.rejectKasMasuk(tx.id, reason, authStore.nama ?? 'OWNER')
+    if (res.success) {
+      const item = kasMasukList.value.find((k) => k.id_kas_masuk === tx.id)
+      if (item) {
+        item.status_verifikasi = 'BATAL'
+        const actor = authStore.nama ? ` (oleh ${authStore.nama})` : ''
+        const tag = `[GAGAL VERIFIKASI: ${reason}${actor}]`
+        item.keterangan = item.keterangan ? `${item.keterangan} | ${tag}` : tag
+      }
+      showToast(`Pembayaran ${formatRupiah(tx.nominal)} ditolak (Gagal Verifikasi: ${reason})`, 'warning')
+      showRejectModal.value = false
+    } else {
+      showToast(`Gagal menolak verifikasi: ${res.error || 'Terjadi kesalahan'}`, 'error')
+    }
+  } catch (e: any) {
+    console.error('Gagal tolak verifikasi:', e)
+    showToast(e?.message || 'Terjadi kesalahan jaringan', 'error')
+  } finally {
+    isRejecting.value = false
   }
 }
 
