@@ -595,10 +595,9 @@ const rows = computed<PiutangRow[]>(() => {
       .filter((k) => k.status_verifikasi === 'VERIFIED')
       .reduce((s, k) => s + k.nominal, 0)
     const has_pending = payments.some((k) => k.status_verifikasi === 'PENDING')
-    // Sudut pandang owner: sisa tagihan & status bayar dihitung dari pembayaran TERVERIFIKASI saja
     const isBatal = order.status_order === 'BATAL'
-    const sisa_tagihan = isBatal ? 0 : Math.max(0, order.total_harga - total_masuk_verified)
-    const status_bayar = hitungStatusBayar(total_masuk_verified, order.total_harga, order.status_order)
+    const sisa_tagihan = isBatal ? 0 : Math.max(0, order.total_harga - total_masuk)
+    const status_bayar = hitungStatusBayar(total_masuk, order.total_harga, order.status_order)
     return {
       order,
       total_masuk,
