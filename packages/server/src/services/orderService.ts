@@ -36,6 +36,7 @@ function formatFinishingLabel(finishing: any): string {
   const map: Record<string, string> = {
     SOFT_COVER: 'Soft Cover',
     HARD_COVER: 'Hard Cover',
+    CETAK_COVER: 'Cetak Cover',
     BINDING_POTONG: 'Binding + Potong',
     LAMINASI_DOFF: 'Laminasi Doff',
     LAMINASI_GLOSSY: 'Laminasi Glossy',

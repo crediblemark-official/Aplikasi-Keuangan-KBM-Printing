@@ -156,7 +156,19 @@ export function getTarifHardCover(
 }
 
 /**
- * 5. Tarif Binding + Potong per pcs (Berdasarkan Tabel Excel)
+ * 5. Tarif Cetak Cover per pcs (Eceran / Terpisah dari Paket Soft/Hard Cover)
+ * A6: Rp 1.500
+ * A5 / Unesco / Custom: Rp 2.500
+ * B5 / A4: Rp 5.000
+ */
+export function getTarifCetakCover(ukuran: UkuranBuku): number {
+  if (ukuran === 'A6') return 1500
+  if (ukuran === 'A4' || ukuran === 'B5') return 5000
+  return 2500 // A5 / Unesco / Custom
+}
+
+/**
+ * 6. Tarif Binding + Potong per pcs (Berdasarkan Tabel Excel)
  */
 export function getTarifBindingPotong(ukuran: UkuranBuku, totalHalaman: number): number {
   const isA4orB5 = ukuran === 'A4' || ukuran === 'B5'
@@ -176,7 +188,7 @@ export function getTarifBindingPotong(ukuran: UkuranBuku, totalHalaman: number):
 }
 
 /**
- * 6. Diskon Finishing Berdasarkan Jumlah Cetak (Oplah)
+ * 7. Diskon Finishing Berdasarkan Jumlah Cetak (Oplah)
  * Keterangan: Cover cetak Offset + minimal 200 hal
  */
 export function getDiskonFinishing(
@@ -240,11 +252,17 @@ export function calculateOrderPriceDetailed(input: PriceCalcInput): PriceCalcRes
     baseFinishingPerPcs += getTarifHardCover(ukuran, totalHalaman, skema)
   } else if (finishing.includes('SOFT_COVER')) {
     baseFinishingPerPcs += getTarifSoftCover(ukuran, totalHalaman, skema)
-  } else if (finishing.includes('BINDING_POTONG')) {
-    baseFinishingPerPcs += getTarifBindingPotong(ukuran, totalHalaman)
+  } else {
+    // Finishing Eceran / Terpisah (Non-Paket)
+    if (finishing.includes('CETAK_COVER')) {
+      baseFinishingPerPcs += getTarifCetakCover(ukuran)
+    }
+    if (finishing.includes('BINDING_POTONG')) {
+      baseFinishingPerPcs += getTarifBindingPotong(ukuran, totalHalaman)
+    }
   }
 
-  // Tambahan laminasi jika dipilih terpisah
+  // Tambahan laminasi jika dipilih terpisah (bukan bagian paket Soft / Hard Cover)
   if (finishing.includes('LAMINASI_DOFF') || finishing.includes('LAMINASI_GLOSSY')) {
     if (!finishing.includes('SOFT_COVER') && !finishing.includes('HARD_COVER')) {
       baseFinishingPerPcs += skema === 'LANGGANAN' ? 1000 : 1500

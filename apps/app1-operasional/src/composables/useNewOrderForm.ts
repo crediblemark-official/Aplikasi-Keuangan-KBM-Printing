@@ -29,8 +29,9 @@ export const kertasOptions = [
 ]
 
 export const finishingOptions = [
-  { value: 'SOFT_COVER', label: 'Soft Cover', sub: 'Cover + Lam + Binding + Shrink' },
-  { value: 'HARD_COVER', label: 'Hard Cover', sub: 'Cover + Lam + Binding + Shrink + Pita' },
+  { value: 'SOFT_COVER', label: 'Soft Cover (Paket)', sub: 'Paket: Cover + Lam + Binding + Shrink' },
+  { value: 'HARD_COVER', label: 'Hard Cover (Paket)', sub: 'Paket: Cover + Lam + Binding + Shrink + Pita' },
+  { value: 'CETAK_COVER', label: 'Cetak Cover', sub: 'A6: 1.5rb • A5: 2.5rb • B5/A4: 5rb' },
   { value: 'BINDING_POTONG', label: 'Binding + Potong', sub: 'Jilid lem & potong rapi' },
   { value: 'LAMINASI_DOFF', label: 'Laminasi Doff', sub: 'Doff lembut' },
   { value: 'LAMINASI_GLOSSY', label: 'Laminasi Glossy', sub: 'Glossy kilap' },
@@ -383,7 +384,16 @@ export function useNewOrderForm() {
       if (item === 'HARD_COVER') {
         const scIdx = form.value.finishing.indexOf('SOFT_COVER')
         if (scIdx !== -1) form.value.finishing.splice(scIdx, 1)
+        const ccIdx = form.value.finishing.indexOf('CETAK_COVER')
+        if (ccIdx !== -1) form.value.finishing.splice(ccIdx, 1)
       } else if (item === 'SOFT_COVER') {
+        const hcIdx = form.value.finishing.indexOf('HARD_COVER')
+        if (hcIdx !== -1) form.value.finishing.splice(hcIdx, 1)
+        const ccIdx = form.value.finishing.indexOf('CETAK_COVER')
+        if (ccIdx !== -1) form.value.finishing.splice(ccIdx, 1)
+      } else if (item === 'CETAK_COVER') {
+        const scIdx = form.value.finishing.indexOf('SOFT_COVER')
+        if (scIdx !== -1) form.value.finishing.splice(scIdx, 1)
         const hcIdx = form.value.finishing.indexOf('HARD_COVER')
         if (hcIdx !== -1) form.value.finishing.splice(hcIdx, 1)
       }

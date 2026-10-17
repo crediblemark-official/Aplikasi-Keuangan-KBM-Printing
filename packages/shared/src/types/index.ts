@@ -30,6 +30,7 @@ export type JenisKertas =
 export type JenisFinishing =
   | 'SOFT_COVER'
   | 'HARD_COVER'
+  | 'CETAK_COVER'
   | 'LAMINASI_DOFF'
   | 'LAMINASI_GLOSSY'
   | 'SHRINK_WRAP'
