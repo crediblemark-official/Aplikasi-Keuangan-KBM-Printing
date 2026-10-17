@@ -159,11 +159,11 @@ export function getTarifHardCover(
  * 5. Tarif Cetak Cover per pcs (Eceran / Terpisah dari Paket Soft/Hard Cover)
  * A6: Rp 1.500
  * A5 / Unesco / Custom: Rp 2.500
- * B5 / A4: Rp 5.000
+ * B5 / A4: Rp 4.000
  */
 export function getTarifCetakCover(ukuran: UkuranBuku): number {
   if (ukuran === 'A6') return 1500
-  if (ukuran === 'A4' || ukuran === 'B5') return 5000
+  if (ukuran === 'A4' || ukuran === 'B5') return 4000
   return 2500 // A5 / Unesco / Custom
 }
 

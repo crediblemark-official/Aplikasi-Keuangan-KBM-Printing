@@ -31,7 +31,7 @@ export const kertasOptions = [
 export const finishingOptions = [
   { value: 'SOFT_COVER', label: 'Soft Cover (Paket)', sub: 'Paket: Cover + Lam + Binding + Shrink' },
   { value: 'HARD_COVER', label: 'Hard Cover (Paket)', sub: 'Paket: Cover + Lam + Binding + Shrink + Pita' },
-  { value: 'CETAK_COVER', label: 'Cetak Cover', sub: 'A6: 1.5rb • A5: 2.5rb • B5/A4: 5rb' },
+  { value: 'CETAK_COVER', label: 'Cetak Cover', sub: 'A6: 1.5rb • A5: 2.5rb • B5/A4: 4rb' },
   { value: 'BINDING_POTONG', label: 'Binding + Potong', sub: 'Jilid lem & potong rapi' },
   { value: 'LAMINASI_DOFF', label: 'Laminasi Doff', sub: 'Doff lembut' },
   { value: 'LAMINASI_GLOSSY', label: 'Laminasi Glossy', sub: 'Glossy kilap' },
