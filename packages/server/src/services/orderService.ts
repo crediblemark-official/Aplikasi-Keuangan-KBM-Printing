@@ -1,6 +1,59 @@
 import { sql } from '../db'
 import { generateId } from './idGenerator'
 
+function formatKertasLabel(k: string | undefined | null): string {
+  if (!k) return '-'
+  const map: Record<string, string> = {
+    BP_57: 'Bookpaper 57g',
+    BP_72: 'Bookpaper 72g',
+    HVS_70: 'HVS 70g Putih',
+    HVS_80: 'HVS 80g Putih',
+    BOOKPAPER_55G: 'Bookpaper 55g',
+    'BOOKPAPER_57.5G': 'Bookpaper 57.5g',
+    HVS_70G: 'HVS 70g Putih',
+    HVS_80G: 'HVS 80g Putih',
+    ART_PAPER_120G: 'Art Paper 120g',
+    ART_CARTON_210G: 'Art Carton 210g',
+    LAIN_LAIN: 'Kertas Khusus',
+  }
+  return map[k] || k
+}
+
+function formatFinishingLabel(finishing: any): string {
+  if (!finishing) return '-'
+  let arr: string[] = []
+  if (Array.isArray(finishing)) {
+    arr = finishing
+  } else if (typeof finishing === 'string') {
+    try {
+      const parsed = JSON.parse(finishing)
+      if (Array.isArray(parsed)) arr = parsed
+      else arr = [finishing]
+    } catch {
+      arr = [finishing]
+    }
+  }
+  const map: Record<string, string> = {
+    SOFT_COVER: 'Soft Cover',
+    HARD_COVER: 'Hard Cover',
+    BINDING_POTONG: 'Binding + Potong',
+    LAMINASI_DOFF: 'Laminasi Doff',
+    LAMINASI_GLOSSY: 'Laminasi Glossy',
+    SHRINK_WRAP: 'Shrink Wrap',
+    SPIRAL: 'Spiral',
+    JILID_LEM: 'Jilid Lem Panas',
+  }
+  return arr.map((f) => map[f] ?? f).join(', ') || '-'
+}
+
+function formatPackingLabel(tipe: string | null | undefined, qty?: number | string | null, biaya?: number | string | null): string {
+  if (!tipe) return 'Tanpa Dus'
+  const tipeStr = tipe === 'DUS_BESAR' ? 'Dus Besar' : tipe === 'DUS_KECIL' ? 'Dus Kecil' : tipe
+  const qtyStr = qty ? `${qty}x ` : ''
+  const biayaStr = biaya && Number(biaya) > 0 ? ` (Rp ${Number(biaya).toLocaleString('id-ID')})` : ''
+  return `${qtyStr}${tipeStr}${biayaStr}`
+}
+
 export async function handleGetOrders(params: Record<string, string> = {}) {
   const status = params.status && params.status !== 'all' ? params.status.trim() : ''
   const search = params.search ? params.search.trim().toLowerCase() : ''
@@ -80,14 +133,26 @@ export async function handleCreateOrder(body: any) {
       `
     }
 
-    // Insert initial order log
+    // Insert initial order log with full specifications
     const actor = body.actor || body.diinput_oleh || 'Tim Operasional'
     const totalFmt = (Number(order.total_harga) || 0).toLocaleString('id-ID')
+    const specSummary = [
+      `Oplah: ${Number(order.jml_pcs) || 0} pcs`,
+      `Ukuran: ${order.ukuran_custom || order.ukuran || 'A5'}`,
+      `Kertas: ${formatKertasLabel(order.kertas)}`,
+      `BW: ${Number(order.cetak_bw) || 0} hal`,
+      `FC: ${Number(order.cetak_fc) || 0} hal`,
+      `Finishing: ${formatFinishingLabel(order.finishing)}`,
+      order.packing_dus_tipe ? `Packing: ${formatPackingLabel(order.packing_dus_tipe, order.packing_dus_qty, order.biaya_packing)}` : '',
+      `Skema: ${order.skema_harga || 'NORMAL'}`,
+      `Nilai: Rp ${totalFmt}`,
+    ].filter(Boolean).join(' • ')
+
     await tx`
       INSERT INTO order_logs (id_order, action, actor, keterangan, changes)
       VALUES (
         ${id_order}, 'CREATE', ${actor},
-        ${`Pesanan dibuat (Oplah: ${Number(order.jml_pcs) || 0} pcs, Nilai: Rp ${totalFmt})`},
+        ${`Pesanan dibuat (${specSummary})`},
         '[]'::jsonb
       );
     `
@@ -168,7 +233,7 @@ export async function handleUpdateOrder(body: any) {
       WHERE id_order = ${id_order};
     `
 
-    // Hitung perubahan spesifikasi & harga
+    // Hitung perubahan spesifikasi teknis & harga yang mempengaruhi kalkulasi
     const changes: Array<{ field: string; field_label: string; old_val: string; new_val: string }> = []
 
     const oldTotal = Number(oldOrder.total_harga) || 0
@@ -182,6 +247,19 @@ export async function handleUpdateOrder(body: any) {
       })
     }
 
+    // Skema Harga
+    const oldSkema = oldOrder.skema_harga || 'NORMAL'
+    const newSkema = order.skema_harga || oldSkema
+    if (order.skema_harga !== undefined && oldSkema !== newSkema) {
+      changes.push({
+        field: 'skema_harga',
+        field_label: 'Skema Tarif Harga',
+        old_val: oldSkema,
+        new_val: newSkema,
+      })
+    }
+
+    // Jumlah Oplah
     const oldPcs = Number(oldOrder.jml_pcs) || 0
     const newPcs = order.jml_pcs !== undefined && order.jml_pcs !== null ? Number(order.jml_pcs) : oldPcs
     if (oldPcs !== newPcs) {
@@ -193,28 +271,7 @@ export async function handleUpdateOrder(body: any) {
       })
     }
 
-    const oldBw = Number(oldOrder.cetak_bw) || 0
-    const newBw = order.cetak_bw !== undefined && order.cetak_bw !== null ? Number(order.cetak_bw) : oldBw
-    if (oldBw !== newBw) {
-      changes.push({
-        field: 'cetak_bw',
-        field_label: 'Halaman BW',
-        old_val: `${oldBw} hal`,
-        new_val: `${newBw} hal`,
-      })
-    }
-
-    const oldFc = Number(oldOrder.cetak_fc) || 0
-    const newFc = order.cetak_fc !== undefined && order.cetak_fc !== null ? Number(order.cetak_fc) : oldFc
-    if (oldFc !== newFc) {
-      changes.push({
-        field: 'cetak_fc',
-        field_label: 'Halaman FC',
-        old_val: `${oldFc} hal`,
-        new_val: `${newFc} hal`,
-      })
-    }
-
+    // Ukuran Buku
     const oldUkuran = oldOrder.ukuran_custom || oldOrder.ukuran || ''
     const newUkuran = order.ukuran_custom || order.ukuran || ''
     if (newUkuran && oldUkuran !== newUkuran) {
@@ -226,17 +283,54 @@ export async function handleUpdateOrder(body: any) {
       })
     }
 
-    const oldKertas = oldOrder.kertas || ''
-    const newKertas = order.kertas || ''
-    if (newKertas && oldKertas !== newKertas) {
+    // Halaman BW
+    const oldBw = Number(oldOrder.cetak_bw) || 0
+    const newBw = order.cetak_bw !== undefined && order.cetak_bw !== null ? Number(order.cetak_bw) : oldBw
+    if (oldBw !== newBw) {
       changes.push({
-        field: 'kertas',
-        field_label: 'Jenis Kertas',
-        old_val: oldKertas || '-',
-        new_val: newKertas,
+        field: 'cetak_bw',
+        field_label: 'Halaman BW',
+        old_val: `${oldBw} hal`,
+        new_val: `${newBw} hal`,
       })
     }
 
+    // Halaman FC
+    const oldFc = Number(oldOrder.cetak_fc) || 0
+    const newFc = order.cetak_fc !== undefined && order.cetak_fc !== null ? Number(order.cetak_fc) : oldFc
+    if (oldFc !== newFc) {
+      changes.push({
+        field: 'cetak_fc',
+        field_label: 'Halaman FC',
+        old_val: `${oldFc} hal`,
+        new_val: `${newFc} hal`,
+      })
+    }
+
+    // Kertas BW & Kertas FC (atau kertas utama)
+    const oldKertasBw = oldOrder.kertas_bw || oldOrder.kertas || ''
+    const newKertasBw = order.kertas_bw || order.kertas || oldKertasBw
+    const oldKertasFc = oldOrder.kertas_fc || oldOrder.kertas || ''
+    const newKertasFc = order.kertas_fc || order.kertas || oldKertasFc
+
+    if (oldKertasBw !== newKertasBw) {
+      changes.push({
+        field: 'kertas_bw',
+        field_label: 'Kertas BW',
+        old_val: formatKertasLabel(oldKertasBw),
+        new_val: formatKertasLabel(newKertasBw),
+      })
+    }
+    if (oldKertasFc !== newKertasFc) {
+      changes.push({
+        field: 'kertas_fc',
+        field_label: 'Kertas Warna (FC)',
+        old_val: formatKertasLabel(oldKertasFc),
+        new_val: formatKertasLabel(newKertasFc),
+      })
+    }
+
+    // Finishing
     const oldFinishingArr = Array.isArray(oldOrder.finishing) ? oldOrder.finishing : (typeof oldOrder.finishing === 'string' ? JSON.parse(oldOrder.finishing || '[]') : [])
     const newFinishingArr = Array.isArray(order.finishing) ? order.finishing : []
     const oldFinishingStr = [...oldFinishingArr].sort().join(', ')
@@ -244,9 +338,25 @@ export async function handleUpdateOrder(body: any) {
     if (order.finishing !== undefined && oldFinishingStr !== newFinishingStr) {
       changes.push({
         field: 'finishing',
-        field_label: 'Finishing Jilid',
-        old_val: oldFinishingStr || '-',
-        new_val: newFinishingStr || '-',
+        field_label: 'Finishing Jilid & Cover',
+        old_val: formatFinishingLabel(oldFinishingArr),
+        new_val: formatFinishingLabel(newFinishingArr),
+      })
+    }
+
+    // Packing Dus
+    const oldPacking = formatPackingLabel(oldOrder.packing_dus_tipe, oldOrder.packing_dus_qty, oldOrder.biaya_packing)
+    const newPackingTipe = order.packing_dus_tipe !== undefined ? order.packing_dus_tipe : oldOrder.packing_dus_tipe
+    const newPackingQty = order.packing_dus_qty !== undefined ? order.packing_dus_qty : oldOrder.packing_dus_qty
+    const newBiayaPacking = order.biaya_packing !== undefined ? order.biaya_packing : oldOrder.biaya_packing
+    const newPacking = formatPackingLabel(newPackingTipe, newPackingQty, newBiayaPacking)
+
+    if (oldPacking !== newPacking) {
+      changes.push({
+        field: 'packing_dus',
+        field_label: 'Packing Dus & Biaya',
+        old_val: oldPacking,
+        new_val: newPacking,
       })
     }
 
@@ -265,15 +375,6 @@ export async function handleUpdateOrder(body: any) {
         field_label: 'Penerbit',
         old_val: oldOrder.nama_penerbit || '-',
         new_val: order.nama_penerbit,
-      })
-    }
-
-    if (order.skema_harga && order.skema_harga !== oldOrder.skema_harga) {
-      changes.push({
-        field: 'skema_harga',
-        field_label: 'Skema Harga',
-        old_val: oldOrder.skema_harga || 'NORMAL',
-        new_val: order.skema_harga,
       })
     }
 
