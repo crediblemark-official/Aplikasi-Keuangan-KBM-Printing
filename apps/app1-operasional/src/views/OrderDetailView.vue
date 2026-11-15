@@ -787,7 +787,7 @@ const specList = computed(() => {
     finishingVal += ` • ${qty}x ${boxName}`
   }
 
-  return [
+  const list = [
     { label: 'Jumlah Oplah', value: `${order.value.jml_pcs} pcs` },
     { label: 'Ukuran Buku', value: order.value.ukuran_custom || order.value.ukuran },
     { label: 'Jenis Kertas', value: formatKertasOrder(order.value) },
@@ -795,6 +795,15 @@ const specList = computed(() => {
     { label: 'Halaman FC', value: `${order.value.cetak_fc} hal` },
     { label: order.value.packing_dus_tipe ? 'Finishing & Packing' : 'Finishing Jilid', value: finishingVal },
   ]
+
+  if (order.value.biaya_penanganan && order.value.biaya_penanganan > 0) {
+    list.push({
+      label: 'Biaya Penanganan',
+      value: `${order.value.penanganan_nama || 'Lain-lain'} (${order.value.penanganan_qty || 1}x @${formatRupiah(order.value.penanganan_harga || 0)}) = ${formatRupiah(order.value.biaya_penanganan)}`,
+    })
+  }
+
+  return list
 })
 
 function kirimWA() {

@@ -65,6 +65,10 @@ export interface Order {
   packing_dus_tipe?: 'DUS_KECIL' | 'DUS_BESAR' | null
   packing_dus_qty?: number
   biaya_packing?: number
+  penanganan_nama?: string
+  penanganan_qty?: number
+  penanganan_harga?: number
+  biaya_penanganan?: number
   total_harga: number
   status_order: StatusOrder
   catatan?: string

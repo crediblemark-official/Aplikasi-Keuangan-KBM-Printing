@@ -67,6 +67,10 @@ export function useNewOrderForm() {
     is_kertas_sama: true,
     packing_dus_tipe: null as 'DUS_KECIL' | 'DUS_BESAR' | null,
     packing_dus_qty: 0,
+    penanganan_nama: '',
+    penanganan_qty: 0,
+    penanganan_harga: 0,
+    biaya_penanganan: 0,
     cetak_bw: 0,
     cetak_fc: 0,
     finishing: ['SOFT_COVER'] as JenisFinishing[],
@@ -300,6 +304,10 @@ export function useNewOrderForm() {
       finishing: form.value.finishing,
       packing_dus_tipe: form.value.packing_dus_tipe,
       packing_dus_qty: form.value.packing_dus_qty,
+      penanganan_nama: form.value.penanganan_nama,
+      penanganan_qty: form.value.penanganan_qty,
+      penanganan_harga: form.value.penanganan_harga,
+      biaya_penanganan: form.value.biaya_penanganan,
       skema_harga: form.value.skema_harga,
     })
   })
@@ -438,6 +446,31 @@ export function useNewOrderForm() {
     recalculatePriceAuto()
   }
 
+  function onPenangananNamaInput(e: Event) {
+    const target = e.target as HTMLInputElement
+    form.value.penanganan_nama = target.value
+  }
+
+  function onPenangananQtyInput(e: Event) {
+    const target = e.target as HTMLInputElement
+    const raw = target.value.replace(/\D/g, '')
+    const num = raw ? parseInt(raw, 10) : 0
+    form.value.penanganan_qty = num
+    form.value.biaya_penanganan = num * (form.value.penanganan_harga || 0)
+    target.value = num ? num.toLocaleString('id-ID') : ''
+    recalculatePriceAuto()
+  }
+
+  function onPenangananHargaInput(e: Event) {
+    const target = e.target as HTMLInputElement
+    const raw = target.value.replace(/\D/g, '')
+    const num = raw ? parseInt(raw, 10) : 0
+    form.value.penanganan_harga = num
+    form.value.biaya_penanganan = (form.value.penanganan_qty || 0) * num
+    target.value = num ? num.toLocaleString('id-ID') : ''
+    recalculatePriceAuto()
+  }
+
   function onTotalHargaInput(e: Event) {
     const target = e.target as HTMLInputElement
     const raw = target.value.replace(/\D/g, '')
@@ -470,6 +503,10 @@ export function useNewOrderForm() {
       is_kertas_sama: true,
       packing_dus_tipe: null,
       packing_dus_qty: 0,
+      penanganan_nama: '',
+      penanganan_qty: 0,
+      penanganan_harga: 0,
+      biaya_penanganan: 0,
       cetak_bw: 0,
       cetak_fc: 0,
       finishing: ['SOFT_COVER'],
@@ -517,6 +554,9 @@ export function useNewOrderForm() {
     onCetakBWInput,
     onCetakFCInput,
     onPackingDusQtyInput,
+    onPenangananNamaInput,
+    onPenangananQtyInput,
+    onPenangananHargaInput,
     onTotalHargaInput,
     applyPricelistCalculation,
     recalculatePriceAuto,

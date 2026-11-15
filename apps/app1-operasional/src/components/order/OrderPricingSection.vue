@@ -121,6 +121,14 @@
             <span v-if="priceBreakdown.diskon_finishing_persen > 0" class="text-[10px] text-emerald-600 font-bold">(-{{ priceBreakdown.diskon_finishing_persen }}%)</span>
           </span>
         </div>
+        <div v-if="priceBreakdown.biaya_packing_total > 0" class="flex justify-between text-slate-600">
+          <span>Biaya Packing Dus:</span>
+          <span class="font-mono text-slate-800">+ {{ formatRupiah(priceBreakdown.biaya_packing_total) }}</span>
+        </div>
+        <div v-if="priceBreakdown.biaya_penanganan_total > 0" class="flex justify-between text-slate-600">
+          <span>Biaya Penanganan ({{ form.penanganan_nama || 'Lain-lain' }}):</span>
+          <span class="font-mono font-bold text-red-600">+ {{ formatRupiah(priceBreakdown.biaya_penanganan_total) }}</span>
+        </div>
         <div class="pt-2 border-t border-slate-200 flex justify-between items-center">
           <span class="font-semibold text-slate-700">Total Oplah ({{ form.jml_pcs || 0 }} pcs):</span>
           <span class="font-mono font-extrabold text-red-600 text-sm">{{ formatRupiah(priceBreakdown.total_harga) }}</span>

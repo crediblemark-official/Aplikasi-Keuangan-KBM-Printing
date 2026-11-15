@@ -92,7 +92,8 @@ export function useInvoiceData(orderId: import('vue').Ref<string>) {
       )
     } else {
       const boxCost = o.biaya_packing || detailed.biaya_packing_total || 0
-      const productionTotal = Math.max(0, o.total_harga - boxCost)
+      const penangananCost = o.biaya_penanganan || detailed.biaya_penanganan_total || 0
+      const productionTotal = Math.max(0, o.total_harga - boxCost - penangananCost)
       const unitRate = Math.round(productionTotal / (o.jml_pcs || 1))
       items.push({
         sl: 1,
@@ -115,6 +116,20 @@ export function useInvoiceData(orderId: import('vue').Ref<string>) {
         qty: o.packing_dus_qty,
         rate: boxRate,
         amount: boxAmount,
+      })
+    }
+
+    if (o.biaya_penanganan && o.biaya_penanganan > 0) {
+      const penangananName = o.penanganan_nama || 'Biaya Penanganan (Lain-lain)'
+      const qty = o.penanganan_qty || 1
+      const rate = o.penanganan_harga || o.biaya_penanganan
+      items.push({
+        sl: items.length + 1,
+        title: `Biaya Penanganan: ${penangananName}`,
+        desc: `Biaya lain-lain: ${penangananName} (${qty}x @${formatRupiah(rate)})`,
+        qty: qty,
+        rate: rate,
+        amount: o.biaya_penanganan,
       })
     }
 
@@ -150,6 +165,10 @@ export function useInvoiceData(orderId: import('vue').Ref<string>) {
         o.packing_dus_tipe && o.packing_dus_qty
           ? `\n📦 *Packing:* ${o.packing_dus_qty}x ${o.packing_dus_tipe === 'DUS_BESAR' ? 'Dus Besar' : 'Dus Kecil'}`
           : ''
+      const penangananStr =
+        o.biaya_penanganan && o.biaya_penanganan > 0
+          ? `\n🛠️ *Penanganan:* ${o.penanganan_nama || 'Biaya Lain-lain'} (${formatRupiah(o.biaya_penanganan)})`
+          : ''
       const message = encodeURIComponent(
         `Halo! Berikut invoice untuk pesanan Anda:\n\n` +
           `📋 *${nomorInvoice.value}*\n` +
@@ -157,6 +176,7 @@ export function useInvoiceData(orderId: import('vue').Ref<string>) {
           `📚 ${o.judul_penulis}\n` +
           `📄 Kertas: ${paperStr}` +
           packingStr +
+          penangananStr +
           `\n` +
           `💰 *Total: ${formatRupiah(o.total_harga)}*\n` +
           `💳 Sisa Tagihan: ${formatRupiah(sisaTagihan.value)}\n\n` +

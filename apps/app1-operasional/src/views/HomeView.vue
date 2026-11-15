@@ -150,6 +150,7 @@
                       <span class="px-1.5 py-0.5 rounded bg-slate-100">{{ order.ukuran }}</span>
                       <span v-if="order.kertas" class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">{{ formatKertasOrder(order) }}</span>
                       <span v-if="order.packing_dus_tipe" class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 font-semibold">{{ order.packing_dus_qty || 1 }}x Dus</span>
+                      <span v-if="order.biaya_penanganan && order.biaya_penanganan > 0" class="px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 font-semibold truncate max-w-[120px]" :title="`${order.penanganan_nama || 'Penanganan'}: ${formatRupiah(order.biaya_penanganan)}`">+ Penanganan</span>
                     </div>
                   </td>
                   <td class="text-right font-extrabold font-mono text-xs whitespace-nowrap" :class="order.status_order === 'BATAL' ? 'line-through text-slate-400' : 'text-red-600'">

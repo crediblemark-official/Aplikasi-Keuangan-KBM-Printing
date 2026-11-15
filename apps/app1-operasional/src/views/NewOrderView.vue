@@ -69,6 +69,9 @@
               @input-cetak-bw="orderForm.onCetakBWInput"
               @input-cetak-fc="orderForm.onCetakFCInput"
               @input-packing-qty="orderForm.onPackingDusQtyInput"
+              @input-penanganan-nama="orderForm.onPenangananNamaInput"
+              @input-penanganan-qty="orderForm.onPenangananQtyInput"
+              @input-penanganan-harga="orderForm.onPenangananHargaInput"
               @request-unlock="handleRequestUnlock"
             />
           </div>
@@ -273,6 +276,10 @@ async function loadExistingOrder() {
       is_kertas_sama: !existing.kertas_fc || existing.kertas_bw === existing.kertas_fc,
       packing_dus_tipe: existing.packing_dus_tipe || null,
       packing_dus_qty: existing.packing_dus_qty || 0,
+      penanganan_nama: existing.penanganan_nama || '',
+      penanganan_qty: existing.penanganan_qty || 0,
+      penanganan_harga: existing.penanganan_harga || 0,
+      biaya_penanganan: existing.biaya_penanganan || 0,
       cetak_bw: existing.cetak_bw || 0,
       cetak_fc: existing.cetak_fc || 0,
       finishing: parsedFinishing,
@@ -309,6 +316,10 @@ async function submitOrder() {
     packing_dus_tipe: formVal.packing_dus_tipe,
     packing_dus_qty: formVal.packing_dus_qty,
     biaya_packing: orderForm.priceBreakdown.value.biaya_packing_total,
+    penanganan_nama: formVal.penanganan_nama ? String(formVal.penanganan_nama).trim() : '',
+    penanganan_qty: Number(formVal.penanganan_qty) || 0,
+    penanganan_harga: Number(formVal.penanganan_harga) || 0,
+    biaya_penanganan: Number(orderForm.priceBreakdown.value.biaya_penanganan_total) || 0,
     cetak_bw: Number(formVal.cetak_bw) || 0,
     cetak_fc: Number(formVal.cetak_fc) || 0,
     finishing: formVal.finishing,

@@ -359,6 +359,78 @@
         </div>
       </div>
 
+      <!-- Biaya Penanganan (Biaya Lain-lain) -->
+      <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <label class="form-label mb-0 flex items-center gap-1.5 text-xs font-bold text-slate-800">
+            <span>🛠️</span>
+            <span>Biaya Penanganan (Biaya Lain-lain)</span>
+          </label>
+          <span v-if="priceBreakdown.biaya_penanganan_total > 0" class="text-[10px] font-bold text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded font-mono">
+            + {{ formatRupiah(priceBreakdown.biaya_penanganan_total) }}
+          </span>
+        </div>
+
+        <p class="text-[11px] text-slate-500 leading-tight">
+          Biaya penanganan atau biaya lain-lain seperti packing khusus, ongkir, wrapping, jasa desain, dll.
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 pt-1">
+          <!-- Nama Biaya Penanganan (Bisa Input Sendiri) -->
+          <div class="sm:col-span-6">
+            <label class="text-[11px] font-semibold text-slate-600 mb-1 block">Nama Biaya Penanganan</label>
+            <input
+              :value="form.penanganan_nama"
+              @input="emit('input-penanganan-nama', $event)"
+              type="text"
+              placeholder="Contoh: Sertifikat"
+              class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 bg-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none text-slate-800 font-medium"
+            />
+          </div>
+
+          <!-- Jumlah (Qty) -->
+          <div class="sm:col-span-3">
+            <label class="text-[11px] font-semibold text-slate-600 mb-1 block">Jumlah (Qty)</label>
+            <div class="flex rounded-lg border border-slate-300 overflow-hidden bg-white focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500">
+              <input
+                :value="form.penanganan_qty ? form.penanganan_qty.toLocaleString('id-ID') : ''"
+                @input="emit('input-penanganan-qty', $event)"
+                type="text"
+                inputmode="numeric"
+                placeholder="0"
+                class="w-full px-2.5 py-1.5 text-xs font-mono font-bold text-slate-800 outline-none border-0"
+              />
+            </div>
+          </div>
+
+          <!-- Harga Satuan -->
+          <div class="sm:col-span-3">
+            <label class="text-[11px] font-semibold text-slate-600 mb-1 block">Harga Satuan (Rp)</label>
+            <div class="flex rounded-lg border border-slate-300 overflow-hidden bg-white focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500">
+              <input
+                :value="form.penanganan_harga ? form.penanganan_harga.toLocaleString('id-ID') : ''"
+                @input="emit('input-penanganan-harga', $event)"
+                type="text"
+                inputmode="numeric"
+                placeholder="0"
+                class="w-full px-2.5 py-1.5 text-xs font-mono font-bold text-slate-800 outline-none border-0"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Subtotal Perhitungan: Jumlah x Harga = Total -->
+        <div v-if="(form.penanganan_qty > 0 && form.penanganan_harga > 0) || priceBreakdown.biaya_penanganan_total > 0" class="flex items-center justify-between pt-2 border-t border-slate-200/60 text-xs">
+          <div class="flex items-center gap-1.5 text-slate-600">
+            <span class="font-medium text-slate-700">{{ form.penanganan_nama || 'Biaya Penanganan' }}:</span>
+            <span class="font-mono text-slate-500">{{ form.penanganan_qty || 0 }} × {{ formatRupiah(form.penanganan_harga || 0) }}</span>
+          </div>
+          <span class="font-mono font-extrabold text-red-600">
+            = {{ formatRupiah(priceBreakdown.biaya_penanganan_total) }}
+          </span>
+        </div>
+      </div>
+
     </div>
   </div>
 </template>
@@ -391,6 +463,9 @@ const emit = defineEmits<{
   (e: 'input-cetak-bw', event: Event): void
   (e: 'input-cetak-fc', event: Event): void
   (e: 'input-packing-qty', event: Event): void
+  (e: 'input-penanganan-nama', event: Event): void
+  (e: 'input-penanganan-qty', event: Event): void
+  (e: 'input-penanganan-harga', event: Event): void
   (e: 'request-unlock'): void
 }>()
 

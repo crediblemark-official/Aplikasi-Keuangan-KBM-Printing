@@ -82,6 +82,7 @@
                 <th>Tanggal</th>
                 <th>Penerbit & Judul</th>
                 <th>Spesifikasi</th>
+                <th class="text-right">Biaya Penanganan</th>
                 <th class="text-right">Total Harga</th>
                 <th class="text-center">Status Cetak</th>
                 <th class="text-center">Status Bayar</th>
@@ -89,7 +90,7 @@
               </tr>
             </thead>
             <tbody>
-              <TableStateRow :colspan="8" :loading="orderStore.isLoading" :is-empty="filteredOrders.length === 0"
+              <TableStateRow :colspan="9" :loading="orderStore.isLoading" :is-empty="filteredOrders.length === 0"
                 empty-text="Tidak ada order ditemukan" loading-text="Memuat daftar order..." />
               <tr v-for="order in displayedOrders" :key="order.id_order" @click="router.push(`/order/${order.id_order}`)"
                 class="hover:bg-slate-50/80 cursor-pointer transition-colors">
@@ -117,6 +118,17 @@
                       1
                       }}x Dus</span>
                   </div>
+                </td>
+                <td class="text-right whitespace-nowrap text-xs font-mono">
+                  <div v-if="order.biaya_penanganan && order.biaya_penanganan > 0">
+                    <span class="font-bold text-slate-800 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-[11px]">
+                      {{ formatRupiah(order.biaya_penanganan) }}
+                    </span>
+                    <p class="text-[10px] text-slate-500 truncate max-w-[130px] ml-auto mt-0.5 font-sans" :title="`${order.penanganan_nama || 'Penanganan'}: ${order.penanganan_qty || 1}x @${formatRupiah(order.penanganan_harga || 0)}`">
+                      {{ order.penanganan_nama || 'Penanganan' }}
+                    </p>
+                  </div>
+                  <span v-else class="text-slate-300">-</span>
                 </td>
                 <td class="text-right font-extrabold font-mono text-xs whitespace-nowrap" :class="order.status_order === 'BATAL' ? 'line-through text-slate-400' : 'text-red-600'">
                   {{ formatRupiah(order.total_harga) }}

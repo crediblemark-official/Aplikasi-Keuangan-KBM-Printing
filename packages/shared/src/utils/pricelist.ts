@@ -17,6 +17,10 @@ export interface PriceCalcInput {
   finishing: JenisFinishing[]
   packing_dus_tipe?: 'DUS_KECIL' | 'DUS_BESAR' | null
   packing_dus_qty?: number
+  penanganan_nama?: string
+  penanganan_qty?: number
+  penanganan_harga?: number
+  biaya_penanganan?: number
   skema_harga?: SkemaHarga
 }
 
@@ -28,6 +32,10 @@ export interface PriceCalcResult {
   biaya_finishing_per_pcs: number
   diskon_finishing_persen: number
   biaya_packing_total: number
+  penanganan_nama?: string
+  penanganan_qty: number
+  penanganan_harga: number
+  biaya_penanganan_total: number
   total_harga: number
 }
 
@@ -217,6 +225,13 @@ export function calculateOrderPriceDetailed(input: PriceCalcInput): PriceCalcRes
   const skema = input.skema_harga || 'NORMAL'
   const { jml_pcs, ukuran, cetak_bw, cetak_fc, finishing } = input
 
+  // Biaya penanganan (biaya lain-lain): nama bebas, jumlah x harga
+  const penanganan_qty = Math.max(0, Number(input.penanganan_qty) || 0)
+  const penanganan_harga = Math.max(0, Number(input.penanganan_harga) || 0)
+  const biaya_penanganan_total = input.biaya_penanganan !== undefined && input.biaya_penanganan > 0
+    ? Number(input.biaya_penanganan)
+    : penanganan_qty * penanganan_harga
+
   if (jml_pcs <= 0) {
     return {
       skema_harga: skema,
@@ -226,7 +241,11 @@ export function calculateOrderPriceDetailed(input: PriceCalcInput): PriceCalcRes
       biaya_finishing_per_pcs: 0,
       diskon_finishing_persen: 0,
       biaya_packing_total: 0,
-      total_harga: 0,
+      penanganan_nama: input.penanganan_nama || '',
+      penanganan_qty,
+      penanganan_harga,
+      biaya_penanganan_total,
+      total_harga: biaya_penanganan_total,
     }
   }
 
@@ -291,7 +310,7 @@ export function calculateOrderPriceDetailed(input: PriceCalcInput): PriceCalcRes
 
   // Total per buku / pcs
   const harga_per_pcs = biaya_cetak_bw_per_pcs + biaya_cetak_fc_per_pcs + biaya_finishing_per_pcs
-  const total_harga = Math.round(harga_per_pcs * jml_pcs) + biaya_packing_total
+  const total_harga = Math.round(harga_per_pcs * jml_pcs) + biaya_packing_total + biaya_penanganan_total
 
   return {
     skema_harga: skema,
@@ -301,6 +320,10 @@ export function calculateOrderPriceDetailed(input: PriceCalcInput): PriceCalcRes
     biaya_finishing_per_pcs,
     diskon_finishing_persen: Math.round(diskonPersen * 100),
     biaya_packing_total,
+    penanganan_nama: input.penanganan_nama || '',
+    penanganan_qty,
+    penanganan_harga,
+    biaya_penanganan_total,
     total_harga,
   }
 }
