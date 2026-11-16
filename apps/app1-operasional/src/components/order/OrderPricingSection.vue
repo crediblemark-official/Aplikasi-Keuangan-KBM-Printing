@@ -125,19 +125,37 @@
           <span>Biaya Packing Dus:</span>
           <span class="font-mono text-slate-800">+ {{ formatRupiah(priceBreakdown.biaya_packing_total) }}</span>
         </div>
-        <!-- Rincian Biaya Penanganan (Tampil Detail Per-Item) -->
-        <template v-if="penangananBreakdownItems.length > 0">
-          <div
-            v-for="(it, idx) in penangananBreakdownItems"
-            :key="it.id || idx"
-            class="flex justify-between text-slate-600 gap-2"
-          >
-            <span class="truncate" :title="`${it.nama || ('Item #' + (idx + 1))}: ${it.qty || 1} × ${formatRupiah(it.harga || 0)}`">
-              Biaya Penanganan ({{ it.nama || ('Item #' + (idx + 1)) }}):
+        <!-- Rincian Biaya Penanganan -->
+        <template v-if="penangananBreakdownItems.length > 1">
+          <div class="space-y-1">
+            <div class="flex justify-between text-slate-600">
+              <span class="font-medium text-slate-700">Biaya Penanganan:</span>
+              <span class="font-mono font-bold text-red-600">+ {{ formatRupiah(priceBreakdown.biaya_penanganan_total) }}</span>
+            </div>
+            <div class="pl-2.5 space-y-0.5 border-l-2 border-red-200 ml-1">
+              <div
+                v-for="(it, idx) in penangananBreakdownItems"
+                :key="it.id || idx"
+                class="flex justify-between text-slate-500 text-[11px]"
+              >
+                <span class="truncate pr-2">
+                  - {{ it.nama || ('Item #' + (idx + 1)) }}
+                  <span v-if="it.qty > 1" class="text-[10px] text-slate-400 font-mono">({{ it.qty }}x)</span>
+                  :
+                </span>
+                <span class="font-mono font-semibold text-slate-700 shrink-0">
+                  {{ formatRupiah(it.total !== undefined ? it.total : ((Number(it.qty) || 0) * (Number(it.harga) || 0))) }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </template>
+        <template v-else-if="penangananBreakdownItems.length === 1">
+          <div class="flex justify-between text-slate-600 gap-2">
+            <span class="truncate" :title="penangananBreakdownItems[0].nama">
+              Biaya Penanganan ({{ penangananBreakdownItems[0].nama || 'Lain-lain' }}):
             </span>
-            <span class="font-mono font-bold text-red-600 shrink-0">
-              + {{ formatRupiah(it.total !== undefined ? it.total : ((Number(it.qty) || 0) * (Number(it.harga) || 0))) }}
-            </span>
+            <span class="font-mono font-bold text-red-600 shrink-0">+ {{ formatRupiah(priceBreakdown.biaya_penanganan_total) }}</span>
           </div>
         </template>
         <div v-else-if="priceBreakdown.biaya_penanganan_total > 0" class="flex justify-between text-slate-600 gap-2">
