@@ -125,7 +125,7 @@
                       {{ formatRupiah(order.biaya_penanganan) }}
                     </span>
                     <p class="text-[10px] text-slate-500 truncate max-w-[130px] ml-auto mt-0.5 font-sans" :title="getPenangananTooltip(order)">
-                      {{ (order.penanganan_rincian && order.penanganan_rincian.length > 1) ? `${order.penanganan_rincian.length} item` : (order.penanganan_nama || 'Penanganan') }}
+                      {{ order.penanganan_nama || 'Penanganan' }}
                     </p>
                   </div>
                   <span v-else class="text-slate-300">-</span>

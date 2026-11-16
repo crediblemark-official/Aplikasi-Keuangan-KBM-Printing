@@ -125,9 +125,24 @@
           <span>Biaya Packing Dus:</span>
           <span class="font-mono text-slate-800">+ {{ formatRupiah(priceBreakdown.biaya_packing_total) }}</span>
         </div>
-        <div v-if="priceBreakdown.biaya_penanganan_total > 0" class="flex justify-between text-slate-600 gap-2">
+        <!-- Rincian Biaya Penanganan (Tampil Detail Per-Item) -->
+        <template v-if="penangananBreakdownItems.length > 0">
+          <div
+            v-for="(it, idx) in penangananBreakdownItems"
+            :key="it.id || idx"
+            class="flex justify-between text-slate-600 gap-2"
+          >
+            <span class="truncate" :title="`${it.nama || ('Item #' + (idx + 1))}: ${it.qty || 1} × ${formatRupiah(it.harga || 0)}`">
+              Biaya Penanganan ({{ it.nama || ('Item #' + (idx + 1)) }}):
+            </span>
+            <span class="font-mono font-bold text-red-600 shrink-0">
+              + {{ formatRupiah(it.total !== undefined ? it.total : ((Number(it.qty) || 0) * (Number(it.harga) || 0))) }}
+            </span>
+          </div>
+        </template>
+        <div v-else-if="priceBreakdown.biaya_penanganan_total > 0" class="flex justify-between text-slate-600 gap-2">
           <span class="truncate" :title="form.penanganan_nama || 'Lain-lain'">
-            Biaya Penanganan ({{ form.penanganan_items && form.penanganan_items.length > 1 ? `${form.penanganan_items.length} item` : (form.penanganan_nama || 'Lain-lain') }}):
+            Biaya Penanganan ({{ form.penanganan_nama || 'Lain-lain' }}):
           </span>
           <span class="font-mono font-bold text-red-600 shrink-0">+ {{ formatRupiah(priceBreakdown.biaya_penanganan_total) }}</span>
         </div>
@@ -173,12 +188,13 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { IonSpinner } from '@ionic/vue'
 import SectionHeader from '@shared/components/SectionHeader.vue'
 import { formatRupiah } from '@shared/utils/formatters'
 import type { SkemaHarga } from '@shared/types'
 
-defineProps<{
+const props = defineProps<{
   form: any
   priceBreakdown: any
   isCustomPrice: boolean
@@ -187,6 +203,14 @@ defineProps<{
   isEditMode: boolean
   isLocked?: boolean
 }>()
+
+const penangananBreakdownItems = computed(() => {
+  const items = Array.isArray(props.priceBreakdown?.penanganan_items) && props.priceBreakdown.penanganan_items.length > 0
+    ? props.priceBreakdown.penanganan_items
+    : (Array.isArray(props.form?.penanganan_items) ? props.form.penanganan_items : [])
+
+  return items.filter((it: any) => it.nama || (Number(it.qty) > 0 && Number(it.harga) > 0) || Number(it.total) > 0)
+})
 
 const emit = defineEmits<{
   (e: 'set-skema', skema: SkemaHarga): void

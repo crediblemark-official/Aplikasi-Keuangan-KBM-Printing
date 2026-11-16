@@ -10,15 +10,16 @@
 Pembaruan **v1.1.28** menyempurnakan fitur Biaya Penanganan pada **KBM Operasional** dengan menghadirkan kapabilitas **Multi-Item Biaya Penanganan** (*multiple handling fee line items*). Pengguna kini dapat menambahkan lebih dari satu jenis biaya penanganan dalam satu pesanan (misalnya: *Sertifikat*, *Ongkir Ekspedisi*, *Wrapping*, *Jasa Desain/Layout*, dll.) hanya dengan mengeklik tombol **`+ Tambah Biaya`**.
 
 ### 1. 🛠️ Tombol `+` & Baris Biaya Penanganan Dinamis
-* **Tombol Tambah Cepat (`+ Tambah Biaya`)**:
-  * Tersedia di bagian header kartu Biaya Penanganan dan di bagian bawah daftar baris.
-  * Memungkinkan penambahan baris biaya penanganan baru kapan saja tanpa batas.
+* **Tombol Tambah Tunggal (`+ Tambah Biaya Penanganan`)**:
+  * Tombol diletakkan di bagian bawah daftar baris biaya penanganan (tidak double di header), menjaga tampilan tetap bersih dan fokus.
 * **Baris Biaya Mandiri**:
   * Setiap baris memiliki input mandiri untuk:
     * **Nama Biaya Penanganan** (placeholder tetap: `Contoh: Sertifikat`).
     * **Jumlah (Qty)**.
     * **Harga Satuan (Rp)**.
   * Setiap baris otomatis mengkalkulasi subtotal: `[Nama]: [Qty] × Rp [Harga] = Rp [Subtotal]`.
+* **Rincian Estimasi Biaya Per-Item**:
+  * Pada kartu **Rincian Estimasi Biaya**, setiap item biaya penanganan tampil sebagai baris detail tersendiri dengan nama item dan nominalnya (tidak digabung menjadi teks "X item").
 * **Hapus Baris Mudah**:
   * Tombol hapus (*trash icon*) pada tiap baris jika terdapat lebih dari satu item.
 * **Akumulasi Total Real-time**:

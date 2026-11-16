@@ -361,26 +361,14 @@
 
       <!-- Biaya Penanganan (Biaya Lain-lain) -->
       <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-3">
-        <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center justify-between">
           <label class="form-label mb-0 flex items-center gap-1.5 text-xs font-bold text-slate-800">
             <span>🛠️</span>
             <span>Biaya Penanganan (Biaya Lain-lain)</span>
           </label>
-          <div class="flex items-center gap-2">
-            <span v-if="priceBreakdown.biaya_penanganan_total > 0" class="text-[10px] font-bold text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded font-mono">
-              + {{ formatRupiah(priceBreakdown.biaya_penanganan_total) }}
-            </span>
-            <button
-              type="button"
-              @click="emit('add-penanganan-item')"
-              :disabled="isLocked"
-              class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 active:bg-red-200 border border-red-200 rounded-lg transition-colors shadow-2xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Tambah Biaya Penanganan"
-            >
-              <span class="text-sm font-extrabold leading-none">+</span>
-              <span>Tambah Biaya</span>
-            </button>
-          </div>
+          <span v-if="priceBreakdown.biaya_penanganan_total > 0" class="text-[10px] font-bold text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded font-mono">
+            + {{ formatRupiah(priceBreakdown.biaya_penanganan_total) }}
+          </span>
         </div>
 
         <p class="text-[11px] text-slate-500 leading-tight">
