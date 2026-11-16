@@ -124,8 +124,8 @@
                     <span class="font-bold text-slate-800 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-[11px]">
                       {{ formatRupiah(order.biaya_penanganan) }}
                     </span>
-                    <p class="text-[10px] text-slate-500 truncate max-w-[130px] ml-auto mt-0.5 font-sans" :title="`${order.penanganan_nama || 'Penanganan'}: ${order.penanganan_qty || 1}x @${formatRupiah(order.penanganan_harga || 0)}`">
-                      {{ order.penanganan_nama || 'Penanganan' }}
+                    <p class="text-[10px] text-slate-500 truncate max-w-[130px] ml-auto mt-0.5 font-sans" :title="getPenangananTooltip(order)">
+                      {{ (order.penanganan_rincian && order.penanganan_rincian.length > 1) ? `${order.penanganan_rincian.length} item` : (order.penanganan_nama || 'Penanganan') }}
                     </p>
                   </div>
                   <span v-else class="text-slate-300">-</span>
@@ -364,6 +364,20 @@ function showAll() {
 
 function formatKertas(kertas: string) {
   return (kertas || '').replace(/_/g, ' ')
+}
+
+function getPenangananTooltip(o: any) {
+  let rincian = o.penanganan_rincian
+  if (!Array.isArray(rincian) && typeof rincian === 'string') {
+    try { rincian = JSON.parse(rincian) } catch {}
+  }
+  if (Array.isArray(rincian) && rincian.length > 1) {
+    return rincian
+      .filter((it: any) => it.nama || (it.qty > 0 && it.harga > 0))
+      .map((it: any) => `${it.nama || 'Biaya'}: ${it.qty || 1}x @${formatRupiah(it.harga || 0)} = ${formatRupiah((it.qty || 1) * (it.harga || 0))}`)
+      .join('\n')
+  }
+  return `${o.penanganan_nama || 'Penanganan'}: ${o.penanganan_qty || 1}x @${formatRupiah(o.penanganan_harga || 0)}`
 }
 
 function debouncedSearch() {

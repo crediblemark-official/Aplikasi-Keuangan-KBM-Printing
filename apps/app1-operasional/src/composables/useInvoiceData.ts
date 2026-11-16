@@ -120,17 +120,38 @@ export function useInvoiceData(orderId: import('vue').Ref<string>) {
     }
 
     if (o.biaya_penanganan && o.biaya_penanganan > 0) {
-      const penangananName = o.penanganan_nama || 'Biaya Penanganan (Lain-lain)'
-      const qty = o.penanganan_qty || 1
-      const rate = o.penanganan_harga || o.biaya_penanganan
-      items.push({
-        sl: items.length + 1,
-        title: `Biaya Penanganan: ${penangananName}`,
-        desc: `Biaya lain-lain: ${penangananName} (${qty}x @${formatRupiah(rate)})`,
-        qty: qty,
-        rate: rate,
-        amount: o.biaya_penanganan,
-      })
+      let rincian = o.penanganan_rincian
+      if (!Array.isArray(rincian) && typeof rincian === 'string') {
+        try { rincian = JSON.parse(rincian) } catch {}
+      }
+      if (Array.isArray(rincian) && rincian.length > 0) {
+        for (const item of rincian) {
+          const itName = item.nama || 'Biaya Penanganan'
+          const itQty = item.qty || 1
+          const itRate = item.harga || item.total || 0
+          const itAmount = item.total || (itQty * itRate)
+          items.push({
+            sl: items.length + 1,
+            title: `Biaya Penanganan: ${itName}`,
+            desc: `Biaya lain-lain: ${itName} (${itQty}x @${formatRupiah(itRate)})`,
+            qty: itQty,
+            rate: itRate,
+            amount: itAmount,
+          })
+        }
+      } else {
+        const penangananName = o.penanganan_nama || 'Biaya Penanganan (Lain-lain)'
+        const qty = o.penanganan_qty || 1
+        const rate = o.penanganan_harga || o.biaya_penanganan
+        items.push({
+          sl: items.length + 1,
+          title: `Biaya Penanganan: ${penangananName}`,
+          desc: `Biaya lain-lain: ${penangananName} (${qty}x @${formatRupiah(rate)})`,
+          qty: qty,
+          rate: rate,
+          amount: o.biaya_penanganan,
+        })
+      }
     }
 
     return items
@@ -165,10 +186,22 @@ export function useInvoiceData(orderId: import('vue').Ref<string>) {
         o.packing_dus_tipe && o.packing_dus_qty
           ? `\n📦 *Packing:* ${o.packing_dus_qty}x ${o.packing_dus_tipe === 'DUS_BESAR' ? 'Dus Besar' : 'Dus Kecil'}`
           : ''
-      const penangananStr =
-        o.biaya_penanganan && o.biaya_penanganan > 0
-          ? `\n🛠️ *Penanganan:* ${o.penanganan_nama || 'Biaya Lain-lain'} (${formatRupiah(o.biaya_penanganan)})`
-          : ''
+      let rincian = o.penanganan_rincian
+      if (!Array.isArray(rincian) && typeof rincian === 'string') {
+        try { rincian = JSON.parse(rincian) } catch {}
+      }
+      let penangananStr = ''
+      if (o.biaya_penanganan && o.biaya_penanganan > 0) {
+        if (Array.isArray(rincian) && rincian.length > 1) {
+          const detailLines = rincian
+            .filter((it: any) => it.nama || (it.qty > 0 && it.harga > 0))
+            .map((it: any) => `  • ${it.nama || 'Biaya'}: ${it.qty || 1}x @${formatRupiah(it.harga || 0)} (${formatRupiah((it.qty || 1) * (it.harga || 0))})`)
+            .join('\n')
+          penangananStr = `\n🛠️ *Penanganan:* ${formatRupiah(o.biaya_penanganan)}\n${detailLines}`
+        } else {
+          penangananStr = `\n🛠️ *Penanganan:* ${o.penanganan_nama || 'Biaya Lain-lain'} (${formatRupiah(o.biaya_penanganan)})`
+        }
+      }
       const message = encodeURIComponent(
         `Halo! Berikut invoice untuk pesanan Anda:\n\n` +
           `📋 *${nomorInvoice.value}*\n` +

@@ -43,6 +43,14 @@ export type JenisFinishing =
 
 export type SkemaHarga = 'NORMAL' | 'LANGGANAN'
 
+export interface PenangananItem {
+  id?: string
+  nama: string
+  qty: number
+  harga: number
+  total?: number
+}
+
 // ---- Entitas Utama ----
 
 export interface Order {
@@ -69,6 +77,7 @@ export interface Order {
   penanganan_qty?: number
   penanganan_harga?: number
   biaya_penanganan?: number
+  penanganan_rincian?: PenangananItem[]
   total_harga: number
   status_order: StatusOrder
   catatan?: string

@@ -1,4 +1,4 @@
-import type { UkuranBuku, JenisKertas, JenisFinishing, SkemaHarga } from '../types'
+import type { UkuranBuku, JenisKertas, JenisFinishing, SkemaHarga, PenangananItem } from '../types'
 
 // ============================================================
 // PRICELIST RESMI — KBM Percetakan
@@ -17,6 +17,7 @@ export interface PriceCalcInput {
   finishing: JenisFinishing[]
   packing_dus_tipe?: 'DUS_KECIL' | 'DUS_BESAR' | null
   packing_dus_qty?: number
+  penanganan_items?: PenangananItem[]
   penanganan_nama?: string
   penanganan_qty?: number
   penanganan_harga?: number
@@ -32,6 +33,7 @@ export interface PriceCalcResult {
   biaya_finishing_per_pcs: number
   diskon_finishing_persen: number
   biaya_packing_total: number
+  penanganan_items: PenangananItem[]
   penanganan_nama?: string
   penanganan_qty: number
   penanganan_harga: number
@@ -225,12 +227,44 @@ export function calculateOrderPriceDetailed(input: PriceCalcInput): PriceCalcRes
   const skema = input.skema_harga || 'NORMAL'
   const { jml_pcs, ukuran, cetak_bw, cetak_fc, finishing } = input
 
-  // Biaya penanganan (biaya lain-lain): nama bebas, jumlah x harga
-  const penanganan_qty = Math.max(0, Number(input.penanganan_qty) || 0)
-  const penanganan_harga = Math.max(0, Number(input.penanganan_harga) || 0)
-  const biaya_penanganan_total = input.biaya_penanganan !== undefined && input.biaya_penanganan > 0
-    ? Number(input.biaya_penanganan)
-    : penanganan_qty * penanganan_harga
+  // Biaya penanganan (biaya lain-lain): dukungan multi-item
+  let penanganan_items: PenangananItem[] = []
+  let biaya_penanganan_total = 0
+
+  if (Array.isArray(input.penanganan_items) && input.penanganan_items.length > 0) {
+    penanganan_items = input.penanganan_items.map((item) => {
+      const q = Math.max(0, Number(item.qty) || 0)
+      const h = Math.max(0, Number(item.harga) || 0)
+      const t = item.total !== undefined && item.total > 0 ? Number(item.total) : q * h
+      return {
+        id: item.id,
+        nama: item.nama || '',
+        qty: q,
+        harga: h,
+        total: t,
+      }
+    })
+    biaya_penanganan_total = penanganan_items.reduce((sum, it) => sum + (it.total || 0), 0)
+  } else {
+    const penanganan_qty = Math.max(0, Number(input.penanganan_qty) || 0)
+    const penanganan_harga = Math.max(0, Number(input.penanganan_harga) || 0)
+    biaya_penanganan_total = input.biaya_penanganan !== undefined && input.biaya_penanganan > 0
+      ? Number(input.biaya_penanganan)
+      : penanganan_qty * penanganan_harga
+    if (biaya_penanganan_total > 0 || input.penanganan_nama) {
+      penanganan_items = [{
+        nama: input.penanganan_nama || '',
+        qty: penanganan_qty,
+        harga: penanganan_harga,
+        total: biaya_penanganan_total,
+      }]
+    }
+  }
+
+  const primaryItem = penanganan_items[0]
+  const penanganan_nama = primaryItem?.nama || input.penanganan_nama || ''
+  const penanganan_qty = primaryItem?.qty || 0
+  const penanganan_harga = primaryItem?.harga || 0
 
   if (jml_pcs <= 0) {
     return {
@@ -241,7 +275,8 @@ export function calculateOrderPriceDetailed(input: PriceCalcInput): PriceCalcRes
       biaya_finishing_per_pcs: 0,
       diskon_finishing_persen: 0,
       biaya_packing_total: 0,
-      penanganan_nama: input.penanganan_nama || '',
+      penanganan_items,
+      penanganan_nama,
       penanganan_qty,
       penanganan_harga,
       biaya_penanganan_total,
@@ -320,7 +355,8 @@ export function calculateOrderPriceDetailed(input: PriceCalcInput): PriceCalcRes
     biaya_finishing_per_pcs,
     diskon_finishing_persen: Math.round(diskonPersen * 100),
     biaya_packing_total,
-    penanganan_nama: input.penanganan_nama || '',
+    penanganan_items,
+    penanganan_nama,
     penanganan_qty,
     penanganan_harga,
     biaya_penanganan_total,

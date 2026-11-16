@@ -69,6 +69,9 @@
               @input-cetak-bw="orderForm.onCetakBWInput"
               @input-cetak-fc="orderForm.onCetakFCInput"
               @input-packing-qty="orderForm.onPackingDusQtyInput"
+              @add-penanganan-item="orderForm.addPenangananItem"
+              @remove-penanganan-item="orderForm.removePenangananItem"
+              @update-penanganan-item="orderForm.updatePenangananItem"
               @input-penanganan-nama="orderForm.onPenangananNamaInput"
               @input-penanganan-qty="orderForm.onPenangananQtyInput"
               @input-penanganan-harga="orderForm.onPenangananHargaInput"
@@ -259,6 +262,33 @@ async function loadExistingOrder() {
       }
     }
 
+    let penangananItems: any[] = []
+    if (Array.isArray(existing.penanganan_rincian) && existing.penanganan_rincian.length > 0) {
+      penangananItems = existing.penanganan_rincian.map((it: any) => ({
+        id: it.id || ('penanganan_' + Math.random().toString(36).substring(2, 7)),
+        nama: it.nama || '',
+        qty: Number(it.qty) || 0,
+        harga: Number(it.harga) || 0,
+        total: Number(it.total) || ((Number(it.qty) || 0) * (Number(it.harga) || 0)),
+      }))
+    } else if (existing.biaya_penanganan && existing.biaya_penanganan > 0) {
+      penangananItems = [{
+        id: 'penanganan_legacy',
+        nama: existing.penanganan_nama || '',
+        qty: Number(existing.penanganan_qty) || 1,
+        harga: Number(existing.penanganan_harga) || Number(existing.biaya_penanganan) || 0,
+        total: Number(existing.biaya_penanganan) || 0,
+      }]
+    } else {
+      penangananItems = [{
+        id: 'penanganan_1',
+        nama: existing.penanganan_nama || '',
+        qty: Number(existing.penanganan_qty) || 0,
+        harga: Number(existing.penanganan_harga) || 0,
+        total: 0,
+      }]
+    }
+
     orderForm.form.value = {
       tanggal: existing.tanggal ? String(existing.tanggal).split('T')[0] : getTodayISO(),
       skema_harga: (existing.skema_harga as SkemaHarga) || 'NORMAL',
@@ -276,6 +306,7 @@ async function loadExistingOrder() {
       is_kertas_sama: !existing.kertas_fc || existing.kertas_bw === existing.kertas_fc,
       packing_dus_tipe: existing.packing_dus_tipe || null,
       packing_dus_qty: existing.packing_dus_qty || 0,
+      penanganan_items: penangananItems,
       penanganan_nama: existing.penanganan_nama || '',
       penanganan_qty: existing.penanganan_qty || 0,
       penanganan_harga: existing.penanganan_harga || 0,
@@ -301,6 +332,21 @@ async function submitOrder() {
   const namaPenulis = String(formVal.nama_penulis || '').trim()
   const combinedJudulPenulis = namaPenulis ? `${judulBuku} / ${namaPenulis}` : judulBuku
 
+  const penangananItemsClean = (formVal.penanganan_items || [])
+    .filter((it: any) => it.nama || it.qty > 0 || it.harga > 0)
+    .map((it: any) => ({
+      id: it.id,
+      nama: it.nama ? String(it.nama).trim() : '',
+      qty: Number(it.qty) || 0,
+      harga: Number(it.harga) || 0,
+      total: (Number(it.qty) || 0) * (Number(it.harga) || 0),
+    }))
+
+  const primaryPenanganan = penangananItemsClean[0]
+  const penangananNama = penangananItemsClean.length > 0
+    ? penangananItemsClean.map((it: any) => it.nama).filter(Boolean).join(', ')
+    : (formVal.penanganan_nama ? String(formVal.penanganan_nama).trim() : '')
+
   const orderPayload = {
     tanggal: formVal.tanggal || getTodayISO(),
     nama_penerbit: String(formVal.nama_penerbit || '').trim(),
@@ -316,10 +362,11 @@ async function submitOrder() {
     packing_dus_tipe: formVal.packing_dus_tipe,
     packing_dus_qty: formVal.packing_dus_qty,
     biaya_packing: orderForm.priceBreakdown.value.biaya_packing_total,
-    penanganan_nama: formVal.penanganan_nama ? String(formVal.penanganan_nama).trim() : '',
-    penanganan_qty: Number(formVal.penanganan_qty) || 0,
-    penanganan_harga: Number(formVal.penanganan_harga) || 0,
+    penanganan_nama: penangananNama,
+    penanganan_qty: primaryPenanganan ? primaryPenanganan.qty : (Number(formVal.penanganan_qty) || 0),
+    penanganan_harga: primaryPenanganan ? primaryPenanganan.harga : (Number(formVal.penanganan_harga) || 0),
     biaya_penanganan: Number(orderForm.priceBreakdown.value.biaya_penanganan_total) || 0,
+    penanganan_rincian: penangananItemsClean,
     cetak_bw: Number(formVal.cetak_bw) || 0,
     cetak_fc: Number(formVal.cetak_fc) || 0,
     finishing: formVal.finishing,

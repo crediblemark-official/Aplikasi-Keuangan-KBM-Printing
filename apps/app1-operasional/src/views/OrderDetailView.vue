@@ -797,10 +797,25 @@ const specList = computed(() => {
   ]
 
   if (order.value.biaya_penanganan && order.value.biaya_penanganan > 0) {
-    list.push({
-      label: 'Biaya Penanganan',
-      value: `${order.value.penanganan_nama || 'Lain-lain'} (${order.value.penanganan_qty || 1}x @${formatRupiah(order.value.penanganan_harga || 0)}) = ${formatRupiah(order.value.biaya_penanganan)}`,
-    })
+    let rincian = order.value.penanganan_rincian
+    if (!Array.isArray(rincian) && typeof rincian === 'string') {
+      try { rincian = JSON.parse(rincian) } catch {}
+    }
+    if (Array.isArray(rincian) && rincian.length > 1) {
+      const itemsStr = rincian
+        .filter((it: any) => it.nama || (it.qty > 0 && it.harga > 0))
+        .map((it: any) => `${it.nama || 'Biaya'}: ${it.qty || 1}x @${formatRupiah(it.harga || 0)} = ${formatRupiah((it.qty || 1) * (it.harga || 0))}`)
+        .join(' • ')
+      list.push({
+        label: 'Biaya Penanganan',
+        value: `${itemsStr} (Total: ${formatRupiah(order.value.biaya_penanganan)})`,
+      })
+    } else {
+      list.push({
+        label: 'Biaya Penanganan',
+        value: `${order.value.penanganan_nama || 'Lain-lain'} (${order.value.penanganan_qty || 1}x @${formatRupiah(order.value.penanganan_harga || 0)}) = ${formatRupiah(order.value.biaya_penanganan)}`,
+      })
+    }
   }
 
   return list

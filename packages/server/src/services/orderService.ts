@@ -77,21 +77,42 @@ export async function handleGetOrders(params: Record<string, string> = {}) {
   }
 
   const rows = await query
-  const data = rows.map((o: any) => ({
-    ...o,
-    jml_pcs: Number(o.jml_pcs) || 0,
-    cetak_bw: Number(o.cetak_bw) || 0,
-    cetak_fc: Number(o.cetak_fc) || 0,
-    packing_dus_qty: Number(o.packing_dus_qty) || 0,
-    biaya_packing: Number(o.biaya_packing) || 0,
-    penanganan_nama: o.penanganan_nama || '',
-    penanganan_qty: Number(o.penanganan_qty) || 0,
-    penanganan_harga: Number(o.penanganan_harga) || 0,
-    biaya_penanganan: Number(o.biaya_penanganan) || 0,
-    total_harga: Number(o.total_harga) || 0,
-    tanggal: typeof o.tanggal === 'string' ? o.tanggal.substring(0, 10) : new Date(o.tanggal).toISOString().substring(0, 10),
-    finishing: Array.isArray(o.finishing) ? o.finishing : (typeof o.finishing === 'string' ? JSON.parse(o.finishing || '[]') : []),
-  }))
+  const data = rows.map((o: any) => {
+    let rincian: any[] = []
+    if (Array.isArray(o.penanganan_rincian)) {
+      rincian = o.penanganan_rincian
+    } else if (typeof o.penanganan_rincian === 'string') {
+      try {
+        const parsed = JSON.parse(o.penanganan_rincian)
+        if (Array.isArray(parsed)) rincian = parsed
+      } catch {}
+    }
+    if (rincian.length === 0 && (Number(o.biaya_penanganan) > 0 || o.penanganan_nama)) {
+      rincian = [{
+        nama: o.penanganan_nama || 'Penanganan',
+        qty: Number(o.penanganan_qty) || 1,
+        harga: Number(o.penanganan_harga) || Number(o.biaya_penanganan) || 0,
+        total: Number(o.biaya_penanganan) || 0,
+      }]
+    }
+
+    return {
+      ...o,
+      jml_pcs: Number(o.jml_pcs) || 0,
+      cetak_bw: Number(o.cetak_bw) || 0,
+      cetak_fc: Number(o.cetak_fc) || 0,
+      packing_dus_qty: Number(o.packing_dus_qty) || 0,
+      biaya_packing: Number(o.biaya_packing) || 0,
+      penanganan_nama: o.penanganan_nama || '',
+      penanganan_qty: Number(o.penanganan_qty) || 0,
+      penanganan_harga: Number(o.penanganan_harga) || 0,
+      biaya_penanganan: Number(o.biaya_penanganan) || 0,
+      penanganan_rincian: rincian,
+      total_harga: Number(o.total_harga) || 0,
+      tanggal: typeof o.tanggal === 'string' ? o.tanggal.substring(0, 10) : new Date(o.tanggal).toISOString().substring(0, 10),
+      finishing: Array.isArray(o.finishing) ? o.finishing : (typeof o.finishing === 'string' ? JSON.parse(o.finishing || '[]') : []),
+    }
+  })
 
   return { success: true, data }
 }
@@ -104,10 +125,42 @@ export async function handleCreateOrder(body: any) {
 
   const combinedJudulPenulis = order.judul_penulis || (order.nama_penulis ? `${order.judul_buku} / ${order.nama_penulis}` : order.judul_buku || '')
   const finishingJson = JSON.stringify(Array.isArray(order.finishing) ? order.finishing : [])
-  const penangananNama = order.penanganan_nama ? String(order.penanganan_nama).trim() : ''
-  const penangananQty = Number(order.penanganan_qty) || 0
-  const penangananHarga = Number(order.penanganan_harga) || 0
-  const biayaPenanganan = Number(order.biaya_penanganan) || (penangananQty * penangananHarga)
+
+  let penangananRincian: any[] = []
+  if (Array.isArray(order.penanganan_rincian) && order.penanganan_rincian.length > 0) {
+    penangananRincian = order.penanganan_rincian.map((item: any) => ({
+      id: item.id || undefined,
+      nama: item.nama ? String(item.nama).trim() : '',
+      qty: Math.max(0, Number(item.qty) || 0),
+      harga: Math.max(0, Number(item.harga) || 0),
+      total: item.total !== undefined ? Number(item.total) : (Math.max(0, Number(item.qty) || 0) * Math.max(0, Number(item.harga) || 0)),
+    })).filter((item: any) => item.nama || item.qty > 0 || item.harga > 0)
+  }
+
+  const penangananNama = penangananRincian.length > 0
+    ? penangananRincian.map(it => it.nama).filter(Boolean).join(', ')
+    : (order.penanganan_nama ? String(order.penanganan_nama).trim() : '')
+
+  const penangananQty = penangananRincian.length === 1 ? penangananRincian[0].qty : (Number(order.penanganan_qty) || 0)
+  const penangananHarga = penangananRincian.length === 1 ? penangananRincian[0].harga : (Number(order.penanganan_harga) || 0)
+
+  const calculatedBiayaPenanganan = penangananRincian.length > 0
+    ? penangananRincian.reduce((sum: number, it: any) => sum + (it.total || 0), 0)
+    : (Number(order.biaya_penanganan) || (penangananQty * penangananHarga))
+
+  const biayaPenanganan = (order.biaya_penanganan !== undefined && Number(order.biaya_penanganan) > 0 && penangananRincian.length === 0)
+    ? Number(order.biaya_penanganan)
+    : calculatedBiayaPenanganan
+
+  if (penangananRincian.length === 0 && (biayaPenanganan > 0 || penangananNama)) {
+    penangananRincian = [{
+      nama: penangananNama || 'Penanganan',
+      qty: penangananQty || 1,
+      harga: penangananHarga || biayaPenanganan,
+      total: biayaPenanganan,
+    }]
+  }
+  const penangananRincianJson = JSON.stringify(penangananRincian)
 
   return await sql.begin(async (tx) => {
     const id_order = await generateId('ORD', tx)
@@ -118,6 +171,7 @@ export async function handleCreateOrder(body: any) {
         jml_pcs, ukuran, ukuran_custom, kertas, kertas_bw, kertas_fc,
         cetak_bw, cetak_fc, finishing, packing_dus_tipe, packing_dus_qty,
         biaya_packing, penanganan_nama, penanganan_qty, penanganan_harga, biaya_penanganan,
+        penanganan_rincian,
         total_harga, status_order, catatan, alamat_penerbit, kontak_penerbit, link_bukti, skema_harga
       ) VALUES (
         ${id_order}, ${tanggal}, ${order.nama_penerbit || ''}, ${combinedJudulPenulis},
@@ -127,6 +181,7 @@ export async function handleCreateOrder(body: any) {
         ${Number(order.cetak_fc) || 0}, ${finishingJson}::jsonb, ${order.packing_dus_tipe || ''},
         ${Number(order.packing_dus_qty) || 0}, ${Number(order.biaya_packing) || 0},
         ${penangananNama}, ${penangananQty}, ${penangananHarga}, ${biayaPenanganan},
+        ${penangananRincianJson}::jsonb,
         ${Number(order.total_harga) || 0}, ${'PROSES'}, ${order.catatan || ''},
         ${order.alamat_penerbit || ''}, ${order.kontak_penerbit || ''}, ${order.link_bukti || ''},
         ${order.skema_harga || 'NORMAL'}
@@ -147,6 +202,10 @@ export async function handleCreateOrder(body: any) {
     // Insert initial order log with full specifications
     const actor = body.actor || body.diinput_oleh || 'Tim Operasional'
     const totalFmt = (Number(order.total_harga) || 0).toLocaleString('id-ID')
+    const penangananSummary = penangananRincian.length > 0
+      ? `Penanganan: ` + penangananRincian.map(it => `${it.nama || 'Biaya'}: ${it.qty}x @Rp ${(it.harga || 0).toLocaleString('id-ID')} = Rp ${(it.total || 0).toLocaleString('id-ID')}`).join('; ') + ` (Total Rp ${biayaPenanganan.toLocaleString('id-ID')})`
+      : (biayaPenanganan > 0 ? `Penanganan: ${penangananNama || 'Biaya Lain'} (${penangananQty}x @Rp ${penangananHarga.toLocaleString('id-ID')} = Rp ${biayaPenanganan.toLocaleString('id-ID')})` : '')
+
     const specSummary = [
       `Oplah: ${Number(order.jml_pcs) || 0} pcs`,
       `Ukuran: ${order.ukuran_custom || order.ukuran || 'A5'}`,
@@ -155,7 +214,7 @@ export async function handleCreateOrder(body: any) {
       `FC: ${Number(order.cetak_fc) || 0} hal`,
       `Finishing: ${formatFinishingLabel(order.finishing)}`,
       order.packing_dus_tipe ? `Packing: ${formatPackingLabel(order.packing_dus_tipe, order.packing_dus_qty, order.biaya_packing)}` : '',
-      biayaPenanganan > 0 ? `Penanganan: ${penangananNama || 'Biaya Lain'} (${penangananQty}x @Rp ${penangananHarga.toLocaleString('id-ID')} = Rp ${biayaPenanganan.toLocaleString('id-ID')})` : '',
+      penangananSummary,
       `Skema: ${order.skema_harga || 'NORMAL'}`,
       `Nilai: Rp ${totalFmt}`,
     ].filter(Boolean).join(' • ')
@@ -216,6 +275,28 @@ export async function handleUpdateOrder(body: any) {
     const combinedJudulPenulis = order.judul_penulis || (order.nama_penulis ? `${order.judul_buku} / ${order.nama_penulis}` : order.judul_buku || '')
     const finishingJson = JSON.stringify(Array.isArray(order.finishing) ? order.finishing : [])
 
+    let penangananRincianJson: string | null = null
+    let penangananNama = order.penanganan_nama !== undefined ? order.penanganan_nama : null
+    let penangananQty = order.penanganan_qty !== undefined && order.penanganan_qty !== null ? Number(order.penanganan_qty) : null
+    let penangananHarga = order.penanganan_harga !== undefined && order.penanganan_harga !== null ? Number(order.penanganan_harga) : null
+    let biayaPenanganan = order.biaya_penanganan !== undefined && order.biaya_penanganan !== null ? Number(order.biaya_penanganan) : null
+
+    if (Array.isArray(order.penanganan_rincian)) {
+      const rincianClean = order.penanganan_rincian.map((item: any) => ({
+        id: item.id || undefined,
+        nama: item.nama ? String(item.nama).trim() : '',
+        qty: Math.max(0, Number(item.qty) || 0),
+        harga: Math.max(0, Number(item.harga) || 0),
+        total: item.total !== undefined ? Number(item.total) : (Math.max(0, Number(item.qty) || 0) * Math.max(0, Number(item.harga) || 0)),
+      })).filter((item: any) => item.nama || item.qty > 0 || item.harga > 0)
+
+      penangananRincianJson = JSON.stringify(rincianClean)
+      biayaPenanganan = rincianClean.reduce((sum: number, it: any) => sum + (it.total || 0), 0)
+      penangananNama = rincianClean.map((it: any) => it.nama).filter(Boolean).join(', ')
+      penangananQty = rincianClean.length === 1 ? rincianClean[0].qty : 0
+      penangananHarga = rincianClean.length === 1 ? rincianClean[0].harga : 0
+    }
+
     await tx`
       UPDATE orders SET
         nama_penerbit = COALESCE(${order.nama_penerbit ?? null}, nama_penerbit),
@@ -234,10 +315,11 @@ export async function handleUpdateOrder(body: any) {
         packing_dus_tipe = COALESCE(${order.packing_dus_tipe ?? null}, packing_dus_tipe),
         packing_dus_qty = COALESCE(${order.packing_dus_qty !== undefined && order.packing_dus_qty !== null ? Number(order.packing_dus_qty) : null}, packing_dus_qty),
         biaya_packing = COALESCE(${order.biaya_packing !== undefined && order.biaya_packing !== null ? Number(order.biaya_packing) : null}, biaya_packing),
-        penanganan_nama = COALESCE(${order.penanganan_nama !== undefined ? order.penanganan_nama : null}, penanganan_nama),
-        penanganan_qty = COALESCE(${order.penanganan_qty !== undefined && order.penanganan_qty !== null ? Number(order.penanganan_qty) : null}, penanganan_qty),
-        penanganan_harga = COALESCE(${order.penanganan_harga !== undefined && order.penanganan_harga !== null ? Number(order.penanganan_harga) : null}, penanganan_harga),
-        biaya_penanganan = COALESCE(${order.biaya_penanganan !== undefined && order.biaya_penanganan !== null ? Number(order.biaya_penanganan) : null}, biaya_penanganan),
+        penanganan_nama = COALESCE(${penangananNama}, penanganan_nama),
+        penanganan_qty = COALESCE(${penangananQty}, penanganan_qty),
+        penanganan_harga = COALESCE(${penangananHarga}, penanganan_harga),
+        biaya_penanganan = COALESCE(${biayaPenanganan}, biaya_penanganan),
+        penanganan_rincian = COALESCE(${penangananRincianJson}::jsonb, penanganan_rincian),
         total_harga = COALESCE(${order.total_harga !== undefined && order.total_harga !== null ? Number(order.total_harga) : null}, total_harga),
         skema_harga = COALESCE(${order.skema_harga ?? null}, skema_harga),
         status_order = COALESCE(${order.status_order ?? null}, status_order),
@@ -378,13 +460,13 @@ export async function handleUpdateOrder(body: any) {
 
     // Biaya Penanganan
     const oldPenanganan = Number(oldOrder.biaya_penanganan) || 0
-    const newPenanganan = order.biaya_penanganan !== undefined && order.biaya_penanganan !== null
-      ? Number(order.biaya_penanganan)
+    const newPenanganan = biayaPenanganan !== null
+      ? Number(biayaPenanganan)
       : (order.penanganan_qty !== undefined && order.penanganan_harga !== undefined ? Number(order.penanganan_qty) * Number(order.penanganan_harga) : oldPenanganan)
     const oldPenangananNama = oldOrder.penanganan_nama || ''
-    const newPenangananNama = order.penanganan_nama !== undefined ? order.penanganan_nama : oldPenangananNama
+    const newPenangananNama = penangananNama !== null ? penangananNama : oldPenangananNama
 
-    if (oldPenanganan !== newPenanganan || (order.penanganan_nama !== undefined && order.penanganan_nama !== oldOrder.penanganan_nama)) {
+    if (oldPenanganan !== newPenanganan || (penangananNama !== null && penangananNama !== oldPenangananNama)) {
       changes.push({
         field: 'biaya_penanganan',
         field_label: 'Biaya Penanganan (Lain-lain)',

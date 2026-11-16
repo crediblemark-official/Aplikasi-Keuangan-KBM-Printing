@@ -6,8 +6,18 @@ import {
   getTarifBWPerHalaman,
   getTarifFCPerHalaman,
 } from '@shared/utils/pricelist'
-import type { UkuranBuku, JenisKertas, JenisFinishing, SkemaHarga } from '@shared/types'
+import type { UkuranBuku, JenisKertas, JenisFinishing, SkemaHarga, PenangananItem } from '@shared/types'
 import { useOrderStore } from '../stores/orders'
+
+function createDefaultPenangananItem(): PenangananItem {
+  return {
+    id: `penanganan_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    nama: '',
+    qty: 0,
+    harga: 0,
+    total: 0,
+  }
+}
 
 export const ukuranOptions = [
   { value: 'A5', label: 'A5 / Unesco' },
@@ -67,6 +77,7 @@ export function useNewOrderForm() {
     is_kertas_sama: true,
     packing_dus_tipe: null as 'DUS_KECIL' | 'DUS_BESAR' | null,
     packing_dus_qty: 0,
+    penanganan_items: [createDefaultPenangananItem()] as PenangananItem[],
     penanganan_nama: '',
     penanganan_qty: 0,
     penanganan_harga: 0,
@@ -304,6 +315,7 @@ export function useNewOrderForm() {
       finishing: form.value.finishing,
       packing_dus_tipe: form.value.packing_dus_tipe,
       packing_dus_qty: form.value.packing_dus_qty,
+      penanganan_items: form.value.penanganan_items,
       penanganan_nama: form.value.penanganan_nama,
       penanganan_qty: form.value.penanganan_qty,
       penanganan_harga: form.value.penanganan_harga,
@@ -446,29 +458,88 @@ export function useNewOrderForm() {
     recalculatePriceAuto()
   }
 
+  function syncPenangananLegacy() {
+    const activeItems = (form.value.penanganan_items || []).filter((it) => it.nama || it.qty > 0 || it.harga > 0)
+    const total = (form.value.penanganan_items || []).reduce((sum, it) => sum + ((it.qty || 0) * (it.harga || 0)), 0)
+    form.value.biaya_penanganan = total
+    if (!form.value.penanganan_items || form.value.penanganan_items.length === 0) {
+      form.value.penanganan_nama = ''
+      form.value.penanganan_qty = 0
+      form.value.penanganan_harga = 0
+    } else if (form.value.penanganan_items.length === 1) {
+      const first = form.value.penanganan_items[0]
+      form.value.penanganan_nama = first.nama || ''
+      form.value.penanganan_qty = first.qty || 0
+      form.value.penanganan_harga = first.harga || 0
+    } else {
+      form.value.penanganan_nama = activeItems.map((it) => it.nama).filter(Boolean).join(', ')
+      form.value.penanganan_qty = activeItems.length
+      form.value.penanganan_harga = 0
+    }
+  }
+
+  function addPenangananItem() {
+    if (!Array.isArray(form.value.penanganan_items)) {
+      form.value.penanganan_items = []
+    }
+    form.value.penanganan_items.push(createDefaultPenangananItem())
+    syncPenangananLegacy()
+    recalculatePriceAuto()
+  }
+
+  function removePenangananItem(index: number) {
+    if (!Array.isArray(form.value.penanganan_items)) return
+    if (form.value.penanganan_items.length > 1) {
+      form.value.penanganan_items.splice(index, 1)
+    } else {
+      form.value.penanganan_items = [createDefaultPenangananItem()]
+    }
+    syncPenangananLegacy()
+    recalculatePriceAuto()
+  }
+
+  function updatePenangananItem(index: number, field: 'nama' | 'qty' | 'harga', value: any) {
+    if (!Array.isArray(form.value.penanganan_items)) {
+      form.value.penanganan_items = [createDefaultPenangananItem()]
+    }
+    if (!form.value.penanganan_items[index]) {
+      form.value.penanganan_items[index] = createDefaultPenangananItem()
+    }
+    const item = form.value.penanganan_items[index]
+    if (field === 'nama') {
+      item.nama = String(value || '')
+    } else if (field === 'qty') {
+      const q = typeof value === 'number' ? value : (parseInt(String(value || '').replace(/\D/g, ''), 10) || 0)
+      item.qty = q
+      item.total = q * (item.harga || 0)
+    } else if (field === 'harga') {
+      const h = typeof value === 'number' ? value : (parseInt(String(value || '').replace(/\D/g, ''), 10) || 0)
+      item.harga = h
+      item.total = (item.qty || 0) * h
+    }
+    syncPenangananLegacy()
+    recalculatePriceAuto()
+  }
+
   function onPenangananNamaInput(e: Event) {
     const target = e.target as HTMLInputElement
-    form.value.penanganan_nama = target.value
+    updatePenangananItem(0, 'nama', target.value)
   }
 
   function onPenangananQtyInput(e: Event) {
     const target = e.target as HTMLInputElement
     const raw = target.value.replace(/\D/g, '')
     const num = raw ? parseInt(raw, 10) : 0
-    form.value.penanganan_qty = num
-    form.value.biaya_penanganan = num * (form.value.penanganan_harga || 0)
+    updatePenangananItem(0, 'qty', num)
     target.value = num ? num.toLocaleString('id-ID') : ''
-    recalculatePriceAuto()
   }
 
   function onPenangananHargaInput(e: Event) {
     const target = e.target as HTMLInputElement
     const raw = target.value.replace(/\D/g, '')
     const num = raw ? parseInt(raw, 10) : 0
-    form.value.penanganan_harga = num
-    form.value.biaya_penanganan = (form.value.penanganan_qty || 0) * num
+    updatePenangananItem(0, 'harga', num)
     target.value = num ? num.toLocaleString('id-ID') : ''
-    recalculatePriceAuto()
   }
 
   function onTotalHargaInput(e: Event) {
@@ -503,6 +574,7 @@ export function useNewOrderForm() {
       is_kertas_sama: true,
       packing_dus_tipe: null,
       packing_dus_qty: 0,
+      penanganan_items: [createDefaultPenangananItem()],
       penanganan_nama: '',
       penanganan_qty: 0,
       penanganan_harga: 0,
@@ -554,6 +626,9 @@ export function useNewOrderForm() {
     onCetakBWInput,
     onCetakFCInput,
     onPackingDusQtyInput,
+    addPenangananItem,
+    removePenangananItem,
+    updatePenangananItem,
     onPenangananNamaInput,
     onPenangananQtyInput,
     onPenangananHargaInput,

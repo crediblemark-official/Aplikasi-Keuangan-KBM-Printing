@@ -360,74 +360,137 @@
       </div>
 
       <!-- Biaya Penanganan (Biaya Lain-lain) -->
-      <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2.5">
-        <div class="flex items-center justify-between">
+      <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-3">
+        <div class="flex items-center justify-between gap-2">
           <label class="form-label mb-0 flex items-center gap-1.5 text-xs font-bold text-slate-800">
             <span>🛠️</span>
             <span>Biaya Penanganan (Biaya Lain-lain)</span>
           </label>
-          <span v-if="priceBreakdown.biaya_penanganan_total > 0" class="text-[10px] font-bold text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded font-mono">
-            + {{ formatRupiah(priceBreakdown.biaya_penanganan_total) }}
-          </span>
+          <div class="flex items-center gap-2">
+            <span v-if="priceBreakdown.biaya_penanganan_total > 0" class="text-[10px] font-bold text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded font-mono">
+              + {{ formatRupiah(priceBreakdown.biaya_penanganan_total) }}
+            </span>
+            <button
+              type="button"
+              @click="emit('add-penanganan-item')"
+              :disabled="isLocked"
+              class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 active:bg-red-200 border border-red-200 rounded-lg transition-colors shadow-2xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Tambah Biaya Penanganan"
+            >
+              <span class="text-sm font-extrabold leading-none">+</span>
+              <span>Tambah Biaya</span>
+            </button>
+          </div>
         </div>
 
         <p class="text-[11px] text-slate-500 leading-tight">
-          Biaya penanganan atau biaya lain-lain seperti packing khusus, ongkir, wrapping, jasa desain, dll.
+          Biaya penanganan atau biaya lain-lain seperti sertifikat, packing khusus, ongkir, wrapping, jasa desain, dll.
         </p>
 
-        <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 pt-1">
-          <!-- Nama Biaya Penanganan (Bisa Input Sendiri) -->
-          <div class="sm:col-span-6">
-            <label class="text-[11px] font-semibold text-slate-600 mb-1 block">Nama Biaya Penanganan</label>
-            <input
-              :value="form.penanganan_nama"
-              @input="emit('input-penanganan-nama', $event)"
-              type="text"
-              placeholder="Contoh: Sertifikat"
-              class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 bg-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none text-slate-800 font-medium"
-            />
-          </div>
+        <!-- List Item Penanganan -->
+        <div class="space-y-2.5">
+          <div
+            v-for="(item, idx) in penangananList"
+            :key="item.id || idx"
+            class="p-2.5 rounded-lg bg-white border border-slate-200/90 shadow-2xs space-y-2"
+          >
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
+              <!-- Nama Biaya Penanganan (Bisa Input Sendiri) -->
+              <div :class="penangananList.length > 1 ? 'sm:col-span-5' : 'sm:col-span-6'">
+                <div class="flex items-center justify-between mb-1">
+                  <label class="text-[11px] font-semibold text-slate-600">
+                    Nama Biaya {{ penangananList.length > 1 ? `#${idx + 1}` : 'Penanganan' }}
+                  </label>
+                </div>
+                <input
+                  :value="item.nama"
+                  @input="onItemNamaChange(idx, $event)"
+                  :disabled="isLocked"
+                  type="text"
+                  placeholder="Contoh: Sertifikat"
+                  class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 bg-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none text-slate-800 font-medium disabled:bg-slate-100"
+                />
+              </div>
 
-          <!-- Jumlah (Qty) -->
-          <div class="sm:col-span-3">
-            <label class="text-[11px] font-semibold text-slate-600 mb-1 block">Jumlah (Qty)</label>
-            <div class="flex rounded-lg border border-slate-300 overflow-hidden bg-white focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500">
-              <input
-                :value="form.penanganan_qty ? form.penanganan_qty.toLocaleString('id-ID') : ''"
-                @input="emit('input-penanganan-qty', $event)"
-                type="text"
-                inputmode="numeric"
-                placeholder="0"
-                class="w-full px-2.5 py-1.5 text-xs font-mono font-bold text-slate-800 outline-none border-0"
-              />
+              <!-- Jumlah (Qty) -->
+              <div class="sm:col-span-3">
+                <label class="text-[11px] font-semibold text-slate-600 mb-1 block">Jumlah (Qty)</label>
+                <div class="flex rounded-lg border border-slate-300 overflow-hidden bg-white focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500">
+                  <input
+                    :value="item.qty ? item.qty.toLocaleString('id-ID') : ''"
+                    @input="onItemQtyChange(idx, $event)"
+                    :disabled="isLocked"
+                    type="text"
+                    inputmode="numeric"
+                    placeholder="0"
+                    class="w-full px-2.5 py-1.5 text-xs font-mono font-bold text-slate-800 outline-none border-0 disabled:bg-slate-100"
+                  />
+                </div>
+              </div>
+
+              <!-- Harga Satuan -->
+              <div :class="penangananList.length > 1 ? 'sm:col-span-3' : 'sm:col-span-3'">
+                <label class="text-[11px] font-semibold text-slate-600 mb-1 block">Harga Satuan (Rp)</label>
+                <div class="flex rounded-lg border border-slate-300 overflow-hidden bg-white focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500">
+                  <input
+                    :value="item.harga ? item.harga.toLocaleString('id-ID') : ''"
+                    @input="onItemHargaChange(idx, $event)"
+                    :disabled="isLocked"
+                    type="text"
+                    inputmode="numeric"
+                    placeholder="0"
+                    class="w-full px-2.5 py-1.5 text-xs font-mono font-bold text-slate-800 outline-none border-0 disabled:bg-slate-100"
+                  />
+                </div>
+              </div>
+
+              <!-- Tombol Hapus (jika lebih dari 1 item) -->
+              <div v-if="penangananList.length > 1" class="sm:col-span-1 flex justify-end pb-0.5">
+                <button
+                  type="button"
+                  @click="emit('remove-penanganan-item', idx)"
+                  :disabled="isLocked"
+                  class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 active:bg-red-100 transition-colors border border-transparent hover:border-red-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Hapus Biaya Ini"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
             </div>
-          </div>
 
-          <!-- Harga Satuan -->
-          <div class="sm:col-span-3">
-            <label class="text-[11px] font-semibold text-slate-600 mb-1 block">Harga Satuan (Rp)</label>
-            <div class="flex rounded-lg border border-slate-300 overflow-hidden bg-white focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500">
-              <input
-                :value="form.penanganan_harga ? form.penanganan_harga.toLocaleString('id-ID') : ''"
-                @input="emit('input-penanganan-harga', $event)"
-                type="text"
-                inputmode="numeric"
-                placeholder="0"
-                class="w-full px-2.5 py-1.5 text-xs font-mono font-bold text-slate-800 outline-none border-0"
-              />
+            <!-- Rincian hitungan per item -->
+            <div v-if="(item.qty || 0) > 0 && (item.harga || 0) > 0" class="flex items-center justify-between pt-1.5 border-t border-slate-100 text-[11px]">
+              <div class="flex items-center gap-1.5 text-slate-600">
+                <span class="font-medium text-slate-700">{{ item.nama || 'Biaya #' + (idx + 1) }}:</span>
+                <span class="font-mono text-slate-500">{{ item.qty || 0 }} × {{ formatRupiah(item.harga || 0) }}</span>
+              </div>
+              <span class="font-mono font-extrabold text-red-600">
+                = {{ formatRupiah((item.qty || 0) * (item.harga || 0)) }}
+              </span>
             </div>
           </div>
         </div>
 
-        <!-- Subtotal Perhitungan: Jumlah x Harga = Total -->
-        <div v-if="(form.penanganan_qty > 0 && form.penanganan_harga > 0) || priceBreakdown.biaya_penanganan_total > 0" class="flex items-center justify-between pt-2 border-t border-slate-200/60 text-xs">
-          <div class="flex items-center gap-1.5 text-slate-600">
-            <span class="font-medium text-slate-700">{{ form.penanganan_nama || 'Biaya Penanganan' }}:</span>
-            <span class="font-mono text-slate-500">{{ form.penanganan_qty || 0 }} × {{ formatRupiah(form.penanganan_harga || 0) }}</span>
+        <!-- Baris Tambah Lagi & Total Biaya Penanganan -->
+        <div class="flex items-center justify-between pt-1 border-t border-slate-200/60">
+          <button
+            type="button"
+            @click="emit('add-penanganan-item')"
+            :disabled="isLocked"
+            class="inline-flex items-center gap-1.5 text-xs font-semibold text-red-600 hover:text-red-700 hover:underline cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span class="w-4 h-4 rounded-full bg-red-100 flex items-center justify-center font-bold text-xs leading-none">+</span>
+            <span>Tambah Biaya Penanganan</span>
+          </button>
+
+          <div v-if="priceBreakdown.biaya_penanganan_total > 0" class="flex items-center gap-2 text-xs">
+            <span class="text-slate-600 font-medium">Total:</span>
+            <span class="font-mono font-extrabold text-red-600 text-sm">
+              = {{ formatRupiah(priceBreakdown.biaya_penanganan_total) }}
+            </span>
           </div>
-          <span class="font-mono font-extrabold text-red-600">
-            = {{ formatRupiah(priceBreakdown.biaya_penanganan_total) }}
-          </span>
         </div>
       </div>
 
@@ -436,11 +499,12 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import SectionHeader from '@shared/components/SectionHeader.vue'
 import { formatRupiah } from '@shared/utils/formatters'
 import type { UkuranBuku, JenisKertas, JenisFinishing } from '@shared/types'
 
-defineProps<{
+const props = defineProps<{
   form: any
   priceBreakdown: any
   tarifBW: number
@@ -463,11 +527,50 @@ const emit = defineEmits<{
   (e: 'input-cetak-bw', event: Event): void
   (e: 'input-cetak-fc', event: Event): void
   (e: 'input-packing-qty', event: Event): void
+  (e: 'add-penanganan-item'): void
+  (e: 'remove-penanganan-item', index: number): void
+  (e: 'update-penanganan-item', index: number, field: 'nama' | 'qty' | 'harga', value: any): void
   (e: 'input-penanganan-nama', event: Event): void
   (e: 'input-penanganan-qty', event: Event): void
   (e: 'input-penanganan-harga', event: Event): void
   (e: 'request-unlock'): void
 }>()
+
+const penangananList = computed(() => {
+  if (Array.isArray(props.form.penanganan_items) && props.form.penanganan_items.length > 0) {
+    return props.form.penanganan_items
+  }
+  return [{
+    nama: props.form.penanganan_nama || '',
+    qty: props.form.penanganan_qty || 0,
+    harga: props.form.penanganan_harga || 0,
+    total: (props.form.penanganan_qty || 0) * (props.form.penanganan_harga || 0),
+  }]
+})
+
+function onItemNamaChange(idx: number, e: Event) {
+  const target = e.target as HTMLInputElement
+  emit('update-penanganan-item', idx, 'nama', target.value)
+  if (idx === 0) emit('input-penanganan-nama', e)
+}
+
+function onItemQtyChange(idx: number, e: Event) {
+  const target = e.target as HTMLInputElement
+  const raw = target.value.replace(/\D/g, '')
+  const num = raw ? parseInt(raw, 10) : 0
+  emit('update-penanganan-item', idx, 'qty', num)
+  target.value = num ? num.toLocaleString('id-ID') : ''
+  if (idx === 0) emit('input-penanganan-qty', e)
+}
+
+function onItemHargaChange(idx: number, e: Event) {
+  const target = e.target as HTMLInputElement
+  const raw = target.value.replace(/\D/g, '')
+  const num = raw ? parseInt(raw, 10) : 0
+  emit('update-penanganan-item', idx, 'harga', num)
+  target.value = num ? num.toLocaleString('id-ID') : ''
+  if (idx === 0) emit('input-penanganan-harga', e)
+}
 
 function setUkuran(u: UkuranBuku) { emit('set-ukuran', u) }
 function setKertas(k: JenisKertas) { emit('set-kertas', k) }
