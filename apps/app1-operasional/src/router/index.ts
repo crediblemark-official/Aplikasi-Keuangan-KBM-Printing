@@ -23,6 +23,7 @@ const routes: RouteRecordRaw[] = [
     path: '/order/:id',
     name: 'OrderDetail',
     component: () => import('../views/OrderDetailView.vue'),
+    props: true,
   },
   {
     path: '/order/edit/:id',

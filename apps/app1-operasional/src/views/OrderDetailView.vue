@@ -49,10 +49,10 @@
         </div>
         <h3 class="text-sm font-bold text-slate-800">Order Tidak Ditemukan</h3>
         <p class="text-xs text-slate-500 mt-1 max-w-xs">
-          Order <span class="font-mono font-semibold text-slate-700">{{ orderId }}</span> tidak ditemukan dalam sistem.
+          Order <span class="font-mono font-semibold text-slate-700">{{ orderId || 'yang dipilih' }}</span> tidak ditemukan dalam sistem.
         </p>
         <div class="flex items-center gap-2 mt-4">
-          <button @click="() => loadData()" class="btn-secondary h-8.5 px-3.5 text-xs font-bold cursor-pointer">
+          <button @click="() => loadData(true)" class="btn-secondary h-8.5 px-3.5 text-xs font-bold cursor-pointer">
             Muat Ulang
           </button>
           <button @click="router.push('/order/list')" class="btn-primary h-8.5 px-3.5 text-xs font-bold cursor-pointer">
@@ -596,7 +596,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   IonPage, IonHeader, IonContent, IonSpinner, IonToast, useIonRouter, onIonViewWillEnter,
@@ -613,13 +613,35 @@ import { api } from '@shared/api/gasClient'
 import type { KasMasuk, OrderLog } from '@shared/types'
 import { formatRupiah, formatTanggal, formatDatetime, formatMetode, formatFinishing, formatKertas, formatKertasOrder, getVerificationStatus } from '@shared/utils/formatters'
 
+const props = defineProps<{
+  id?: string
+}>()
+
 const route = useRoute()
 const router = useIonRouter()
 const orderStore = useOrderStore()
 const authStore = useAuthStore()
 
-const orderId = computed(() => ((route.params.id as string) || '').trim())
+const orderId = computed(() => {
+  return (
+    props.id ||
+    (route.params.id as string) ||
+    (route.query.id as string) ||
+    ''
+  ).trim()
+})
 const order = computed(() => orderStore.orders.find((o) => (o.id_order || '').trim() === orderId.value))
+
+watch(
+  () => [route.params.id, props.id],
+  ([newRouteId, newPropId]) => {
+    const id = (newPropId || newRouteId || '').toString().trim()
+    if (id) {
+      loadData(true)
+    }
+  },
+  { immediate: true }
+)
 const kasMasukList = ref<KasMasuk[]>([])
 const orderLogs = ref<OrderLog[]>([])
 const isLoading = ref(true)
@@ -831,7 +853,15 @@ async function handleRefundSuccess() {
 }
 
 async function loadData(force: boolean | unknown = false) {
-  if (!orderId.value) {
+  const currentId = (
+    orderId.value ||
+    props.id ||
+    (route.params.id as string) ||
+    (route.query.id as string) ||
+    ''
+  ).trim()
+
+  if (!currentId) {
     isLoading.value = false
     return
   }
@@ -840,12 +870,12 @@ async function loadData(force: boolean | unknown = false) {
   isLoading.value = true
   try {
     if (!order.value || isForce) {
-      await orderStore.ensureOrderLoaded(orderId.value)
+      await orderStore.ensureOrderLoaded(currentId, isForce)
     }
     await Promise.all([
       (async () => {
         const res = await api.getKasMasuk({
-          id_order: orderId.value,
+          id_order: currentId,
           nocache: isForce ? 'true' : undefined,
         })
         if (res.success && res.data) {
@@ -855,6 +885,8 @@ async function loadData(force: boolean | unknown = false) {
       })(),
       loadOrderLogs(isForce),
     ])
+  } catch (err) {
+    console.warn('[OrderDetailView] Gagal memuat data order:', err)
   } finally {
     isLoading.value = false
   }
