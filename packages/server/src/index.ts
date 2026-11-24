@@ -46,20 +46,6 @@ app.onError((err, c) => {
   return c.json({ success: false, error: err.message || 'Internal Server Error' }, 500)
 })
 
-let workerSql: postgres.Sql | null = null
-
-function getWorkerSql(dbUrl: string): postgres.Sql {
-  if (!workerSql) {
-    workerSql = postgres(dbUrl, {
-      prepare: false,
-      max: 1, // 1 koneksi per Worker isolate untuk mencegah limit PgBouncer (EMAXPOOLSREACHED)
-      idle_timeout: 20,
-      connect_timeout: 10,
-    })
-  }
-  return workerSql
-}
-
 // Isolasi koneksi database per-request untuk Cloudflare Workers
 app.use('*', async (c, next) => {
   if (bunSql) {
@@ -67,11 +53,24 @@ app.use('*', async (c, next) => {
   }
 
   const dbUrl = (c.env as any)?.DATABASE_URL || DATABASE_URL
-  const db = getWorkerSql(dbUrl)
-
-  await sqlStorage.run(db, async () => {
-    await next()
+  const db = postgres(dbUrl, {
+    prepare: false, // Wajib false untuk PgBouncer / Supavisor transaction pooler
+    max: 1,        // Tepat 1 koneksi per-request agar tidak membebani limit pool Supavisor
+    idle_timeout: 5,
+    connect_timeout: 10,
   })
+
+  try {
+    await sqlStorage.run(db, async () => {
+      await next()
+    })
+  } finally {
+    try {
+      await db.end({ timeout: 2 })
+    } catch (e) {
+      console.warn('Gagal menutup koneksi db worker:', e)
+    }
+  }
 })
 
 // Unified Router for both REST and GAS query-based compatibility

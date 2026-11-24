@@ -99,7 +99,14 @@ export async function gasGet<T = unknown>(
       }),
       timeoutMs,
     )
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    if (!res.ok) {
+      let errMsg = `HTTP ${res.status}`
+      try {
+        const errJson = await res.json()
+        if (errJson?.error) errMsg = errJson.error
+      } catch {}
+      throw new Error(errMsg)
+    }
     const data = await res.json()
     notifyNetworkStatus(true)
     return data
@@ -143,7 +150,14 @@ export async function gasPost<T = unknown>(
       }),
       timeoutMs,
     )
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    if (!res.ok) {
+      let errMsg = `HTTP ${res.status}`
+      try {
+        const errJson = await res.json()
+        if (errJson?.error) errMsg = errJson.error
+      } catch {}
+      throw new Error(errMsg)
+    }
     const data = await res.json()
     notifyNetworkStatus(true)
     return data
