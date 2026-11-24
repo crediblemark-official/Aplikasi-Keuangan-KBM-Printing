@@ -41,10 +41,15 @@ function notifyNetworkStatus(isOnline: boolean) {
 // atau GitHub Secrets saat build CI/CD.
 // ============================================================
 
+const rawGasUrl = (import.meta.env?.VITE_GAS_URL as string | undefined)?.trim()
+// Cegah penggunaan Google Apps Script (legacy) yang datanya sudah tidak aktif sejak Oktober
+const isLegacyGas = Boolean(rawGasUrl && rawGasUrl.includes('script.google.com'))
+
 export const CONFIG = {
   GAS_URL:
-    ((import.meta.env?.VITE_GAS_URL as string | undefined)?.trim()) ||
-    'https://kbm-api.karyabaktimakmur.workers.dev/api',
+    (rawGasUrl && !isLegacyGas)
+      ? rawGasUrl
+      : 'https://kbm-api.karyabaktimakmur.workers.dev/api',
   APP_NAME:
     ((import.meta.env?.VITE_APP_NAME as string | undefined)?.trim()) ||
     'KBM Percetakan',
