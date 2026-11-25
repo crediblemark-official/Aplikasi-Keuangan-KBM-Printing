@@ -631,17 +631,6 @@ const orderId = computed(() => {
   ).trim()
 })
 const order = computed(() => orderStore.orders.find((o) => (o.id_order || '').trim() === orderId.value))
-
-watch(
-  () => [route.params.id, props.id],
-  ([newRouteId, newPropId]) => {
-    const id = (newPropId || newRouteId || '').toString().trim()
-    if (id) {
-      loadData(true)
-    }
-  },
-  { immediate: true }
-)
 const kasMasukList = ref<KasMasuk[]>([])
 const orderLogs = ref<OrderLog[]>([])
 const isLoading = ref(true)
@@ -912,6 +901,17 @@ function loadData(force: boolean | unknown = false) {
   loadDataPromise = p
   return p
 }
+
+watch(
+  () => [route.params.id, props.id],
+  ([newRouteId, newPropId], [oldRouteId, oldPropId] = []) => {
+    const id = (newPropId || newRouteId || '').toString().trim()
+    const oldId = (oldPropId || oldRouteId || '').toString().trim()
+    if (id && id !== oldId) {
+      loadData(true)
+    }
+  }
+)
 
 onMounted(() => {
   loadData()
