@@ -60,11 +60,11 @@ app.use('*', async (c, next) => {
       db = postgres(dbUrl, {
         prepare: false,    // Wajib false untuk PgBouncer / Supavisor transaction pooler
         max: 1,            // Tepat 1 koneksi per-request agar tidak membebani limit pool Supavisor
-        max_pipeline: 0,   // WAJIB 0: cegah deadlock query paralel di Supavisor transaction mode
+        max_pipeline: 1,   // WAJIB >= 1: di postgres.js, max_pipeline: 0 menonaktifkan onexecute() pada sql.begin()
         fetch_types: false,// Hemat 1 query pg_catalog.pg_type pada setiap koneksi baru
         idle_timeout: 5,
         connect_timeout: 10,
-      })
+      } as postgres.Options<{}>)
     }
     return db
   }

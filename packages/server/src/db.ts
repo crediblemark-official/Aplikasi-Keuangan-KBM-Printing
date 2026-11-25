@@ -11,10 +11,10 @@ export const bunSql: postgres.Sql | null =
     ? postgres(DATABASE_URL, {
         prepare: false,
         max: 10,
-        max_pipeline: 0,
+        max_pipeline: 1,
         fetch_types: false,
         idle_timeout: 30,
-      })
+      } as postgres.Options<{}>)
     : null
 
 // Universal SQL proxy: otomatis memilih koneksi per-request di Cloudflare Workers
