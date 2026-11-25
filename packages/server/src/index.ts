@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import postgres from 'postgres'
-import { DATABASE_URL, bunSql, sqlStorage } from './db'
+import { DATABASE_URL, DATABASE_URL_FALLBACK, bunSql, parseDbUrls, sqlStorage } from './db'
 
 // Modular Service Handlers
 import {
@@ -58,7 +58,7 @@ app.onError((err, c) => {
 
 function isPoolHandshakeError(err: any): boolean {
   const msg = String(err?.message || err || '')
-  return /EMAXPOOLSREACHED|max pools count reached|max client connections|MaxClientsInSessionMode|CONNECT_TIMEOUT|ECONNREFUSED/i.test(msg)
+  return /EMAXPOOLSREACHED|max pools count reached|max client connections|MaxClientsInSessionMode|CONNECT_TIMEOUT|ECONNREFUSED|ENOTFOUND|EAI_AGAIN/i.test(msg)
 }
 
 function createWorkerDb(dbUrl: string): postgres.Sql {
@@ -68,21 +68,28 @@ function createWorkerDb(dbUrl: string): postgres.Sql {
     max_pipeline: 1,   // WAJIB >= 1: di postgres.js, max_pipeline: 0 menonaktifkan onexecute() pada sql.begin()
     fetch_types: false,// Hemat 1 query pg_catalog.pg_type pada setiap koneksi baru
     idle_timeout: 5,
-    connect_timeout: 10,
+    connect_timeout: 6,
   } as postgres.Options<{}>)
 }
 
-// Isolasi koneksi database per-request secara lazy + auto-retry aman saat handshake pooler penuh (EMAXPOOLSREACHED)
+// Isolasi koneksi database per-request + auto-failover (Direct 65437 -> Session 6433 -> Transaction 6432)
 async function runWithDbRetry<T>(c: any, fn: () => Promise<T>): Promise<T> {
   if (bunSql) {
     return await fn()
   }
 
-  const dbUrl = (c.env as any)?.DATABASE_URL || DATABASE_URL
-  const backoffs = [350, 800, 1500]
+  const env = (c.env as any) || {}
+  const urls = parseDbUrls(env.DATABASE_URL || DATABASE_URL, env.DATABASE_URL_FALLBACK || DATABASE_URL_FALLBACK)
+  if (!urls.length) {
+    throw new Error('DATABASE_URL belum dikonfigurasi pada environment Worker.')
+  }
+
+  // Rencana percobaan: setiap URL dicoba berurutan, lalu retry 1x ke primary setelah jeda singkat jika semua sempat gagal handshake
+  const candidates = urls.length > 1 ? [...urls, urls[0]] : [urls[0], urls[0], urls[0]]
   let lastErr: any
 
-  for (let attempt = 0; attempt <= backoffs.length; attempt++) {
+  for (let i = 0; i < candidates.length; i++) {
+    const dbUrl = candidates[i]
     let db: postgres.Sql | null = null
     const getDb = () => {
       if (!db) {
@@ -95,9 +102,13 @@ async function runWithDbRetry<T>(c: any, fn: () => Promise<T>): Promise<T> {
       return await sqlStorage.run(getDb, fn)
     } catch (err: any) {
       lastErr = err
-      if (attempt < backoffs.length && isPoolHandshakeError(err)) {
-        const delay = backoffs[attempt] + Math.floor(Math.random() * 200)
-        console.warn(`[DB Handshake Retry ${attempt + 1}/${backoffs.length}] ${err?.message || err} -> retry in ${delay}ms`)
+      const canFailover = i < candidates.length - 1 && isPoolHandshakeError(err)
+      if (canFailover) {
+        let endpointTag = `candidate-${i + 1}`
+        try { endpointTag = new URL(dbUrl).port || 'default' } catch {}
+        const isLastWait = i === urls.length - 1
+        const delay = (isLastWait ? 450 : 120) + Math.floor(Math.random() * 120)
+        console.warn(`[DB Failover port:${endpointTag} -> next] ${err?.message || err} (wait ${delay}ms)`)
         await new Promise((r) => setTimeout(r, delay))
         continue
       }
