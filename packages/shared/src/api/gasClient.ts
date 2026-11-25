@@ -55,14 +55,24 @@ export const CONFIG = {
     'KBM Percetakan',
 }
 
-// ---- Timeout helper ----
-function withTimeout<T>(promise: Promise<T>, ms = 30000): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Request timeout')), ms),
-    ),
-  ])
+// ---- Timeout helper dengan AbortController agar koneksi menggantung benar-benar diputus ----
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  ms = 30000,
+): Promise<Response> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(new Error('Request timeout')), ms)
+  try {
+    return await fetch(url, { ...init, signal: controller.signal })
+  } catch (err: any) {
+    if (err?.name === 'AbortError' || err?.message === 'Request timeout') {
+      throw new Error('Request timeout')
+    }
+    throw err
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 // ---- GET request ----
@@ -92,11 +102,12 @@ export async function gasGet<T = unknown>(
   })
 
   try {
-    const res = await withTimeout(
-      fetch(url.toString(), {
+    const res = await fetchWithTimeout(
+      url.toString(),
+      {
         method: 'GET',
         redirect: 'follow',
-      }),
+      },
       timeoutMs,
     )
     if (!res.ok) {
@@ -105,7 +116,12 @@ export async function gasGet<T = unknown>(
         const errJson = await res.json()
         if (errJson?.error) errMsg = errJson.error
       } catch {}
-      throw new Error(errMsg)
+      notifyNetworkStatus(true)
+      return {
+        success: false,
+        error: errMsg,
+        isOffline: false,
+      }
     }
     const data = await res.json()
     notifyNetworkStatus(true)
@@ -137,8 +153,9 @@ export async function gasPost<T = unknown>(
   }
 
   try {
-    const res = await withTimeout(
-      fetch(CONFIG.GAS_URL, {
+    const res = await fetchWithTimeout(
+      CONFIG.GAS_URL,
+      {
         method: 'POST',
         // Menggunakan text/plain;charset=utf-8 menghindari browser mengirim CORS preflight OPTIONS request
         // yang tidak didukung oleh Google Apps Script Web App
@@ -147,7 +164,7 @@ export async function gasPost<T = unknown>(
         },
         body: JSON.stringify({ action, ...body }),
         redirect: 'follow',
-      }),
+      },
       timeoutMs,
     )
     if (!res.ok) {
@@ -156,7 +173,12 @@ export async function gasPost<T = unknown>(
         const errJson = await res.json()
         if (errJson?.error) errMsg = errJson.error
       } catch {}
-      throw new Error(errMsg)
+      notifyNetworkStatus(true)
+      return {
+        success: false,
+        error: errMsg,
+        isOffline: false,
+      }
     }
     const data = await res.json()
     notifyNetworkStatus(true)
@@ -272,6 +294,10 @@ export const api = {
     status_verifikasi?: string
   }) => {
     const res = await gasPost<{ id_kas_masuk: string }>('createKasMasuk', data)
+    // Jangan simpan blob foto_base64 ke localStorage jika sudah sukses tersinkron agar tidak memenuhi kuota 5MB
+    const logPayload = res.success && data.foto_base64
+      ? { ...data, foto_base64: undefined }
+      : data
     tryLogSync({
       entity_type: 'KAS_MASUK',
       title: `Kas Masuk: ${data.jenis_pembayaran} (${data.metode})`,
@@ -279,7 +305,7 @@ export const api = {
       nominal: data.nominal,
       status: res.success ? 'SYNCED' : 'FAILED',
       action: 'createKasMasuk',
-      payload: data as any,
+      payload: logPayload as any,
       error_message: res.error,
     })
     return res

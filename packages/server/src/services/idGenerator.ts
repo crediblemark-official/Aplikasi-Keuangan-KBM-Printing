@@ -6,14 +6,22 @@ const LOCK_KEYS: Record<'ORD' | 'KM' | 'KK', number> = {
   KK: 400103,
 }
 
+function getWibPeriod(): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+  }).formatToParts(new Date())
+  const yyyy = parts.find((p) => p.type === 'year')?.value || String(new Date().getFullYear())
+  const mm = parts.find((p) => p.type === 'month')?.value || String(new Date().getMonth() + 1).padStart(2, '0')
+  return `${yyyy}${mm}`
+}
+
 export async function generateId(
   prefix: 'ORD' | 'KM' | 'KK',
   client: any = sql
 ): Promise<string> {
-  const now = new Date()
-  const yyyy = now.getFullYear()
-  const mm = String(now.getMonth() + 1).padStart(2, '0')
-  const period = `${yyyy}${mm}`
+  const period = getWibPeriod()
   const pattern = `${prefix}-${period}-%`
 
   // Lock per-prefix selama transaksi aktif untuk mencegah race condition / ID duplikat

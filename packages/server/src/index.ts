@@ -46,29 +46,40 @@ app.onError((err, c) => {
   return c.json({ success: false, error: err.message || 'Internal Server Error' }, 500)
 })
 
-// Isolasi koneksi database per-request untuk Cloudflare Workers
+// Isolasi koneksi database per-request secara lazy untuk Cloudflare Workers
 app.use('*', async (c, next) => {
   if (bunSql) {
     return await next()
   }
 
   const dbUrl = (c.env as any)?.DATABASE_URL || DATABASE_URL
-  const db = postgres(dbUrl, {
-    prepare: false, // Wajib false untuk PgBouncer / Supavisor transaction pooler
-    max: 1,        // Tepat 1 koneksi per-request agar tidak membebani limit pool Supavisor
-    idle_timeout: 5,
-    connect_timeout: 10,
-  })
+  let db: postgres.Sql | null = null
+
+  const getDb = () => {
+    if (!db) {
+      db = postgres(dbUrl, {
+        prepare: false,    // Wajib false untuk PgBouncer / Supavisor transaction pooler
+        max: 1,            // Tepat 1 koneksi per-request agar tidak membebani limit pool Supavisor
+        max_pipeline: 0,   // WAJIB 0: cegah deadlock query paralel di Supavisor transaction mode
+        fetch_types: false,// Hemat 1 query pg_catalog.pg_type pada setiap koneksi baru
+        idle_timeout: 5,
+        connect_timeout: 10,
+      })
+    }
+    return db
+  }
 
   try {
-    await sqlStorage.run(db, async () => {
+    await sqlStorage.run(getDb, async () => {
       await next()
     })
   } finally {
-    try {
-      await db.end({ timeout: 2 })
-    } catch (e) {
-      console.warn('Gagal menutup koneksi db worker:', e)
+    if (db) {
+      try {
+        await (db as postgres.Sql).end({ timeout: 2 })
+      } catch (e) {
+        console.warn('Gagal menutup koneksi db worker:', e)
+      }
     }
   }
 })

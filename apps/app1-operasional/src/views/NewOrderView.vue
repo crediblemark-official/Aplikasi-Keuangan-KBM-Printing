@@ -325,7 +325,7 @@ async function loadExistingOrder() {
 }
 
 async function submitOrder() {
-  if (!orderForm.isFormValid.value) return
+  if (orderStore.isLoading || !orderForm.isFormValid.value) return
 
   const formVal = orderForm.form.value
   const judulBuku = String(formVal.judul_buku || '').trim()
@@ -393,7 +393,9 @@ async function submitOrder() {
     const result = await orderStore.createOrder(orderPayload)
 
     if (result && result.id_order) {
-      router.push(`/invoice/${result.id_order.trim()}`)
+      const targetInvoiceId = result.id_order.trim()
+      orderForm.resetForm()
+      router.push(`/invoice/${targetInvoiceId}`)
     } else {
       toastMsg.value = orderStore.error ?? 'Gagal menyimpan order'
       toastOpen.value = true

@@ -852,21 +852,16 @@ async function handleRefundSuccess() {
   await loadData(true)
 }
 
-async function loadData(force: boolean | unknown = false) {
-  const currentId = (
-    orderId.value ||
-    props.id ||
-    (route.params.id as string) ||
-    (route.query.id as string) ||
-    ''
-  ).trim()
+let lastDetailOrderId = ''
+let loadDataPromise: Promise<void> | null = null
 
-  if (!currentId) {
-    isLoading.value = false
-    return
+async function doLoadData(currentId: string, isForce: boolean) {
+  if (lastDetailOrderId !== currentId) {
+    lastDetailOrderId = currentId
+    kasMasukList.value = []
+    orderLogs.value = []
   }
 
-  const isForce = force === true
   isLoading.value = true
   try {
     if (!order.value || isForce) {
@@ -878,7 +873,7 @@ async function loadData(force: boolean | unknown = false) {
           id_order: currentId,
           nocache: isForce ? 'true' : undefined,
         })
-        if (res.success && res.data) {
+        if (res.success && res.data && orderId.value === currentId) {
           kasMasukList.value = res.data
           orderStore.mergeKasMasuk(res.data)
         }
@@ -890,6 +885,32 @@ async function loadData(force: boolean | unknown = false) {
   } finally {
     isLoading.value = false
   }
+}
+
+function loadData(force: boolean | unknown = false) {
+  const currentId = (
+    orderId.value ||
+    props.id ||
+    (route.params.id as string) ||
+    (route.query.id as string) ||
+    ''
+  ).trim()
+
+  if (!currentId) {
+    isLoading.value = false
+    return Promise.resolve()
+  }
+
+  const isForce = force === true
+  if (!isForce && loadDataPromise) {
+    return loadDataPromise
+  }
+
+  const p = doLoadData(currentId, isForce).finally(() => {
+    if (loadDataPromise === p) loadDataPromise = null
+  })
+  loadDataPromise = p
+  return p
 }
 
 onMounted(() => {

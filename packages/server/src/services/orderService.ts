@@ -228,9 +228,9 @@ export async function handleCreateOrder(body: any) {
       );
     `
 
-    const seq = id_order.split('-')[2]
-    const now = new Date()
-    const yyyymm = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
+    const parts = id_order.split('-')
+    const yyyymm = parts[1] || `${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}`
+    const seq = parts[2] || '001'
     const nomor_invoice = `INV-${yyyymm}-${seq}`
 
     return { success: true, data: { id_order, nomor_invoice } }

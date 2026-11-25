@@ -136,7 +136,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   IonPage, IonHeader, IonContent, IonSpinner, IonToast, useIonRouter, onIonViewWillEnter,
@@ -190,6 +190,15 @@ function handleBack() {
     router.push('/order/list')
   }
 }
+
+watch(
+  targetOrderId,
+  (newId) => {
+    if (newId) {
+      loadData(true)
+    }
+  }
+)
 
 onMounted(() => {
   loadData()

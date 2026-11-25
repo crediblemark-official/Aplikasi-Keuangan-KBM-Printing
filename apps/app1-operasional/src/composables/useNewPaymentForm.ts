@@ -204,24 +204,39 @@ export function useNewPaymentForm(targetOrderId: import('vue').Ref<string>) {
   }
 
   let loadPromise: Promise<void> | null = null
+  let lastLoadedOrderId = ''
 
   async function doLoadData() {
-    if (!targetOrderId.value) {
+    const orderId = targetOrderId.value
+    if (!orderId) {
       isLoading.value = false
       return
+    }
+
+    // Reset seluruh state form & interaksi jika berpindah ke order lain (Ionic route caching)
+    if (lastLoadedOrderId !== orderId) {
+      lastLoadedOrderId = orderId
+      userInteractedWithJenis.value = false
+      activePreset.value = null
+      kasMasukList.value = []
+      form.value.id_order = orderId
+      form.value.nominal = 0
+      form.value.keterangan = ''
+      photoBase64.value = ''
+      photoFilename.value = ''
     }
 
     isLoading.value = true
 
     try {
       // Pastikan data order selalu ter-load segar dari server (menggunakan targeted single-order lookup)
-      await orderStore.ensureOrderLoaded(targetOrderId.value, true)
+      await orderStore.ensureOrderLoaded(orderId, true)
 
-      form.value.id_order = targetOrderId.value
+      form.value.id_order = orderId
 
       const [resOrderKm, _] = await Promise.all([
-        api.getKasMasuk({ id_order: targetOrderId.value }),
-        orderStore.fetchKasMasuk(true),
+        api.getKasMasuk({ id_order: orderId }),
+        orderStore.fetchKasMasuk(false),
       ])
       if (resOrderKm.success && resOrderKm.data) {
         kasMasukList.value = resOrderKm.data

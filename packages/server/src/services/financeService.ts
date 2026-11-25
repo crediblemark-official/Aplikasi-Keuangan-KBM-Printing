@@ -8,12 +8,12 @@ export async function handleGetClients() {
 }
 
 export async function handleGetFinanceBundle(params: Record<string, string> = {}) {
-  const [ordersRes, kmRes, kkRes, clientsRes] = await Promise.all([
-    handleGetOrders(params),
-    handleGetKasMasuk(params),
-    handleGetKasKeluar(),
-    handleGetClients(),
-  ])
+  // Eksekusi sekuensial di atas 1 koneksi per-request (max: 1, max_pipeline: 0)
+  // untuk menghindari deadlock pipelining di Supavisor transaction mode.
+  const ordersRes = await handleGetOrders(params)
+  const kmRes = await handleGetKasMasuk(params)
+  const kkRes = await handleGetKasKeluar()
+  const clientsRes = await handleGetClients()
 
   return {
     success: true,
